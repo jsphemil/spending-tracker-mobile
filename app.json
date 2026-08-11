@@ -3,13 +3,16 @@
     "name": "spending-tracker-mobile",
     "slug": "spending-tracker-mobile",
     "version": "1.0.0",
+    "scheme": "spendingtracker",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.jsphemil.spendingtracker"
     },
     "android": {
+      "package": "com.jsphemil.spendingtracker",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -19,7 +22,21 @@
       "predictiveBackGestureEnabled": false
     },
     "web": {
-      "favicon": "./assets/favicon.png"
-    }
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-status-bar",
+      "expo-sqlite",
+      "@react-native-community/datetimepicker"
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "05d13497-4b5e-4488-b669-361a3769283f"
+      }
+    },
+    "owner": "jsphemil"
   }
 }

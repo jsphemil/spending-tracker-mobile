@@ -1,0 +1,22 @@
+// MaterialCommunityIcons names (@expo/vector-icons) offered when creating a category.
+export const CATEGORY_ICONS = [
+  "shopping",
+  "cart",
+  "silverware-fork-knife",
+  "home",
+  "briefcase",
+  "heart-pulse",
+  "gift",
+  "movie",
+  "book-open",
+  "car",
+  "airplane",
+  "credit-card",
+  "cash",
+  "trending-up",
+  "cellphone",
+  "wifi",
+  "flash",
+  "emoticon-happy",
+  "dots-horizontal",
+] as const;

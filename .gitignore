@@ -36,6 +36,9 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 
+# local runtime state
+.claude/scheduled_tasks.lock
+
 # generated native folders
 /ios
 /android
