@@ -6,14 +6,18 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { Stack } from "expo-router";
+import { vars } from "nativewind";
 import { useMigrations } from "drizzle-orm/expo-sqlite/migrator";
 
 import { db } from "../db/client";
 import { ensureSeeded } from "../db/seed";
+import { cssVars, useResolvedTheme, useThemeColors } from "../theme/palette";
 import migrations from "../drizzle/migrations";
 
 export default function RootLayout() {
   const { success, error } = useMigrations(db, migrations);
+  const scheme = useResolvedTheme();
+  const colors = useThemeColors();
 
   useEffect(() => {
     if (success) ensureSeeded(db);
@@ -21,20 +25,33 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
+      {/* CSS variables driven directly from our own resolved theme state
+          (settings.themePreference + OS scheme for "system"), not from
+          NativeWind's colorScheme/Appearance.setColorScheme — that path is
+          wired but never actually propagates on this Android build (see
+          theme/palette.ts's cssVars comment for why). */}
+      <View style={[{ flex: 1 }, vars(cssVars(scheme))]}>
       <SafeAreaProvider>
-        <StatusBar style="auto" />
+        <StatusBar style={scheme === "dark" ? "light" : "dark"} />
         {error ? (
-          <View className="flex-1 items-center justify-center bg-white p-6">
-            <Text className="text-center text-red-600">
+          <View className="flex-1 items-center justify-center bg-bg p-6">
+            <Text className="text-center text-danger">
               Database migration failed: {error.message}
             </Text>
           </View>
         ) : !success ? (
-          <View className="flex-1 items-center justify-center bg-white">
-            <Text>Setting up database…</Text>
+          <View className="flex-1 items-center justify-center bg-bg">
+            <Text className="text-fg">Setting up database…</Text>
           </View>
         ) : (
-          <Stack screenOptions={{ headerShown: false }}>
+          <Stack
+            screenOptions={{
+              headerShown: false,
+              headerStyle: { backgroundColor: colors.surface },
+              headerTitleStyle: { color: colors.fg },
+              headerTintColor: colors.fg,
+            }}
+          >
             <Stack.Screen name="(tabs)" />
             <Stack.Screen
               name="account/new"
@@ -67,6 +84,7 @@ export default function RootLayout() {
           </Stack>
         )}
       </SafeAreaProvider>
+      </View>
     </GestureHandlerRootView>
   );
 }

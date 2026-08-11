@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 import { db } from "../client";
 import { transactionTags, transactions, type TransactionType } from "../schema";
@@ -38,8 +38,21 @@ export function createTransaction(input: TransactionInput): number {
   });
 }
 
+// Kept in sync with the account's own opening-balance fields (see
+// db/actions/accounts.ts) — not directly editable/deletable through the
+// normal transaction UI (app/transaction/[id]/edit.tsx already blocks
+// this), these two checks are a backstop against any other call path.
 export function updateTransaction(id: number, input: TransactionInput): void {
   db.transaction((tx) => {
+    const existing = tx
+      .select({ isOpeningBalance: transactions.isOpeningBalance })
+      .from(transactions)
+      .where(eq(transactions.id, id))
+      .get();
+    if (existing?.isOpeningBalance) {
+      throw new Error("Edit the opening balance from the account's own edit page instead.");
+    }
+
     tx.update(transactions)
       .set({
         type: input.type,
@@ -61,5 +74,7 @@ export function updateTransaction(id: number, input: TransactionInput): void {
 }
 
 export function deleteTransaction(id: number): void {
-  db.delete(transactions).where(eq(transactions.id, id)).run();
+  db.delete(transactions)
+    .where(and(eq(transactions.id, id), eq(transactions.isOpeningBalance, false)))
+    .run();
 }

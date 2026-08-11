@@ -6,6 +6,7 @@ import { db } from "../../db/client";
 import { useTagTransactions } from "../../db/queries/tags";
 import { getExchangeRate } from "../../services/currency";
 import { formatMoney, majorToMinor, minorToMajor } from "../../services/format";
+import { EmptyState } from "../../components/ui/EmptyState";
 
 const BASE_CURRENCY = "INR";
 
@@ -60,52 +61,48 @@ export default function TagSummaryScreen() {
   const netMinor = totals.incomeMinor - totals.expenseMinor;
 
   return (
-    <View className="flex-1 bg-white">
+    <View className="flex-1 bg-bg">
       <FlatList
         data={rows ?? []}
         keyExtractor={({ transaction }) => String(transaction.id)}
         contentContainerStyle={{ padding: 16, gap: 8 }}
         ListHeaderComponent={
           <View className="mb-6 gap-3">
-            <Text className="text-xl font-semibold text-gray-900">{tagName}</Text>
-            <Text className="text-base text-gray-700">
+            <Text className="text-xl font-semibold text-fg">{tagName}</Text>
+            <Text className="text-base text-fg-muted">
               Net cost of {tagName}: {formatMoney(netMinor, BASE_CURRENCY)}
             </Text>
             <View className="flex-row justify-around">
               <View className="items-center">
-                <Text className="text-xs text-gray-500">Income</Text>
-                <Text className="text-base font-medium text-green-600">
+                <Text className="text-xs text-fg-muted">Income</Text>
+                <Text className="font-data text-base font-medium tabular-nums text-success">
                   {formatMoney(totals.incomeMinor, BASE_CURRENCY)}
                 </Text>
               </View>
               <View className="items-center">
-                <Text className="text-xs text-gray-500">Expense</Text>
-                <Text className="text-base font-medium text-red-600">
+                <Text className="text-xs text-fg-muted">Expense</Text>
+                <Text className="font-data text-base font-medium tabular-nums text-danger">
                   {formatMoney(totals.expenseMinor, BASE_CURRENCY)}
                 </Text>
               </View>
             </View>
           </View>
         }
-        ListEmptyComponent={
-          <Text className="py-8 text-center text-gray-500">
-            No transactions carry this tag yet.
-          </Text>
-        }
+        ListEmptyComponent={<EmptyState message="No transactions carry this tag yet." />}
         renderItem={({ item }) => (
-          <View className="flex-row items-center justify-between border-b border-gray-100 py-3">
+          <View className="flex-row items-center justify-between border-b border-border py-3">
             <View className="flex-1 pr-3">
-              <Text className="text-base text-gray-900">
+              <Text className="text-base text-fg">
                 {item.transaction.description || item.accountName}
               </Text>
-              <Text className="text-xs text-gray-400">
+              <Text className="text-xs text-fg-subtle">
                 {item.accountName} · {item.transaction.date.toLocaleDateString("en-IN")}
               </Text>
             </View>
             <Text
-              className={
-                item.transaction.type === "income" ? "text-green-600" : "text-gray-900"
-              }
+              className={`font-data tabular-nums ${
+                item.transaction.type === "income" ? "text-success" : "text-fg"
+              }`}
             >
               {formatMoney(item.transaction.amountMinor, item.accountCurrency)}
             </Text>

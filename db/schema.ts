@@ -26,6 +26,9 @@ export type CategoryKind = (typeof CATEGORY_KINDS)[number];
 export const RECURRENCE_UNITS = ["day", "week", "month", "year"] as const;
 export type RecurrenceUnit = (typeof RECURRENCE_UNITS)[number];
 
+export const THEME_PREFERENCES = ["light", "dark", "system"] as const;
+export type ThemePreference = (typeof THEME_PREFERENCES)[number];
+
 // All monetary amounts are stored as integers in the currency's smallest
 // unit (e.g. paise for INR, cents for USD) to avoid floating-point rounding
 // errors in balance/summary math.
@@ -155,6 +158,9 @@ export const settings = sqliteTable("settings", {
     .default(true),
   displayName: text("display_name"),
   baseCurrency: text("base_currency").notNull().default("INR"),
+  themePreference: text("theme_preference", { enum: THEME_PREFERENCES })
+    .notNull()
+    .default("system"),
   widgetAccountId: integer("widget_account_id").references(
     () => accounts.id,
     { onDelete: "set null" },

@@ -29,14 +29,14 @@ export default function TransactionsCalendarScreen() {
   }, [rows, accounts]);
 
   return (
-    <ScrollView className="flex-1 bg-white" contentContainerStyle={{ padding: 16 }}>
+    <ScrollView className="flex-1 bg-bg" contentContainerStyle={{ padding: 16 }}>
       <View className="mb-4 flex-row items-center justify-between">
         <Pressable onPress={() => setPeriod((p) => shiftMonth(p, -1))} className="p-2">
-          <Text className="text-lg">‹</Text>
+          <Text className="text-lg text-fg">‹</Text>
         </Pressable>
-        <Text className="text-base font-medium text-gray-900">{monthLabel(period)}</Text>
+        <Text className="text-base font-medium text-fg">{monthLabel(period)}</Text>
         <Pressable onPress={() => setPeriod((p) => shiftMonth(p, 1))} className="p-2">
-          <Text className="text-lg">›</Text>
+          <Text className="text-lg text-fg">›</Text>
         </Pressable>
       </View>
       <CalendarMonthGrid period={period} currency={BASE_CURRENCY} expenseByDay={expenseByDay} />

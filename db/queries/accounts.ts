@@ -17,6 +17,10 @@ export function useAccount(id: number) {
   return { account: data?.[0], ...rest };
 }
 
+// A zero opening balance has no row at all (see db/actions/accounts.ts) —
+// `data` is `undefined` while the live query hasn't resolved yet, and `[]`
+// once resolved with genuinely no row, so callers can tell "still loading"
+// apart from "loaded, balance is 0."
 export function useAccountOpeningBalance(id: number) {
   const { data } = useLiveQuery(
     db
@@ -26,5 +30,5 @@ export function useAccountOpeningBalance(id: number) {
         and(eq(transactions.accountId, id), eq(transactions.isOpeningBalance, true)),
       ),
   );
-  return data?.[0];
+  return { openingBalanceTx: data?.[0] ?? null, isLoading: data === undefined };
 }

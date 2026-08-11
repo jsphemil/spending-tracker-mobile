@@ -6,6 +6,7 @@ import { useAccounts } from "../db/queries/accounts";
 import { useCategories } from "../db/queries/categories";
 import { TRANSACTION_TYPES, type TransactionType } from "../db/schema";
 import { majorToMinor, minorToMajor } from "../services/format";
+import { useThemeColors } from "../theme/palette";
 import { TagPicker } from "./TagPicker";
 
 export interface TransactionFormValues {
@@ -39,6 +40,7 @@ export function TransactionForm({
   const { data: accounts } = useAccounts();
   const [type, setType] = useState<TransactionType>(initialValues?.type ?? "expense");
   const { data: categories } = useCategories(type === "income" ? "income" : "expense");
+  const colors = useThemeColors();
 
   const [amountText, setAmountText] = useState(() => {
     if (initialValues?.amountMinor == null) return "";
@@ -71,14 +73,35 @@ export function TransactionForm({
   );
   const [description, setDescription] = useState(initialValues?.description ?? "");
   const [tagIds, setTagIds] = useState<number[]>(initialValues?.tagIds ?? []);
+  const [error, setError] = useState<string | null>(null);
 
   const selectedAccount = accounts?.find((a) => a.id === accountId);
   const currency = selectedAccount?.currency ?? "INR";
 
   function handleSubmit() {
     const amount = Number(amountText);
-    if (!amount || !accountId) return;
-    if (type === "transfer" && (!toAccountId || toAccountId === accountId)) return;
+    if (!Number.isFinite(amount) || amount <= 0) {
+      setError("Amount must be greater than 0");
+      return;
+    }
+    if (!accountId) {
+      setError(type === "transfer" ? "From account is required" : "Account is required");
+      return;
+    }
+    if (type === "transfer") {
+      if (!toAccountId) {
+        setError("To account is required");
+        return;
+      }
+      if (toAccountId === accountId) {
+        setError("From and to accounts must be different");
+        return;
+      }
+    } else if (!categoryId) {
+      setError("Category is required");
+      return;
+    }
+    setError(null);
 
     onSubmit({
       type,
@@ -93,17 +116,17 @@ export function TransactionForm({
   }
 
   return (
-    <ScrollView className="flex-1 bg-white" contentContainerStyle={{ padding: 16, gap: 20 }}>
+    <ScrollView className="flex-1 bg-bg" contentContainerStyle={{ padding: 16, gap: 20 }}>
       <View className="flex-row gap-2">
         {TRANSACTION_TYPES.map((t) => (
           <Pressable
             key={t}
             onPress={() => setType(t)}
             className={`flex-1 items-center rounded-lg border py-2 ${
-              type === t ? "border-blue-600 bg-blue-50" : "border-gray-200"
+              type === t ? "border-accent bg-accent-soft" : "border-border bg-surface"
             }`}
           >
-            <Text className={type === t ? "text-blue-600" : "text-gray-700"}>
+            <Text className={type === t ? "text-accent" : "text-fg-muted"}>
               {TYPE_LABELS[t]}
             </Text>
           </Pressable>
@@ -111,18 +134,19 @@ export function TransactionForm({
       </View>
 
       <View className="gap-2">
-        <Text className="text-sm font-medium text-gray-700">Amount</Text>
+        <Text className="text-sm font-medium text-fg-muted">Amount</Text>
         <TextInput
           value={amountText}
           onChangeText={setAmountText}
           keyboardType="decimal-pad"
           placeholder="0"
-          className="rounded-lg border border-gray-200 px-3 py-2 text-lg"
+          placeholderTextColor={colors.fgSubtle}
+          className="font-data rounded-lg border border-border bg-surface px-3 py-2 text-lg text-fg"
         />
       </View>
 
       <View className="gap-2">
-        <Text className="text-sm font-medium text-gray-700">
+        <Text className="text-sm font-medium text-fg-muted">
           {type === "transfer" ? "From Account" : "Account"}
         </Text>
         <View className="flex-row flex-wrap gap-2">
@@ -131,10 +155,10 @@ export function TransactionForm({
               key={a.id}
               onPress={() => setAccountId(a.id)}
               className={`rounded-full border px-3 py-2 ${
-                accountId === a.id ? "border-blue-600 bg-blue-50" : "border-gray-200"
+                accountId === a.id ? "border-accent bg-accent-soft" : "border-border bg-surface"
               }`}
             >
-              <Text className={accountId === a.id ? "text-blue-600" : "text-gray-700"}>
+              <Text className={accountId === a.id ? "text-accent" : "text-fg-muted"}>
                 {a.name}
               </Text>
             </Pressable>
@@ -144,7 +168,7 @@ export function TransactionForm({
 
       {type === "transfer" && (
         <View className="gap-2">
-          <Text className="text-sm font-medium text-gray-700">To Account</Text>
+          <Text className="text-sm font-medium text-fg-muted">To Account</Text>
           <View className="flex-row flex-wrap gap-2">
             {(accounts ?? [])
               .filter((a) => a.id !== accountId)
@@ -153,10 +177,10 @@ export function TransactionForm({
                   key={a.id}
                   onPress={() => setToAccountId(a.id)}
                   className={`rounded-full border px-3 py-2 ${
-                    toAccountId === a.id ? "border-blue-600 bg-blue-50" : "border-gray-200"
+                    toAccountId === a.id ? "border-transfer bg-transfer-soft" : "border-border bg-surface"
                   }`}
                 >
-                  <Text className={toAccountId === a.id ? "text-blue-600" : "text-gray-700"}>
+                  <Text className={toAccountId === a.id ? "text-transfer" : "text-fg-muted"}>
                     {a.name}
                   </Text>
                 </Pressable>
@@ -167,17 +191,17 @@ export function TransactionForm({
 
       {type !== "transfer" && (
         <View className="gap-2">
-          <Text className="text-sm font-medium text-gray-700">Category</Text>
+          <Text className="text-sm font-medium text-fg-muted">Category</Text>
           <View className="flex-row flex-wrap gap-2">
             {(categories ?? []).map((c) => (
               <Pressable
                 key={c.id}
                 onPress={() => setCategoryId(c.id)}
                 className={`rounded-full border px-3 py-2 ${
-                  categoryId === c.id ? "border-blue-600 bg-blue-50" : "border-gray-200"
+                  categoryId === c.id ? "border-accent bg-accent-soft" : "border-border bg-surface"
                 }`}
               >
-                <Text className={categoryId === c.id ? "text-blue-600" : "text-gray-700"}>
+                <Text className={categoryId === c.id ? "text-accent" : "text-fg-muted"}>
                   {c.name}
                 </Text>
               </Pressable>
@@ -187,12 +211,12 @@ export function TransactionForm({
       )}
 
       <View className="gap-2">
-        <Text className="text-sm font-medium text-gray-700">Date</Text>
+        <Text className="text-sm font-medium text-fg-muted">Date</Text>
         <Pressable
           onPress={() => setShowDatePicker(true)}
-          className="rounded-lg border border-gray-200 px-3 py-2"
+          className="rounded-lg border border-border bg-surface px-3 py-2"
         >
-          <Text>{date.toDateString()}</Text>
+          <Text className="text-fg">{date.toDateString()}</Text>
         </Pressable>
         {showDatePicker && (
           <DateTimePicker
@@ -207,20 +231,23 @@ export function TransactionForm({
       </View>
 
       <View className="gap-2">
-        <Text className="text-sm font-medium text-gray-700">Description (optional)</Text>
+        <Text className="text-sm font-medium text-fg-muted">Description (optional)</Text>
         <TextInput
           value={description}
           onChangeText={setDescription}
           placeholder="Add a note"
-          className="rounded-lg border border-gray-200 px-3 py-2 text-base"
+          placeholderTextColor={colors.fgSubtle}
+          className="rounded-lg border border-border bg-surface px-3 py-2 text-base text-fg"
         />
       </View>
 
       <TagPicker selectedTagIds={tagIds} onChange={setTagIds} />
 
+      {error && <Text className="text-sm text-danger">{error}</Text>}
+
       <Pressable
         onPress={handleSubmit}
-        className="items-center rounded-lg bg-blue-600 py-3"
+        className="items-center rounded-lg bg-accent py-3"
       >
         <Text className="text-base font-semibold text-white">{submitLabel}</Text>
       </Pressable>

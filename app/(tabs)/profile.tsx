@@ -3,6 +3,13 @@ import { Pressable, ScrollView, Switch, Text, TextInput, View } from "react-nati
 
 import { updateSettings } from "../../db/actions/settings";
 import { useSettings } from "../../db/queries/settings";
+import { THEME_PREFERENCES, type ThemePreference } from "../../db/schema";
+
+const THEME_LABELS: Record<ThemePreference, string> = {
+  light: "Light",
+  dark: "Dark",
+  system: "System",
+};
 
 export default function ProfileScreen() {
   const { settings } = useSettings();
@@ -14,9 +21,9 @@ export default function ProfileScreen() {
   const nameValue = editedName ? displayName : (settings.displayName ?? "");
 
   return (
-    <ScrollView className="flex-1 bg-white" contentContainerStyle={{ padding: 16, gap: 24 }}>
+    <ScrollView className="flex-1 bg-bg" contentContainerStyle={{ padding: 16, gap: 24 }}>
       <View className="gap-2">
-        <Text className="text-sm font-medium text-gray-700">Display Name (optional)</Text>
+        <Text className="text-sm font-medium text-fg-muted">Display Name (optional)</Text>
         <TextInput
           value={nameValue}
           onChangeText={(text) => {
@@ -25,14 +32,38 @@ export default function ProfileScreen() {
           }}
           onBlur={() => updateSettings(settings.id, { displayName: nameValue.trim() || null })}
           placeholder="Your name"
-          className="rounded-lg border border-gray-200 px-3 py-2 text-base"
+          placeholderTextColor="#9498a8"
+          className="rounded-lg border border-border bg-surface px-3 py-2 text-base text-fg"
         />
+      </View>
+
+      <View className="gap-2">
+        <Text className="text-sm font-medium text-fg-muted">Theme</Text>
+        <View className="flex-row gap-2">
+          {THEME_PREFERENCES.map((pref) => (
+            <Pressable
+              key={pref}
+              onPress={() => updateSettings(settings.id, { themePreference: pref })}
+              className={`flex-1 items-center rounded-lg border py-2 ${
+                settings.themePreference === pref
+                  ? "border-accent bg-accent-soft"
+                  : "border-border bg-surface"
+              }`}
+            >
+              <Text
+                className={settings.themePreference === pref ? "text-accent" : "text-fg-muted"}
+              >
+                {THEME_LABELS[pref]}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
       </View>
 
       <View className="flex-row items-center justify-between">
         <View className="pr-4">
-          <Text className="text-base text-gray-900">Budget Mode</Text>
-          <Text className="text-sm text-gray-500">
+          <Text className="text-base text-fg">Budget Mode</Text>
+          <Text className="text-sm text-fg-muted">
             Applies to every account unless overridden individually.
           </Text>
         </View>
@@ -44,8 +75,8 @@ export default function ProfileScreen() {
 
       <View className="flex-row items-center justify-between">
         <View className="pr-4">
-          <Text className="text-base text-gray-900">Show Future Transactions</Text>
-          <Text className="text-sm text-gray-500">
+          <Text className="text-base text-fg">Show Future Transactions</Text>
+          <Text className="text-sm text-fg-muted">
             Applies to every account unless overridden individually.
           </Text>
         </View>
@@ -56,7 +87,7 @@ export default function ProfileScreen() {
       </View>
 
       <View className="gap-2">
-        <Text className="text-sm font-medium text-gray-700">Base Currency</Text>
+        <Text className="text-sm font-medium text-fg-muted">Base Currency</Text>
         <TextInput
           value={settings.baseCurrency}
           onChangeText={(text) =>
@@ -64,17 +95,17 @@ export default function ProfileScreen() {
           }
           autoCapitalize="characters"
           maxLength={3}
-          className="rounded-lg border border-gray-200 px-3 py-2 text-base"
+          className="rounded-lg border border-border bg-surface px-3 py-2 text-base text-fg"
         />
       </View>
 
-      <View className="gap-2 rounded-lg border border-gray-200 p-4">
-        <Text className="text-base text-gray-900">Dropbox Backup</Text>
-        <Text className="text-sm text-gray-500">
+      <View className="gap-2 rounded-lg border border-border bg-surface p-4">
+        <Text className="text-base text-fg">Dropbox Backup</Text>
+        <Text className="text-sm text-fg-muted">
           Not connected. Automatic and manual backups are coming in a future update.
         </Text>
-        <Pressable disabled className="items-center rounded-lg bg-gray-100 py-3">
-          <Text className="text-gray-400">Connect Dropbox</Text>
+        <Pressable disabled className="items-center rounded-lg bg-surface-2 py-3">
+          <Text className="text-fg-subtle">Connect Dropbox</Text>
         </Pressable>
       </View>
     </ScrollView>

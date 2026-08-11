@@ -20,16 +20,16 @@ export default function EditTransactionScreen() {
 
   if (!transaction) {
     return (
-      <View className="flex-1 items-center justify-center bg-white">
-        <Text>Loading…</Text>
+      <View className="flex-1 items-center justify-center bg-bg">
+        <Text className="text-fg">Loading…</Text>
       </View>
     );
   }
 
   if (transaction.isOpeningBalance) {
     return (
-      <View className="flex-1 items-center justify-center bg-white p-6">
-        <Text className="text-center text-gray-500">
+      <View className="flex-1 items-center justify-center bg-bg p-6">
+        <Text className="text-center text-fg-muted">
           This is the account's opening balance. Edit it from the account's
           settings instead.
         </Text>
@@ -70,9 +70,9 @@ export default function EditTransactionScreen() {
             },
           ])
         }
-        className="mx-4 mb-6 items-center rounded-lg border border-red-200 py-3"
+        className="mx-4 mb-6 items-center rounded-lg border border-danger/30 py-3"
       >
-        <Text className="font-semibold text-red-600">Delete Transaction</Text>
+        <Text className="font-semibold text-danger">Delete Transaction</Text>
       </Pressable>
     </View>
   );

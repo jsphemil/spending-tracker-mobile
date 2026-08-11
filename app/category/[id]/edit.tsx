@@ -18,8 +18,8 @@ export default function EditCategoryScreen() {
 
   if (!category) {
     return (
-      <View className="flex-1 items-center justify-center bg-white">
-        <Text>Loading…</Text>
+      <View className="flex-1 items-center justify-center bg-bg">
+        <Text className="text-fg">Loading…</Text>
       </View>
     );
   }
@@ -52,9 +52,9 @@ export default function EditCategoryScreen() {
             ],
           )
         }
-        className="mx-4 mb-6 items-center rounded-lg border border-red-200 py-3"
+        className="mx-4 mb-6 items-center rounded-lg border border-danger/30 py-3"
       >
-        <Text className="font-semibold text-red-600">Delete Category</Text>
+        <Text className="font-semibold text-danger">Delete Category</Text>
       </Pressable>
     </View>
   );

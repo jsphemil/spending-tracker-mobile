@@ -6,6 +6,7 @@ import { BalanceRing } from "../../../components/rings/BalanceRing";
 import { CreditUsageRing } from "../../../components/rings/CreditUsageRing";
 import { CurrencyAmount } from "../../../components/CurrencyAmount";
 import { TransactionListItem } from "../../../components/TransactionListItem";
+import { EmptyState } from "../../../components/ui/EmptyState";
 import { useAccount } from "../../../db/queries/accounts";
 import { useCategories } from "../../../db/queries/categories";
 import { useAccountTransactions } from "../../../db/queries/transactions";
@@ -24,19 +25,22 @@ export default function AccountDetailScreen() {
 
   if (!account) {
     return (
-      <View className="flex-1 items-center justify-center bg-white">
-        <Text>Loading…</Text>
+      <View className="flex-1 items-center justify-center bg-bg">
+        <Text className="text-fg">Loading…</Text>
       </View>
     );
   }
 
   const totals = getPeriodTotals(db, { accountId, ...range });
-  const balanceMinor = getAccountBalanceMinor(db, accountId);
+  // "As of" the end of the viewed period, not always today — so navigating
+  // to a past month moves the Balance figure the same way Income/Expense
+  // already do (services/balance.ts).
+  const balanceMinor = getAccountBalanceMinor(db, accountId, range.end);
   const categoryName = (categoryId: number | null) =>
     categories?.find((c) => c.id === categoryId)?.name;
 
   return (
-    <View className="flex-1 bg-white">
+    <View className="flex-1 bg-bg">
       <FlatList
         data={periodTransactions ?? []}
         keyExtractor={(item) => String(item.id)}
@@ -45,19 +49,19 @@ export default function AccountDetailScreen() {
           <View className="mb-6 items-center gap-4">
             <View className="w-full flex-row items-center justify-between">
               <Pressable onPress={() => setPeriod((p) => shiftMonth(p, -1))} className="p-2">
-                <Text className="text-lg">‹</Text>
+                <Text className="text-lg text-fg">‹</Text>
               </Pressable>
-              <Text className="text-base font-medium text-gray-900">
+              <Text className="text-base font-medium text-fg">
                 {monthLabel(period)}
               </Text>
               <Pressable onPress={() => setPeriod((p) => shiftMonth(p, 1))} className="p-2">
-                <Text className="text-lg">›</Text>
+                <Text className="text-lg text-fg">›</Text>
               </Pressable>
             </View>
 
             {account.type === "credit_card" ? (
               <CreditUsageRing
-                owedMinor={getCreditCardOwedMinor(db, accountId)}
+                owedMinor={getCreditCardOwedMinor(db, accountId, range.end)}
                 creditLimitMinor={account.creditLimitMinor ?? 0}
                 currency={account.currency}
               />
@@ -71,38 +75,43 @@ export default function AccountDetailScreen() {
 
             <View className="w-full flex-row justify-around">
               <View className="items-center">
-                <Text className="text-xs text-gray-500">Income</Text>
+                <Text className="text-xs text-fg-muted">Income</Text>
                 <CurrencyAmount
                   amountMinor={totals.incomeMinor}
                   currency={account.currency}
-                  className="text-base font-medium text-green-600"
+                  stacked
+                  className="text-base font-medium text-success"
                 />
               </View>
               <View className="items-center">
-                <Text className="text-xs text-gray-500">Expense</Text>
+                <Text className="text-xs text-fg-muted">Expense</Text>
                 <CurrencyAmount
                   amountMinor={totals.expenseMinor}
                   currency={account.currency}
-                  className="text-base font-medium text-red-600"
+                  stacked
+                  className="text-base font-medium text-danger"
                 />
               </View>
               <View className="items-center">
-                <Text className="text-xs text-gray-500">Balance</Text>
+                <Text className="text-xs text-fg-muted">Balance</Text>
                 <CurrencyAmount
                   amountMinor={balanceMinor}
                   currency={account.currency}
-                  className="text-base font-medium text-gray-900"
+                  stacked
+                  className="text-base font-medium text-fg"
                 />
               </View>
             </View>
 
             {account.type === "credit_card" && account.creditLimitMinor != null && (
               <View className="flex-row items-center gap-1">
-                <Text className="text-sm text-gray-500">Available credit: </Text>
+                <Text className="text-sm text-fg-muted">Available credit: </Text>
                 <CurrencyAmount
-                  amountMinor={account.creditLimitMinor - getCreditCardOwedMinor(db, accountId)}
+                  amountMinor={
+                    account.creditLimitMinor - getCreditCardOwedMinor(db, accountId, range.end)
+                  }
                   currency={account.currency}
-                  className="text-sm text-gray-500"
+                  className="text-sm text-fg-muted"
                 />
               </View>
             )}
@@ -112,7 +121,7 @@ export default function AccountDetailScreen() {
                 href={`/transaction/new?accountId=${accountId}&type=income`}
                 asChild
               >
-                <Pressable className="flex-1 items-center rounded-lg bg-green-600 py-3">
+                <Pressable className="flex-1 items-center rounded-lg bg-success py-3">
                   <Text className="font-semibold text-white">Income</Text>
                 </Pressable>
               </Link>
@@ -120,7 +129,7 @@ export default function AccountDetailScreen() {
                 href={`/transaction/new?accountId=${accountId}&type=expense`}
                 asChild
               >
-                <Pressable className="flex-1 items-center rounded-lg bg-red-600 py-3">
+                <Pressable className="flex-1 items-center rounded-lg bg-danger py-3">
                   <Text className="font-semibold text-white">Expense</Text>
                 </Pressable>
               </Link>
@@ -128,7 +137,7 @@ export default function AccountDetailScreen() {
                 href={`/transaction/new?accountId=${accountId}&type=transfer`}
                 asChild
               >
-                <Pressable className="flex-1 items-center rounded-lg bg-blue-600 py-3">
+                <Pressable className="flex-1 items-center rounded-lg bg-transfer py-3">
                   <Text className="font-semibold text-white">Transfer</Text>
                 </Pressable>
               </Link>
@@ -136,16 +145,12 @@ export default function AccountDetailScreen() {
 
             <Link href={`/account/${accountId}/edit`} asChild>
               <Pressable>
-                <Text className="text-blue-600">Edit Account</Text>
+                <Text className="text-accent">Edit Account</Text>
               </Pressable>
             </Link>
           </View>
         }
-        ListEmptyComponent={
-          <Text className="py-8 text-center text-gray-500">
-            No transactions this month.
-          </Text>
-        }
+        ListEmptyComponent={<EmptyState message="No transactions this month." />}
         renderItem={({ item }) => (
           <TransactionListItem
             transaction={item}

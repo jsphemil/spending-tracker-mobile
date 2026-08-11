@@ -15,9 +15,9 @@ interface TransactionListItemProps {
 }
 
 const AMOUNT_STYLE = {
-  income: "text-green-600",
-  expense: "text-red-600",
-  transfer: "text-gray-700",
+  income: "text-success",
+  expense: "text-danger",
+  transfer: "text-transfer",
 } as const;
 
 export function TransactionListItem({
@@ -28,23 +28,31 @@ export function TransactionListItem({
 }: TransactionListItemProps) {
   const tagNames = useTransactionTagNames(transaction.id);
 
-  const title =
-    transaction.type === "transfer"
+  const title = transaction.isOpeningBalance
+    ? "🏦 Opening balance"
+    : transaction.type === "transfer"
       ? `Transfer${transferAccountName ? ` to ${transferAccountName}` : ""}`
       : (categoryName ?? "Uncategorized");
 
   const sign = transaction.type === "expense" ? "-" : transaction.type === "income" ? "+" : "";
 
+  // Opening-balance rows aren't editable via the normal transaction screen
+  // (db/actions/transactions.ts blocks it) — route straight to the
+  // account's own edit page instead, matching the real app's pattern.
+  const editHref = transaction.isOpeningBalance
+    ? `/account/${transaction.accountId}/edit`
+    : `/transaction/${transaction.id}/edit`;
+
   return (
-    <View className="border-b border-gray-100 py-3">
-      <Link href={`/transaction/${transaction.id}/edit`} asChild>
+    <View className="border-b border-border py-3">
+      <Link href={editHref} asChild>
         <Pressable className="flex-row items-center justify-between">
           <View className="flex-1 pr-3">
-            <Text className="text-base text-gray-900">{title}</Text>
-            {transaction.description ? (
-              <Text className="text-sm text-gray-500">{transaction.description}</Text>
+            <Text className="text-base text-fg">{title}</Text>
+            {transaction.description && !transaction.isOpeningBalance ? (
+              <Text className="text-sm text-fg-muted">{transaction.description}</Text>
             ) : null}
-            <Text className="text-xs text-gray-400">
+            <Text className="text-xs text-fg-subtle">
               {transaction.date.toLocaleDateString("en-IN")}
             </Text>
           </View>
@@ -60,8 +68,8 @@ export function TransactionListItem({
         <View className="mt-2 flex-row flex-wrap gap-1.5">
           {tagNames.map((name) => (
             <Link key={name} href={`/tag/${encodeURIComponent(name)}`} asChild>
-              <Pressable className="rounded-full bg-gray-100 px-2 py-0.5">
-                <Text className="text-xs text-gray-600">{name}</Text>
+              <Pressable className="rounded-full bg-surface-2 px-2 py-0.5">
+                <Text className="text-xs text-fg-muted">{name}</Text>
               </Pressable>
             </Link>
           ))}

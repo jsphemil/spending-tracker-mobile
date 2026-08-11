@@ -1,6 +1,7 @@
 import { Text } from "react-native";
 
 import { formatMoney } from "../../services/format";
+import { useThemeColors } from "../../theme/palette";
 import { RingArc } from "./RingArc";
 
 interface CreditUsageRingProps {
@@ -32,19 +33,20 @@ export function CreditUsageRing({
   }
 
   const overLimit = creditLimitMinor > 0 && owedMinor > creditLimitMinor;
+  const colors = useThemeColors();
 
   return (
     <RingArc
       size={size}
       strokeWidth={16}
-      trackColor="#E5E7EB"
-      color="#F97316"
+      trackColor={colors.surface3}
+      color={colors.transfer}
       percent={percent}
       overflowPercent={overflowPercent}
     >
-      <Text className="text-xs text-gray-500">Owed</Text>
+      <Text className="text-xs text-fg-muted">Owed</Text>
       <Text
-        className={`text-lg font-semibold ${overLimit ? "text-red-600" : "text-gray-900"}`}
+        className={`font-data text-lg font-semibold tabular-nums ${overLimit ? "text-danger" : "text-fg"}`}
       >
         {formatMoney(owedMinor, currency)}
       </Text>

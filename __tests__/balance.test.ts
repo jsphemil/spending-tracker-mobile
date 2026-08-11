@@ -59,6 +59,42 @@ describe("getAccountBalanceMinor", () => {
     const accountId = insertAccount(db);
     expect(getAccountBalanceMinor(db, accountId)).toBe(0);
   });
+
+  it("scopes to asOfDate instead of always summing to today", () => {
+    const accountId = insertAccount(db);
+    db.insert(transactions)
+      .values([
+        { type: "income", amountMinor: 10000, date: new Date("2026-01-15"), accountId },
+        { type: "expense", amountMinor: 3000, date: new Date("2026-02-15"), accountId },
+      ])
+      .run();
+
+    // As of end of January: only the January income counts.
+    expect(getAccountBalanceMinor(db, accountId, new Date("2026-02-01"))).toBe(10000);
+    // As of end of February (exclusive upper bound, matches getPeriodTotals'
+    // range.end convention): both rows count.
+    expect(getAccountBalanceMinor(db, accountId, new Date("2026-03-01"))).toBe(7000);
+    // No asOfDate at all: same as "as of now," i.e. everything.
+    expect(getAccountBalanceMinor(db, accountId)).toBe(7000);
+  });
+
+  it("an opening balance doesn't leak into periods before the account existed", () => {
+    const accountId = insertAccount(db);
+    db.insert(transactions)
+      .values({
+        type: "income",
+        amountMinor: 50000,
+        date: new Date("2026-03-01"),
+        accountId,
+        isOpeningBalance: true,
+      })
+      .run();
+
+    // A month before the account's own opening date — should see nothing.
+    expect(getAccountBalanceMinor(db, accountId, new Date("2026-02-01"))).toBe(0);
+    // As of (or after) the opening date — the opening balance is in effect.
+    expect(getAccountBalanceMinor(db, accountId, new Date("2026-03-02"))).toBe(50000);
+  });
 });
 
 describe("getPeriodTotals", () => {

@@ -1,3 +1,52 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Design tokens ported from the source web app's src/app/globals.css
+   (values fetched and verified directly against that repo 2026-08-11, see
+   spec.md §5.12). Solid tokens are "R G B" triplets (no commas) so
+   Tailwind's rgb(var(--x) / <alpha-value>) wrapper in tailwind.config.js
+   can apply opacity modifiers; "soft" tokens already carry their own alpha
+   as a full rgba() and are consumed directly, not through that wrapper. */
+
+:root {
+  --bg: 245 245 248;
+  --surface: 255 255 255;
+  --surface-2: 240 240 245;
+  --surface-3: 232 233 240;
+  --border: 226 227 234;
+  --border-strong: 207 209 220;
+  --fg: 22 23 28;
+  --fg-muted: 98 102 122;
+  --fg-subtle: 148 152 168;
+  --accent: 91 79 224;
+  --accent-strong: 74 63 208;
+  --accent-soft: rgba(91, 79, 224, 0.1);
+  --success: 18 165 124;
+  --success-soft: rgba(18, 165, 124, 0.12);
+  --danger: 224 67 90;
+  --danger-soft: rgba(224, 67, 90, 0.1);
+  --transfer: 180 83 9;
+  --transfer-soft: rgba(180, 83, 9, 0.1);
+}
+
+.dark {
+  --bg: 11 12 16;
+  --surface: 20 22 28;
+  --surface-2: 26 29 37;
+  --surface-3: 32 35 45;
+  --border: 38 42 53;
+  --border-strong: 51 55 72;
+  --fg: 236 237 242;
+  --fg-muted: 139 144 160;
+  --fg-subtle: 92 96 114;
+  --accent: 139 127 251;
+  --accent-strong: 168 155 255;
+  --accent-soft: rgba(139, 127, 251, 0.14);
+  --success: 53 208 160;
+  --success-soft: rgba(53, 208, 160, 0.12);
+  --danger: 255 107 128;
+  --danger-soft: rgba(255, 107, 128, 0.12);
+  --transfer: 245 196 81;
+  --transfer-soft: rgba(245, 196, 81, 0.14);
+}

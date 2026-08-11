@@ -29,7 +29,7 @@ export function CalendarMonthGrid({ period, currency, expenseByDay }: CalendarMo
       <View className="flex-row">
         {WEEKDAY_LABELS.map((label, i) => (
           <View key={i} className="flex-1 items-center py-1">
-            <Text className="text-xs text-gray-400">{label}</Text>
+            <Text className="text-xs text-fg-subtle">{label}</Text>
           </View>
         ))}
       </View>
@@ -41,10 +41,10 @@ export function CalendarMonthGrid({ period, currency, expenseByDay }: CalendarMo
           return (
             <View key={i} style={{ width: `${100 / 7}%` }} className="p-1">
               <Link href={`/transaction/new?date=${dateStr}`} asChild>
-                <Pressable className="aspect-square items-center justify-center rounded-lg border border-gray-100">
-                  <Text className="text-sm text-gray-900">{day}</Text>
+                <Pressable className="aspect-square items-center justify-center rounded-lg border border-border">
+                  <Text className="text-sm text-fg">{day}</Text>
                   {expense ? (
-                    <Text className="text-[10px] text-red-600" numberOfLines={1}>
+                    <Text className="font-data text-[10px] tabular-nums text-danger" numberOfLines={1}>
                       {formatMoney(expense, currency)}
                     </Text>
                   ) : null}

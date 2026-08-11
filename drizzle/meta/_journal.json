@@ -8,6 +8,13 @@
       "when": 1786458296174,
       "tag": "0000_nasty_hercules",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1786472661291,
+      "tag": "0001_faithful_johnny_blaze",
+      "breakpoints": true
     }
   ]
 }

@@ -30,7 +30,7 @@ export function TagPicker({ selectedTagIds, onChange }: TagPickerProps) {
 
   return (
     <View className="gap-2">
-      <Text className="text-sm font-medium text-gray-700">Tags</Text>
+      <Text className="text-sm font-medium text-fg-muted">Tags</Text>
       <View className="flex-row flex-wrap gap-2">
         {(tags ?? []).map((tag) => {
           const selected = selectedTagIds.includes(tag.id);
@@ -39,10 +39,10 @@ export function TagPicker({ selectedTagIds, onChange }: TagPickerProps) {
               key={tag.id}
               onPress={() => toggle(tag.id)}
               className={`rounded-full border px-3 py-1.5 ${
-                selected ? "border-blue-600 bg-blue-50" : "border-gray-200"
+                selected ? "border-accent bg-accent-soft" : "border-border"
               }`}
             >
-              <Text className={selected ? "text-blue-600" : "text-gray-700"}>
+              <Text className={selected ? "text-accent" : "text-fg-muted"}>
                 {tag.name}
               </Text>
             </Pressable>
@@ -54,14 +54,14 @@ export function TagPicker({ selectedTagIds, onChange }: TagPickerProps) {
           value={newTagName}
           onChangeText={setNewTagName}
           placeholder="New tag"
-          onSubmitEditing={addNewTag}
-          className="flex-1 rounded-lg border border-gray-200 px-3 py-2 text-base"
+          placeholderTextColor="#9498a8"
+          className="flex-1 rounded-lg border border-border bg-surface px-3 py-2 text-base text-fg"
         />
         <Pressable
           onPress={addNewTag}
-          className="items-center justify-center rounded-lg border border-gray-200 px-4"
+          className="items-center justify-center rounded-lg border border-border bg-surface px-4"
         >
-          <Text>Add</Text>
+          <Text className="text-fg">Add</Text>
         </Pressable>
       </View>
     </View>

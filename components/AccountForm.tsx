@@ -4,8 +4,10 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 
 import { ACCOUNT_TYPE_ICONS, ACCOUNT_TYPE_LABELS } from "../constants/accountTypes";
 import { COLOR_PALETTE } from "../constants/colorPalette";
+import { CURRENCY_OPTIONS } from "../constants/currencies";
 import { ACCOUNT_TYPES, type AccountType } from "../db/schema";
 import { majorToMinor, minorToMajor } from "../services/format";
+import { useThemeColors } from "../theme/palette";
 
 export interface AccountFormValues {
   name: string;
@@ -39,7 +41,7 @@ function TriStateRow({
 }) {
   return (
     <View className="gap-2">
-      <Text className="text-sm font-medium text-gray-700">{label}</Text>
+      <Text className="text-sm font-medium text-fg-muted">{label}</Text>
       <View className="flex-row gap-2">
         {(
           [
@@ -53,12 +55,12 @@ function TriStateRow({
             onPress={() => onChange(optValue)}
             className={`flex-1 items-center rounded-lg border py-2 ${
               value === optValue
-                ? "border-blue-600 bg-blue-50"
-                : "border-gray-200"
+                ? "border-accent bg-accent-soft"
+                : "border-border bg-surface"
             }`}
           >
             <Text
-              className={value === optValue ? "text-blue-600" : "text-gray-700"}
+              className={value === optValue ? "text-accent" : "text-fg-muted"}
             >
               {optLabel}
             </Text>
@@ -104,53 +106,75 @@ export function AccountForm({
       ? String(minorToMajor(initialValues.budgetMonthlyMinor, currency))
       : "",
   );
+  const colors = useThemeColors();
+  const [error, setError] = useState<string | null>(null);
 
   function handleSubmit() {
-    if (!name.trim()) return;
+    if (!name.trim()) {
+      setError("Name is required");
+      return;
+    }
+    const normalizedCurrency = currency.trim().toUpperCase();
+    if (normalizedCurrency.length !== 3) {
+      setError("Use a 3-letter currency code");
+      return;
+    }
+    const creditLimitNum = creditLimitText ? Number(creditLimitText) : null;
+    if (creditLimitNum !== null && !(creditLimitNum > 0)) {
+      setError("Credit limit must be greater than 0");
+      return;
+    }
+    const budgetNum = budgetMonthlyText ? Number(budgetMonthlyText) : null;
+    if (budgetNum !== null && !(budgetNum > 0)) {
+      setError("Monthly budget must be greater than 0");
+      return;
+    }
+    setError(null);
+
     onSubmit({
       name: name.trim(),
       type,
       color,
       icon: ACCOUNT_TYPE_ICONS[type],
-      currency: currency.trim().toUpperCase() || "INR",
+      currency: normalizedCurrency,
       creditLimitMinor:
-        type === "credit_card" && creditLimitText
-          ? majorToMinor(Number(creditLimitText), currency)
+        type === "credit_card" && creditLimitNum !== null
+          ? majorToMinor(creditLimitNum, normalizedCurrency)
           : null,
-      openingBalanceMinor: majorToMinor(Number(openingBalanceText) || 0, currency),
+      openingBalanceMinor: majorToMinor(Number(openingBalanceText) || 0, normalizedCurrency),
       openingDate,
       budgetModeEnabled,
       showFutureTxEnabled,
-      budgetMonthlyMinor: budgetMonthlyText
-        ? majorToMinor(Number(budgetMonthlyText), currency)
-        : null,
+      budgetMonthlyMinor:
+        budgetNum !== null ? majorToMinor(budgetNum, normalizedCurrency) : null,
     });
   }
 
   return (
-    <ScrollView className="flex-1 bg-white" contentContainerStyle={{ padding: 16, gap: 20 }}>
+    <ScrollView className="flex-1 bg-bg" contentContainerStyle={{ padding: 16, gap: 20 }}>
       <View className="gap-2">
-        <Text className="text-sm font-medium text-gray-700">Name</Text>
+        <Text className="text-sm font-medium text-fg-muted">Name</Text>
         <TextInput
           value={name}
           onChangeText={setName}
           placeholder="e.g. HDFC Salary"
-          className="rounded-lg border border-gray-200 px-3 py-2 text-base"
+          placeholderTextColor={colors.fgSubtle}
+          className="rounded-lg border border-border bg-surface px-3 py-2 text-base text-fg"
         />
       </View>
 
       <View className="gap-2">
-        <Text className="text-sm font-medium text-gray-700">Type</Text>
+        <Text className="text-sm font-medium text-fg-muted">Type</Text>
         <View className="flex-row flex-wrap gap-2">
           {ACCOUNT_TYPES.map((t) => (
             <Pressable
               key={t}
               onPress={() => setType(t)}
               className={`rounded-full border px-3 py-2 ${
-                type === t ? "border-blue-600 bg-blue-50" : "border-gray-200"
+                type === t ? "border-accent bg-accent-soft" : "border-border bg-surface"
               }`}
             >
-              <Text className={type === t ? "text-blue-600" : "text-gray-700"}>
+              <Text className={type === t ? "text-accent" : "text-fg-muted"}>
                 {ACCOUNT_TYPE_LABELS[t]}
               </Text>
             </Pressable>
@@ -159,7 +183,7 @@ export function AccountForm({
       </View>
 
       <View className="gap-2">
-        <Text className="text-sm font-medium text-gray-700">Color</Text>
+        <Text className="text-sm font-medium text-fg-muted">Color</Text>
         <View className="flex-row flex-wrap gap-2">
           {COLOR_PALETTE.map((c) => (
             <Pressable
@@ -167,7 +191,7 @@ export function AccountForm({
               onPress={() => setColor(c)}
               style={{ backgroundColor: c }}
               className={`h-9 w-9 rounded-full ${
-                color === c ? "border-2 border-gray-900" : ""
+                color === c ? "border-2 border-fg" : ""
               }`}
             />
           ))}
@@ -175,48 +199,68 @@ export function AccountForm({
       </View>
 
       <View className="gap-2">
-        <Text className="text-sm font-medium text-gray-700">Currency</Text>
+        <Text className="text-sm font-medium text-fg-muted">Currency</Text>
+        <View className="flex-row flex-wrap gap-2">
+          {CURRENCY_OPTIONS.map((opt) => (
+            <Pressable
+              key={opt.code}
+              onPress={() => setCurrency(opt.code)}
+              className={`rounded-full border px-3 py-1.5 ${
+                currency.toUpperCase() === opt.code
+                  ? "border-accent bg-accent-soft"
+                  : "border-border bg-surface"
+              }`}
+            >
+              <Text className={currency.toUpperCase() === opt.code ? "text-accent" : "text-fg-muted"}>
+                {opt.label}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
         <TextInput
           value={currency}
           onChangeText={setCurrency}
           autoCapitalize="characters"
           maxLength={3}
-          placeholder="INR"
-          className="rounded-lg border border-gray-200 px-3 py-2 text-base"
+          placeholder="Or type any 3-letter code"
+          placeholderTextColor={colors.fgSubtle}
+          className="rounded-lg border border-border bg-surface px-3 py-2 text-base text-fg"
         />
       </View>
 
       {type === "credit_card" && (
         <View className="gap-2">
-          <Text className="text-sm font-medium text-gray-700">Credit Limit</Text>
+          <Text className="text-sm font-medium text-fg-muted">Credit Limit</Text>
           <TextInput
             value={creditLimitText}
             onChangeText={setCreditLimitText}
             keyboardType="decimal-pad"
             placeholder="0"
-            className="rounded-lg border border-gray-200 px-3 py-2 text-base"
+            placeholderTextColor={colors.fgSubtle}
+            className="rounded-lg border border-border bg-surface px-3 py-2 text-base text-fg"
           />
         </View>
       )}
 
       <View className="gap-2">
-        <Text className="text-sm font-medium text-gray-700">Opening Balance</Text>
+        <Text className="text-sm font-medium text-fg-muted">Opening Balance</Text>
         <TextInput
           value={openingBalanceText}
           onChangeText={setOpeningBalanceText}
           keyboardType="numbers-and-punctuation"
           placeholder="0"
-          className="rounded-lg border border-gray-200 px-3 py-2 text-base"
+          placeholderTextColor={colors.fgSubtle}
+          className="rounded-lg border border-border bg-surface px-3 py-2 text-base text-fg"
         />
       </View>
 
       <View className="gap-2">
-        <Text className="text-sm font-medium text-gray-700">Opening Date</Text>
+        <Text className="text-sm font-medium text-fg-muted">Opening Date</Text>
         <Pressable
           onPress={() => setShowDatePicker(true)}
-          className="rounded-lg border border-gray-200 px-3 py-2"
+          className="rounded-lg border border-border bg-surface px-3 py-2"
         >
-          <Text>{openingDate.toDateString()}</Text>
+          <Text className="text-fg">{openingDate.toDateString()}</Text>
         </Pressable>
         {showDatePicker && (
           <DateTimePicker
@@ -239,7 +283,7 @@ export function AccountForm({
           />
           {budgetModeEnabled === true && (
             <View className="gap-2">
-              <Text className="text-sm font-medium text-gray-700">
+              <Text className="text-sm font-medium text-fg-muted">
                 Monthly Budget
               </Text>
               <TextInput
@@ -247,7 +291,8 @@ export function AccountForm({
                 onChangeText={setBudgetMonthlyText}
                 keyboardType="decimal-pad"
                 placeholder="0"
-                className="rounded-lg border border-gray-200 px-3 py-2 text-base"
+                placeholderTextColor={colors.fgSubtle}
+                className="rounded-lg border border-border bg-surface px-3 py-2 text-base text-fg"
               />
             </View>
           )}
@@ -259,9 +304,11 @@ export function AccountForm({
         </>
       )}
 
+      {error && <Text className="text-sm text-danger">{error}</Text>}
+
       <Pressable
         onPress={handleSubmit}
-        className="items-center rounded-lg bg-blue-600 py-3"
+        className="items-center rounded-lg bg-accent py-3"
       >
         <Text className="text-base font-semibold text-white">{submitLabel}</Text>
       </Pressable>

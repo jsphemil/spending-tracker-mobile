@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 
 import { db } from "../client";
-import { settings } from "../schema";
+import { settings, type ThemePreference } from "../schema";
 
 export function updateSettings(
   id: number,
@@ -10,6 +10,7 @@ export function updateSettings(
     showFutureTxGlobal: boolean;
     displayName: string | null;
     baseCurrency: string;
+    themePreference: ThemePreference;
   }>,
 ): void {
   db.update(settings).set(patch).where(eq(settings.id, id)).run();

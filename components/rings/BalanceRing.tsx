@@ -1,6 +1,7 @@
 import { Text, View } from "react-native";
 
 import { formatMoney } from "../../services/format";
+import { useThemeColors } from "../../theme/palette";
 import { RingArc } from "./RingArc";
 
 interface BalanceRingProps {
@@ -21,6 +22,7 @@ export function BalanceRing({
   size = 180,
 }: BalanceRingProps) {
   const netMinor = incomeMinor - expenseMinor;
+  const colors = useThemeColors();
 
   let percent: number;
   let overflowPercent = 0;
@@ -37,14 +39,14 @@ export function BalanceRing({
     <RingArc
       size={size}
       strokeWidth={16}
-      trackColor="#E5E7EB"
-      color="#3B82F6"
+      trackColor={colors.surface3}
+      color={colors.accent}
       percent={percent}
       overflowPercent={overflowPercent}
     >
-      <Text className="text-xs text-gray-500">Net</Text>
+      <Text className="text-xs text-fg-muted">Net</Text>
       <Text
-        className={`text-lg font-semibold ${netMinor < 0 ? "text-red-600" : "text-gray-900"}`}
+        className={`font-data text-lg font-semibold tabular-nums ${netMinor < 0 ? "text-danger" : "text-fg"}`}
       >
         {formatMoney(netMinor, currency)}
       </Text>

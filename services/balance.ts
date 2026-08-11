@@ -6,8 +6,19 @@ import { transactions } from "../db/schema";
 // A transaction affects an account's balance from one of two sides:
 // income/expense rows via `accountId`, transfer rows via either leg
 // (`accountId` = outgoing, `toAccountId` = incoming). Summing both sides
-// gives the account's all-time running balance.
-export function getAccountBalanceMinor(db: Db, accountId: number): number {
+// gives the account's balance.
+//
+// `asOfDate` (exclusive upper bound, consistent with getPeriodTotals'
+// `range.end`) scopes this to "as of a specific point in time" rather than
+// always "as of now" — without it, navigating an account's page to a past
+// month left the Balance figure showing today's live balance while
+// Income/Expense right next to it correctly changed with the month. An
+// account's own opening-balance row is dated at its openingDate, so it
+// naturally drops out once asOfDate falls before that — no special-casing
+// needed here, same as getPeriodTotals.
+export function getAccountBalanceMinor(db: Db, accountId: number, asOfDate?: Date): number {
+  const dateFilter = asOfDate ? [lt(transactions.date, asOfDate)] : [];
+
   const outgoing = db
     .select({
       total: sql<number>`coalesce(sum(case
@@ -17,7 +28,7 @@ export function getAccountBalanceMinor(db: Db, accountId: number): number {
         else 0 end), 0)`,
     })
     .from(transactions)
-    .where(eq(transactions.accountId, accountId))
+    .where(and(eq(transactions.accountId, accountId), ...dateFilter))
     .get();
 
   const incoming = db
@@ -26,7 +37,11 @@ export function getAccountBalanceMinor(db: Db, accountId: number): number {
     })
     .from(transactions)
     .where(
-      and(eq(transactions.type, "transfer"), eq(transactions.toAccountId, accountId)),
+      and(
+        eq(transactions.type, "transfer"),
+        eq(transactions.toAccountId, accountId),
+        ...dateFilter,
+      ),
     )
     .get();
 
@@ -68,6 +83,6 @@ export function getPeriodTotals(
 
 // Credit card balance is naturally negative (spec.md §5.1); the net amount
 // currently owed is the positive inverse of that balance.
-export function getCreditCardOwedMinor(db: Db, accountId: number): number {
-  return -getAccountBalanceMinor(db, accountId);
+export function getCreditCardOwedMinor(db: Db, accountId: number, asOfDate?: Date): number {
+  return -getAccountBalanceMinor(db, accountId, asOfDate);
 }

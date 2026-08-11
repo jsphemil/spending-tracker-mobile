@@ -31,6 +31,7 @@ pushed to a later phase) · ❌ Dropped (cut from scope).
 | §5.9 | Navigation | 🚧 In Progress | Built |
 | §5.10 | Profile Page | 🚧 In Progress | Built; Dropbox section is an inert placeholder |
 | §5.11 | Home Screen Widget | ⏸️ Deferred | Phase 5 |
+| §5.12 | Visual Design System | 📋 Planned | Full port of the web app's dark-first token theme, monospace tabular numerals, gauge-over-pie pattern, and card/FAB/empty-state conventions — decided 2026-08-11, supersedes the earlier "out of scope" call in §6 |
 | §3 | Dropbox Backup/Restore | ⏸️ Deferred | Phase 3 |
 
 Nothing is marked ✅ yet — Phase 1 is code-complete and type-checked,
@@ -326,6 +327,48 @@ optional description.
   (optional, cosmetic only), Dropbox connection status/management,
   currency/date-format preferences
 
+### 5.12 Visual Design System 📋 Planned
+
+**Decided 2026-08-11: full port of the source web app's design language**,
+per `knowledge-transfer.md` §4 — supersedes the earlier "dark mode /
+theme customization is out of scope for v1" call in §6 below, which is
+now stale and kept only for history.
+
+- **Token-based semantic theming, never a hardcoded color in a
+  component.** A small named palette (`bg`, `surface`/`surface-2`/
+  `surface-3`, `border`/`border-strong`, `fg`/`fg-muted`/`fg-subtle`,
+  `accent`/`accent-soft`/`accent-strong`, `success`/`success-soft`,
+  `danger`/`danger-soft`, and a third neutral-but-distinct `transfer`
+  color) defined for both a dark and a light theme with equal care —
+  components consume token names only, never a raw hex value. On this
+  stack (NativeWind/Tailwind v3 + React Native), the mechanism is a
+  theme object through context/provider (or NativeWind's dark: variant
+  driven by that same context), not CSS custom properties.
+- **Fintech-terminal numeric styling:** every money figure in a
+  monospace/tabular-numeral font, using the Indian locale grouping
+  already in place (`₹1,53,168.00`).
+- **Gauges over flow-ratio pies for capacity questions** (already
+  matches — `BalanceRing`/`CreditUsageRing` use this pattern); ratio
+  pies or plain lists-with-subtotals for composition questions
+  (relevant once Phase 2's category breakdown / monthly pie charts are
+  built — reconsider list vs. pie per the source project's own
+  lesson before defaulting to a pie).
+- **One repeated card primitive** for every discrete content block,
+  reused everywhere rather than bespoke per-screen containers.
+- **Compact icon actions** (not repeated text links) for per-row
+  actions, with a truncating content column and a non-shrinking action
+  column.
+- **FAB placement is planned, not defaulted** — audit every screen for
+  existing bottom-right occupants (month-nav arrows, the Claude
+  assistant placeholder FAB) before adding another one there; measure
+  actual stacking gaps rather than eyeballing them.
+- **Explicit loading/empty/error states** for every list and async
+  boundary — no bare blank areas, no silent freezes.
+- Full reference palette (dark theme values) and the rest of the
+  detail live in `knowledge-transfer.md` §4 and Appendix B — treat the
+  hex values there as a starting point, not a mandate; light-theme
+  values need their own tuning pass, not a mechanical inversion.
+
 ### 5.11 Mobile Home Screen Widget ⏸️ Deferred
 - Since this app is native mobile from day one (not a wrapped web app),
   the home-screen widget is **core v1**, not a later phase
@@ -345,7 +388,9 @@ optional description.
 
 (Move these up if you want them sooner — just say so.)
 
-- Dark mode / theme customization
+- ~~Dark mode / theme customization~~ — **moved in-scope 2026-08-11,
+  see §5.12.** Struck rather than deleted so the history of the
+  decision stays visible.
 - Passcode/biometric lock
 - Reminders/notifications
 - Reports/charts beyond the monthly summary and pie charts
