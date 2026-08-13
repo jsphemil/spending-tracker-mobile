@@ -1,0 +1,101 @@
+import { useState } from "react";
+import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import DateTimePicker from "@react-native-community/datetimepicker";
+
+import type { GoalInput } from "../db/actions/goals";
+import { majorToMinor, minorToMajor } from "../services/format";
+import { useThemeColors } from "../theme/palette";
+
+interface GoalFormProps {
+  initialValues?: Partial<GoalInput>;
+  onSubmit: (values: GoalInput) => void;
+  submitLabel: string;
+}
+
+// Goals track net worth across every account, so — same as category
+// budgets — the target is always entered in the app's base currency.
+const GOAL_CURRENCY = "INR";
+
+export function GoalForm({ initialValues, onSubmit, submitLabel }: GoalFormProps) {
+  const [name, setName] = useState(initialValues?.name ?? "");
+  const [targetText, setTargetText] = useState(
+    initialValues?.targetAmountMinor != null
+      ? String(minorToMajor(initialValues.targetAmountMinor, GOAL_CURRENCY))
+      : "",
+  );
+  const [targetDate, setTargetDate] = useState<Date | null>(initialValues?.targetDate ?? null);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const colors = useThemeColors();
+
+  function handleSubmit() {
+    if (!name.trim()) {
+      setError("Goal name is required");
+      return;
+    }
+    const target = Number(targetText);
+    if (!Number.isFinite(target) || target <= 0) {
+      setError("Target net worth must be greater than 0");
+      return;
+    }
+    setError(null);
+    onSubmit({
+      name: name.trim(),
+      targetAmountMinor: majorToMinor(target, GOAL_CURRENCY),
+      targetDate,
+    });
+  }
+
+  return (
+    <ScrollView className="flex-1 bg-bg" contentContainerStyle={{ padding: 16, gap: 20 }}>
+      <View className="gap-2">
+        <Text className="text-sm font-medium text-fg-muted">Goal name</Text>
+        <TextInput
+          value={name}
+          onChangeText={setName}
+          placeholder="e.g. Emergency fund, House down payment"
+          placeholderTextColor={colors.fgSubtle}
+          className="rounded-lg border border-border bg-surface px-3 py-2 text-base text-fg"
+        />
+      </View>
+
+      <View className="gap-2">
+        <Text className="text-sm font-medium text-fg-muted">Target net worth (₹)</Text>
+        <TextInput
+          value={targetText}
+          onChangeText={setTargetText}
+          keyboardType="decimal-pad"
+          placeholder="0"
+          placeholderTextColor={colors.fgSubtle}
+          className="font-data rounded-lg border border-border bg-surface px-3 py-2 text-lg text-fg"
+        />
+      </View>
+
+      <View className="gap-2">
+        <Text className="text-sm font-medium text-fg-muted">Target date (optional)</Text>
+        <Pressable
+          onPress={() => setShowDatePicker(true)}
+          className="rounded-lg border border-border bg-surface px-3 py-2"
+        >
+          <Text className="text-fg">{targetDate ? targetDate.toDateString() : "No target date"}</Text>
+        </Pressable>
+        {showDatePicker && (
+          <DateTimePicker
+            value={targetDate ?? new Date()}
+            mode="date"
+            onChange={(_, selected) => {
+              setShowDatePicker(false);
+              if (selected) setTargetDate(selected);
+            }}
+          />
+        )}
+      </View>
+
+      {error && <Text className="text-sm text-danger">{error}</Text>}
+
+      <Pressable onPress={handleSubmit} className="items-center rounded-lg bg-accent py-3">
+        <Text className="text-base font-semibold text-white">{submitLabel}</Text>
+      </Pressable>
+    </ScrollView>
+  );
+}

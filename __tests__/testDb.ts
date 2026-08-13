@@ -10,15 +10,28 @@ import { accounts, type AccountType } from "../db/schema";
 // stand-in for expo-sqlite — same SQL dialect and drizzle query-builder
 // surface, so services/*.ts (which only take a typed `Db` parameter) run
 // against it exactly as they would against the real on-device database.
+//
+// Applies every migration listed in drizzle/meta/_journal.json, in order —
+// not just 0000 — so the test schema always matches what actually ships.
+// Missing 0001+ silently left the test DB out of sync with production for
+// a while (themePreference, monthlyBudgetMinor never existed in-memory);
+// reading the journal instead of hardcoding a filename prevents that
+// drifting again as new migrations are added.
 export function createTestDb() {
   const sqlite = new Database(":memory:");
   sqlite.pragma("foreign_keys = ON");
 
-  const migrationSql = fs.readFileSync(
-    path.join(__dirname, "../drizzle/0000_nasty_hercules.sql"),
-    "utf-8",
-  );
-  sqlite.exec(migrationSql);
+  const journal = JSON.parse(
+    fs.readFileSync(path.join(__dirname, "../drizzle/meta/_journal.json"), "utf-8"),
+  ) as { entries: { tag: string }[] };
+
+  for (const entry of journal.entries) {
+    const migrationSql = fs.readFileSync(
+      path.join(__dirname, `../drizzle/${entry.tag}.sql`),
+      "utf-8",
+    );
+    sqlite.exec(migrationSql);
+  }
 
   return drizzle(sqlite, { schema }) as unknown as import("../db/client").Db;
 }

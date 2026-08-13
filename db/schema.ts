@@ -1,11 +1,13 @@
 import { sql } from "drizzle-orm";
 import {
+  type AnySQLiteColumn,
   index,
   integer,
   primaryKey,
   real,
   sqliteTable,
   text,
+  unique,
 } from "drizzle-orm/sqlite-core";
 
 export const ACCOUNT_TYPES = [
@@ -58,6 +60,10 @@ export const categories = sqliteTable("categories", {
   icon: text("icon").notNull(),
   color: text("color").notNull(),
   sortOrder: integer("sort_order").notNull().default(0),
+  // Only meaningful for expense categories, mirroring accounts.budgetMonthlyMinor's
+  // "only meaningful for one type" pattern — always this-month, no month-nav
+  // (matches the real app's categories/page.tsx design note).
+  monthlyBudgetMinor: integer("monthly_budget_minor"),
 });
 
 export const tags = sqliteTable("tags", {
@@ -85,6 +91,18 @@ export const recurringRules = sqliteTable("recurring_rules", {
   endDate: integer("end_date", { mode: "timestamp" }),
   // Last date up to which occurrences have been materialized into `transactions`.
   materializedThrough: integer("materialized_through", { mode: "timestamp" }),
+  // false once an "edit/delete this and all future occurrences" split has
+  // closed this rule off — ensureMaterialized skips inactive rules, so a
+  // closed rule can never regenerate the occurrences that were deleted out
+  // from under it.
+  isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
+  // Set on the *new* rule created by an "this and all future" edit,
+  // pointing back at the rule it replaced — lineage only, not read by the
+  // materialization engine itself.
+  supersedesRuleId: integer("supersedes_rule_id").references(
+    (): AnySQLiteColumn => recurringRules.id,
+    { onDelete: "set null" },
+  ),
 });
 
 export const recurringRuleTags = sqliteTable(
@@ -126,11 +144,27 @@ export const transactions = sqliteTable(
       () => recurringRules.id,
       { onDelete: "set null" },
     ),
+    // The schedule "slot" this row fills — stays fixed even if `date` is
+    // edited via "just this one" (e.g. a salary normally on the 1st landing
+    // on the 3rd one month keeps occurrenceDate on the 1st). Null for
+    // non-recurring rows. Paired with recurringRuleId as the uniqueness key
+    // that keeps materialization idempotent.
+    occurrenceDate: integer("occurrence_date", { mode: "timestamp" }),
+    isRecurringGenerated: integer("is_recurring_generated", { mode: "boolean" })
+      .notNull()
+      .default(false),
+    isRecurringException: integer("is_recurring_exception", { mode: "boolean" })
+      .notNull()
+      .default(false),
   },
   (table) => [
     index("transactions_account_id_idx").on(table.accountId),
     index("transactions_date_idx").on(table.date),
     index("transactions_category_id_idx").on(table.categoryId),
+    unique("transactions_recurring_occurrence_idx").on(
+      table.recurringRuleId,
+      table.occurrenceDate,
+    ),
   ],
 );
 
@@ -147,6 +181,18 @@ export const transactionTags = sqliteTable(
   (table) => [primaryKey({ columns: [table.transactionId, table.tagId] })],
 );
 
+// Net-worth targets, tracked against the whole portfolio (not any one
+// account) — always in the app's base currency, same as category budgets.
+export const goals = sqliteTable("goals", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  name: text("name").notNull(),
+  targetAmountMinor: integer("target_amount_minor").notNull(),
+  targetDate: integer("target_date", { mode: "timestamp" }),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .default(sql`(unixepoch())`),
+});
+
 // Single-row table (id is always 1) holding global app preferences.
 export const settings = sqliteTable("settings", {
   id: integer("id").primaryKey({ autoIncrement: true }),
@@ -161,6 +207,12 @@ export const settings = sqliteTable("settings", {
   themePreference: text("theme_preference", { enum: THEME_PREFERENCES })
     .notNull()
     .default("system"),
+  // Gates the first-run onboarding flow (spec.md §5.13). Migration 0005
+  // backfills this to true for any row that already has accounts, so
+  // existing installs with real data never get sent through onboarding.
+  onboardingCompleted: integer("onboarding_completed", { mode: "boolean" })
+    .notNull()
+    .default(false),
   widgetAccountId: integer("widget_account_id").references(
     () => accounts.id,
     { onDelete: "set null" },

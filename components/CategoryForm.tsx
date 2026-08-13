@@ -6,6 +6,7 @@ import { CATEGORY_ICONS } from "../constants/categoryIcons";
 import { COLOR_PALETTE } from "../constants/colorPalette";
 import { CATEGORY_KINDS, type CategoryKind } from "../db/schema";
 import type { CategoryInput } from "../db/actions/categories";
+import { majorToMinor, minorToMajor } from "../services/format";
 import { useThemeColors } from "../theme/palette";
 
 interface CategoryFormProps {
@@ -14,16 +15,43 @@ interface CategoryFormProps {
   submitLabel: string;
 }
 
+// Category budgets are always tracked in the app's base currency (INR),
+// matching how cross-account totals are aggregated elsewhere (Dashboard,
+// Transactions summary band) — a category isn't scoped to one account/
+// currency the way accounts.budgetMonthlyMinor is.
+const BUDGET_CURRENCY = "INR";
+
 export function CategoryForm({ initialValues, onSubmit, submitLabel }: CategoryFormProps) {
   const [name, setName] = useState(initialValues?.name ?? "");
   const [kind, setKind] = useState<CategoryKind>(initialValues?.kind ?? "expense");
   const [icon, setIcon] = useState(initialValues?.icon ?? CATEGORY_ICONS[0]);
   const [color, setColor] = useState(initialValues?.color ?? COLOR_PALETTE[0]);
+  const [budgetText, setBudgetText] = useState(
+    initialValues?.monthlyBudgetMinor != null
+      ? String(minorToMajor(initialValues.monthlyBudgetMinor, BUDGET_CURRENCY))
+      : "",
+  );
+  const [error, setError] = useState<string | null>(null);
   const colors = useThemeColors();
 
   function handleSubmit() {
-    if (!name.trim()) return;
-    onSubmit({ name: name.trim(), kind, icon, color });
+    if (!name.trim()) {
+      setError("Name is required");
+      return;
+    }
+    const budgetNum = budgetText ? Number(budgetText) : null;
+    if (budgetNum !== null && !(budgetNum > 0)) {
+      setError("Monthly budget must be greater than 0");
+      return;
+    }
+    setError(null);
+    onSubmit({
+      name: name.trim(),
+      kind,
+      icon,
+      color,
+      monthlyBudgetMinor: budgetNum !== null ? majorToMinor(budgetNum, BUDGET_CURRENCY) : null,
+    });
   }
 
   return (
@@ -92,6 +120,24 @@ export function CategoryForm({ initialValues, onSubmit, submitLabel }: CategoryF
           ))}
         </View>
       </View>
+
+      {kind === "expense" && (
+        <View className="gap-2">
+          <Text className="text-sm font-medium text-fg-muted">
+            Monthly Budget (₹, optional)
+          </Text>
+          <TextInput
+            value={budgetText}
+            onChangeText={setBudgetText}
+            keyboardType="decimal-pad"
+            placeholder="No budget set"
+            placeholderTextColor={colors.fgSubtle}
+            className="rounded-lg border border-border bg-surface px-3 py-2 text-base text-fg"
+          />
+        </View>
+      )}
+
+      {error && <Text className="text-sm text-danger">{error}</Text>}
 
       <Pressable onPress={handleSubmit} className="items-center rounded-lg bg-accent py-3">
         <Text className="text-base font-semibold text-white">{submitLabel}</Text>

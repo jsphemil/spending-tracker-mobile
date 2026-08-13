@@ -14,6 +14,7 @@ export function useTransactionTagIds(transactionId: number) {
       .select({ tagId: transactionTags.tagId })
       .from(transactionTags)
       .where(eq(transactionTags.transactionId, transactionId)),
+    [transactionId],
   );
   return data?.map((row) => row.tagId) ?? [];
 }
@@ -25,6 +26,7 @@ export function useTransactionTagNames(transactionId: number) {
       .from(transactionTags)
       .innerJoin(tags, eq(transactionTags.tagId, tags.id))
       .where(eq(transactionTags.transactionId, transactionId)),
+    [transactionId],
   );
   return data?.map((row) => row.name) ?? [];
 }
@@ -46,5 +48,6 @@ export function useTagTransactions(tagName: string) {
       .innerJoin(accounts, eq(transactions.accountId, accounts.id))
       .where(eq(tags.name, tagName))
       .orderBy(desc(transactions.date)),
+    [tagName],
   );
 }

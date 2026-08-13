@@ -8,6 +8,8 @@ interface CreditUsageRingProps {
   owedMinor: number;
   creditLimitMinor: number;
   currency: string;
+  /** "≈ {base currency}" line — only passed when the account's own currency differs from the app's live base currency. */
+  owedEquivalent?: string;
   size?: number;
 }
 
@@ -19,6 +21,7 @@ export function CreditUsageRing({
   owedMinor,
   creditLimitMinor,
   currency,
+  owedEquivalent,
   size = 180,
 }: CreditUsageRingProps) {
   let percent: number;
@@ -50,6 +53,9 @@ export function CreditUsageRing({
       >
         {formatMoney(owedMinor, currency)}
       </Text>
+      {owedEquivalent ? (
+        <Text className="font-data text-xs tabular-nums text-fg-subtle">≈ {owedEquivalent}</Text>
+      ) : null}
     </RingArc>
   );
 }

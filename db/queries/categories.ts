@@ -9,5 +9,5 @@ export function useCategories(kind?: CategoryKind) {
     ? db.select().from(categories).where(eq(categories.kind, kind))
     : db.select().from(categories);
 
-  return useLiveQuery(query.orderBy(asc(categories.sortOrder), asc(categories.id)));
+  return useLiveQuery(query.orderBy(asc(categories.sortOrder), asc(categories.id)), [kind]);
 }

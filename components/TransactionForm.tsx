@@ -1,10 +1,16 @@
 import { useEffect, useRef, useState } from "react";
-import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { Alert, Pressable, ScrollView, Switch, Text, TextInput, View } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 
+import { AmountOperatorRow } from "./AmountOperatorRow";
+import { CATEGORY_ICONS } from "../constants/categoryIcons";
+import { COLOR_PALETTE } from "../constants/colorPalette";
+import { createCategory } from "../db/actions/categories";
 import { useAccounts } from "../db/queries/accounts";
 import { useCategories } from "../db/queries/categories";
-import { TRANSACTION_TYPES, type TransactionType } from "../db/schema";
+import { RECURRENCE_UNITS, TRANSACTION_TYPES, type RecurrenceUnit, type TransactionType } from "../db/schema";
+import type { RecurringSchedule } from "../services/recurrence";
+import { evaluateExpression } from "../services/calculator";
 import { majorToMinor, minorToMajor } from "../services/format";
 import { useThemeColors } from "../theme/palette";
 import { TagPicker } from "./TagPicker";
@@ -20,10 +26,23 @@ export interface TransactionFormValues {
   tagIds: number[];
 }
 
+export interface RecurringSeriesInfo {
+  scheduleLabel: string;
+  endDate: Date | null;
+}
+
 interface TransactionFormProps {
   initialValues?: Partial<TransactionFormValues>;
   onSubmit: (values: TransactionFormValues) => void;
   submitLabel: string;
+  /** Only meaningful at creation — shows the "Make recurring" toggle. */
+  allowRecurring?: boolean;
+  /** Called instead of onSubmit when "Make recurring" is checked at creation. */
+  onSubmitRecurring?: (values: TransactionFormValues, schedule: RecurringSchedule) => void;
+  /** Set when editing an occurrence that's part of a recurring series. */
+  recurringInfo?: RecurringSeriesInfo | null;
+  /** Called instead of onSubmit once the user picks "just this one" / "this and future". */
+  onEditScope?: (scope: "one" | "future", values: TransactionFormValues, newEndDate: Date | null) => void;
 }
 
 const TYPE_LABELS: Record<TransactionType, string> = {
@@ -32,10 +51,21 @@ const TYPE_LABELS: Record<TransactionType, string> = {
   transfer: "Transfer",
 };
 
+const UNIT_LABELS: Record<RecurrenceUnit, string> = {
+  day: "day(s)",
+  week: "week(s)",
+  month: "month(s)",
+  year: "year(s)",
+};
+
 export function TransactionForm({
   initialValues,
   onSubmit,
   submitLabel,
+  allowRecurring = false,
+  onSubmitRecurring,
+  recurringInfo = null,
+  onEditScope,
 }: TransactionFormProps) {
   const { data: accounts } = useAccounts();
   const [type, setType] = useState<TransactionType>(initialValues?.type ?? "expense");
@@ -71,16 +101,44 @@ export function TransactionForm({
   const [categoryId, setCategoryId] = useState<number | null>(
     initialValues?.categoryId ?? null,
   );
+  const [addingCategory, setAddingCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
   const [description, setDescription] = useState(initialValues?.description ?? "");
   const [tagIds, setTagIds] = useState<number[]>(initialValues?.tagIds ?? []);
   const [error, setError] = useState<string | null>(null);
 
+  const isRecurringEdit = recurringInfo !== null;
+  const [recurring, setRecurring] = useState(false);
+  const [intervalCountText, setIntervalCountText] = useState("1");
+  const [intervalUnit, setIntervalUnit] = useState<RecurrenceUnit>("month");
+  const [scheduleEndDate, setScheduleEndDate] = useState<Date | null>(
+    recurringInfo?.endDate ?? null,
+  );
+  const [showEndDatePicker, setShowEndDatePicker] = useState(false);
+
   const selectedAccount = accounts?.find((a) => a.id === accountId);
   const currency = selectedAccount?.currency ?? "INR";
 
+  function handleCreateCategory() {
+    if (!newCategoryName.trim()) return;
+    const newId = createCategory({
+      name: newCategoryName.trim(),
+      kind: type === "income" ? "income" : "expense",
+      icon: CATEGORY_ICONS[0],
+      color: COLOR_PALETTE[0],
+    });
+    setCategoryId(newId);
+    setNewCategoryName("");
+    setAddingCategory(false);
+  }
+
   function handleSubmit() {
-    const amount = Number(amountText);
-    if (!Number.isFinite(amount) || amount <= 0) {
+    const amount = evaluateExpression(amountText);
+    if (amount === null) {
+      setError("Enter a valid amount or expression (e.g. 1200+350)");
+      return;
+    }
+    if (amount <= 0) {
       setError("Amount must be greater than 0");
       return;
     }
@@ -101,9 +159,19 @@ export function TransactionForm({
       setError("Category is required");
       return;
     }
+
+    let schedule: RecurringSchedule | null = null;
+    if (!isRecurringEdit && allowRecurring && recurring) {
+      const intervalCount = Number(intervalCountText);
+      if (!Number.isInteger(intervalCount) || intervalCount < 1) {
+        setError("Repeat interval must be a whole number of 1 or more");
+        return;
+      }
+      schedule = { intervalCount, intervalUnit, endDate: scheduleEndDate };
+    }
     setError(null);
 
-    onSubmit({
+    const values: TransactionFormValues = {
       type,
       amountMinor: majorToMinor(amount, currency),
       date,
@@ -112,7 +180,26 @@ export function TransactionForm({
       categoryId: type === "transfer" ? null : categoryId,
       description: description.trim(),
       tagIds,
-    });
+    };
+
+    if (isRecurringEdit) {
+      Alert.alert("Apply this change to:", undefined, [
+        { text: "Just this one", onPress: () => onEditScope?.("one", values, scheduleEndDate) },
+        {
+          text: "This and all future occurrences",
+          onPress: () => onEditScope?.("future", values, scheduleEndDate),
+        },
+        { text: "Cancel", style: "cancel" },
+      ]);
+      return;
+    }
+
+    if (schedule) {
+      onSubmitRecurring?.(values, schedule);
+      return;
+    }
+
+    onSubmit(values);
   }
 
   return (
@@ -143,6 +230,7 @@ export function TransactionForm({
           placeholderTextColor={colors.fgSubtle}
           className="font-data rounded-lg border border-border bg-surface px-3 py-2 text-lg text-fg"
         />
+        <AmountOperatorRow value={amountText} onChange={setAmountText} />
       </View>
 
       <View className="gap-2">
@@ -191,7 +279,14 @@ export function TransactionForm({
 
       {type !== "transfer" && (
         <View className="gap-2">
-          <Text className="text-sm font-medium text-fg-muted">Category</Text>
+          <View className="flex-row items-center justify-between">
+            <Text className="text-sm font-medium text-fg-muted">Category</Text>
+            <Pressable onPress={() => setAddingCategory((v) => !v)}>
+              <Text className="text-xs font-medium text-accent">
+                {addingCategory ? "Cancel" : "+ New category"}
+              </Text>
+            </Pressable>
+          </View>
           <View className="flex-row flex-wrap gap-2">
             {(categories ?? []).map((c) => (
               <Pressable
@@ -207,6 +302,23 @@ export function TransactionForm({
               </Pressable>
             ))}
           </View>
+          {addingCategory && (
+            <View className="flex-row gap-2">
+              <TextInput
+                value={newCategoryName}
+                onChangeText={setNewCategoryName}
+                placeholder="Category name"
+                placeholderTextColor={colors.fgSubtle}
+                className="flex-1 rounded-lg border border-border bg-surface px-3 py-2 text-base text-fg"
+              />
+              <Pressable
+                onPress={handleCreateCategory}
+                className="items-center justify-center rounded-lg border border-border bg-surface px-4"
+              >
+                <Text className="text-fg">Add</Text>
+              </Pressable>
+            </View>
+          )}
         </View>
       )}
 
@@ -242,6 +354,102 @@ export function TransactionForm({
       </View>
 
       <TagPicker selectedTagIds={tagIds} onChange={setTagIds} />
+
+      {isRecurringEdit && (
+        <View className="gap-2 rounded-lg bg-surface-2 p-3">
+          <Text className="text-sm text-fg-muted">
+            🔁 Part of a recurring series · {recurringInfo!.scheduleLabel}
+          </Text>
+          <Text className="text-xs text-fg-muted">
+            End date (optional — leave blank to repeat indefinitely)
+          </Text>
+          <Pressable
+            onPress={() => setShowEndDatePicker(true)}
+            className="rounded-lg border border-border bg-surface px-3 py-2"
+          >
+            <Text className="text-fg">
+              {scheduleEndDate ? scheduleEndDate.toDateString() : "No end date"}
+            </Text>
+          </Pressable>
+          {showEndDatePicker && (
+            <DateTimePicker
+              value={scheduleEndDate ?? new Date()}
+              mode="date"
+              onChange={(_, selected) => {
+                setShowEndDatePicker(false);
+                if (selected) setScheduleEndDate(selected);
+              }}
+            />
+          )}
+          <Text className="text-xs text-fg-subtle">
+            Only applied if you choose &ldquo;this and all future occurrences&rdquo; below.
+          </Text>
+        </View>
+      )}
+
+      {allowRecurring && !isRecurringEdit && (
+        <View className="gap-3 rounded-lg border border-border p-3">
+          <View className="flex-row items-center justify-between">
+            <Text className="text-base text-fg">Make recurring</Text>
+            <Switch value={recurring} onValueChange={setRecurring} />
+          </View>
+
+          {recurring && (
+            <>
+              <View className="gap-2">
+                <View className="flex-row items-center gap-2">
+                  <Text className="text-sm text-fg-muted">Repeat every</Text>
+                  <TextInput
+                    value={intervalCountText}
+                    onChangeText={setIntervalCountText}
+                    keyboardType="number-pad"
+                    className="w-16 rounded-lg border border-border bg-surface px-2 py-1.5 text-center text-fg"
+                  />
+                </View>
+                <View className="flex-row flex-wrap gap-1.5">
+                  {RECURRENCE_UNITS.map((unit) => (
+                    <Pressable
+                      key={unit}
+                      onPress={() => setIntervalUnit(unit)}
+                      className={`rounded-full border px-2.5 py-1.5 ${
+                        intervalUnit === unit ? "border-accent bg-accent-soft" : "border-border bg-surface"
+                      }`}
+                    >
+                      <Text className={intervalUnit === unit ? "text-accent" : "text-fg-muted"}>
+                        {UNIT_LABELS[unit]}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
+
+              <View className="gap-2">
+                <Text className="text-sm text-fg-muted">
+                  End date (optional — leave blank to repeat indefinitely)
+                </Text>
+                <Pressable
+                  onPress={() => setShowEndDatePicker(true)}
+                  className="rounded-lg border border-border bg-surface px-3 py-2"
+                >
+                  <Text className="text-fg">
+                    {scheduleEndDate ? scheduleEndDate.toDateString() : "No end date"}
+                  </Text>
+                </Pressable>
+                {showEndDatePicker && (
+                  <DateTimePicker
+                    value={scheduleEndDate ?? new Date()}
+                    mode="date"
+                    onChange={(_, selected) => {
+                      setShowEndDatePicker(false);
+                      if (selected) setScheduleEndDate(selected);
+                    }}
+                  />
+                )}
+              </View>
+            </>
+          )}
+        </View>
+      )}
 
       {error && <Text className="text-sm text-danger">{error}</Text>}
 

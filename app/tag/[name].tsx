@@ -3,25 +3,26 @@ import { useLocalSearchParams } from "expo-router";
 import { FlatList, Text, View } from "react-native";
 
 import { db } from "../../db/client";
+import { useSettings } from "../../db/queries/settings";
 import { useTagTransactions } from "../../db/queries/tags";
 import { getExchangeRate } from "../../services/currency";
 import { formatMoney, majorToMinor, minorToMajor } from "../../services/format";
 import { EmptyState } from "../../components/ui/EmptyState";
 
-const BASE_CURRENCY = "INR";
-
 export default function TagSummaryScreen() {
   const { name } = useLocalSearchParams<{ name: string }>();
   const tagName = decodeURIComponent(name);
   const { data: rows } = useTagTransactions(tagName);
+  const { settings } = useSettings();
+  const baseCurrency = settings?.baseCurrency ?? "INR";
 
   const foreignCurrencies = useMemo(() => {
     const set = new Set<string>();
     for (const row of rows ?? []) {
-      if (row.accountCurrency !== BASE_CURRENCY) set.add(row.accountCurrency);
+      if (row.accountCurrency !== baseCurrency) set.add(row.accountCurrency);
     }
     return Array.from(set);
-  }, [rows]);
+  }, [rows, baseCurrency]);
 
   const [rates, setRates] = useState<Record<string, number>>({});
 
@@ -29,7 +30,7 @@ export default function TagSummaryScreen() {
     let cancelled = false;
     Promise.all(
       foreignCurrencies.map(async (currency) => {
-        const rate = await getExchangeRate(db, currency, BASE_CURRENCY);
+        const rate = await getExchangeRate(db, currency, baseCurrency);
         return [currency, rate] as const;
       }),
     ).then((entries) => {
@@ -38,14 +39,14 @@ export default function TagSummaryScreen() {
     return () => {
       cancelled = true;
     };
-  }, [foreignCurrencies.join(",")]);
+  }, [foreignCurrencies.join(","), baseCurrency]);
 
   function toBaseMinor(amountMinor: number, currency: string): number {
-    if (currency === BASE_CURRENCY) return amountMinor;
+    if (currency === baseCurrency) return amountMinor;
     const rate = rates[currency];
     if (rate === undefined) return 0; // rate not loaded yet
     const majorInSource = minorToMajor(amountMinor, currency);
-    return majorToMinor(majorInSource * rate, BASE_CURRENCY);
+    return majorToMinor(majorInSource * rate, baseCurrency);
   }
 
   const totals = (rows ?? []).reduce(
@@ -70,19 +71,19 @@ export default function TagSummaryScreen() {
           <View className="mb-6 gap-3">
             <Text className="text-xl font-semibold text-fg">{tagName}</Text>
             <Text className="text-base text-fg-muted">
-              Net cost of {tagName}: {formatMoney(netMinor, BASE_CURRENCY)}
+              Net cost of {tagName}: {formatMoney(netMinor, baseCurrency)}
             </Text>
             <View className="flex-row justify-around">
               <View className="items-center">
                 <Text className="text-xs text-fg-muted">Income</Text>
                 <Text className="font-data text-base font-medium tabular-nums text-success">
-                  {formatMoney(totals.incomeMinor, BASE_CURRENCY)}
+                  {formatMoney(totals.incomeMinor, baseCurrency)}
                 </Text>
               </View>
               <View className="items-center">
                 <Text className="text-xs text-fg-muted">Expense</Text>
                 <Text className="font-data text-base font-medium tabular-nums text-danger">
-                  {formatMoney(totals.expenseMinor, BASE_CURRENCY)}
+                  {formatMoney(totals.expenseMinor, baseCurrency)}
                 </Text>
               </View>
             </View>

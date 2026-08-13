@@ -19,19 +19,24 @@ pushed to a later phase) · ❌ Dropped (cut from scope).
 
 | Section | Feature | Status | Notes |
 |---|---|---|---|
-| §5.1 | Accounts | 🚧 In Progress | Built, incl. the distinct Credit Card ring; on-device verification still pending |
-| §5.2 | Transactions | 🚧 In Progress | Entry/edit/list/filters/calendar built; recurring transactions ⏸️ deferred to Phase 2 |
+| §5.1 | Accounts | 🚧 In Progress | Full Phase 10 parity pass 2026-08-12: Account Detail page rebuilt (correct capacity-gauge ring, Carry Forward/Total In/Total Out/Left to Spend, Safe-to-spend/day, debt payoff projection, Budget Mode bar wired up, category/counterpart Breakdown section, Show-Future-Transactions hidden-count notice, Duplicate+Edit+Delete icons); Accounts list gained month nav + per-account Income/Expense/Transfers row + period-scoped balance — on-device verification pending |
+| §5.2 | Transactions | 🚧 In Progress | Entry/edit/list/filters/calendar built; recurring transactions (Phase 5) code-complete 2026-08-12 — engine (`services/recurrence.ts`) unit-tested (13 tests), "make recurring" toggle, just-this-one/this-and-future edit+delete scope picker, 🔁 badge, `ensureMaterialized` wired into Dashboard/Transactions/Accounts/Categories/Calendar. Phase 10 (2026-08-12): "Clear (show all time)" toggle, SummaryBand proportional bar, Duplicate+Edit+Delete icons, Duplicate-transaction flow, inline "+ New category" on the transaction form — on-device verification pending |
 | §5.3 | Categories | 🚧 In Progress | Full CRUD + starter seed built |
 | §5.3a | Tags | 🚧 In Progress | Inline creation + per-tag summary (with currency conversion) built |
 | §5.4 | Spending Summary | 🚧 In Progress | Month nav, net worth, Indian formatting built; Carry Forward + pie charts ⏸️ deferred to Phase 2 |
-| §5.5 | Budget Mode | 🚧 In Progress | Toggle + schema built; spend-vs-budget comparison not yet wired in (⏸️ Phase 2) — toggling it has no visible effect yet |
+| §5.5 | Budget Mode | 🚧 In Progress | Account-level toggle + schema built, spend-vs-budget comparison still not wired in; category-level budgets (separate from the toggle) built 2026-08-12 with spend-vs-budget bars on the Categories list — on-device verification pending for both |
 | §5.6 | Show/Hide Future Transactions | 🚧 In Progress | Toggle + schema built; filtering not yet applied (⏸️ Phase 2) — same as above |
 | §5.7 | Smart Features (Claude) | ⏸️ Deferred | Phase 4. Inert FAB placeholder only |
-| §5.8 | Dashboard | 🚧 In Progress | Built |
-| §5.9 | Navigation | 🚧 In Progress | Built |
+| §5.8 | Dashboard | 🚧 In Progress | Fully rebuilt 2026-08-12 to match the real app: net worth capacity gauge, net worth trend chart (history-capped), asset allocation donut, over-budget banner, embedded calendar with quick-add buttons, Accounts card, Goals card (top 3), Recent Transactions card with inline edit/delete icons — on-device verification pending |
+| §5.9 | Navigation | 🚧 In Progress | Built; Commitments tab added 2026-08-12 (Dashboard, Accounts, Transactions, Commitments, Categories, Profile — 6 tabs total, matching the real app's order) |
 | §5.10 | Profile Page | 🚧 In Progress | Built; Dropbox section is an inert placeholder |
 | §5.11 | Home Screen Widget | ⏸️ Deferred | Phase 5 |
 | §5.12 | Visual Design System | 📋 Planned | Full port of the web app's dark-first token theme, monospace tabular numerals, gauge-over-pie pattern, and card/FAB/empty-state conventions — decided 2026-08-11, supersedes the earlier "out of scope" call in §6 |
+| §5.13 | First-Run Onboarding & Base Currency | 🚧 In Progress | New — decided 2026-08-12. Unlike the web app (INR-only, single market), mobile ships for global customers: base currency becomes a real, live-editable user setting, not hardcoded INR. Phase 12 code-complete 2026-08-13: onboarding flow + gate, base currency generalized across every screen, full searchable currency dropdown (Frankfurter's ~170 currencies) replacing the old 6-pill picker — on-device verification pending |
+| §5.14 | CSV Export | ✅ Built & Verified | New — decided 2026-08-12, matches the web app's account/date-filtered CSV export. Phase 11 code-complete 2026-08-12 (`services/csv.ts`, `services/export.ts`, `ExportTransactionsForm` on Profile), required a native rebuild for `expo-file-system`/`expo-sharing` — verified on-device 2026-08-12 |
+| §5.15 | In-App Info/Tips | ⏸️ Deferred | New — decided 2026-08-12, explicitly deferred by the user to a later pass |
+| §5.16 | Commitments | 🚧 In Progress | New — discovered during repo comparison (not in the original spec), Phase 6. Code-complete 2026-08-12: new "Commitments" tab, monthly-normalized recurring rules split into expense/transfer/income sections, % of recurring income committed — on-device verification pending |
+| §5.17 | Goals | 🚧 In Progress | New — discovered during repo comparison, Phases 7-8. Code-complete 2026-08-12: `services/balance.ts`'s `getNetWorthSeries` (Phase 8, unit-tested), goal CRUD + trailing-6-month pace projection + behind-pace flag (Phase 7). Reached via a temporary "Goals →" link on the Dashboard (not a tab, matching the real app) — Phase 9's Dashboard rebuild replaces it with the real top-3-goals card. On-device verification pending |
 | §3 | Dropbox Backup/Restore | ⏸️ Deferred | Phase 3 |
 
 Nothing is marked ✅ yet — Phase 1 is code-complete and type-checked,
@@ -146,9 +151,12 @@ Everything below is the "must-have" list. Anything not listed here
     elsewhere
 - When creating an account, you enter an **opening balance** as of the
   creation date — this becomes the starting point the account builds from
-- Accounts can be in a **currency other than INR** (e.g. a Dirham cash
-  account). The app converts the balance to INR using a live/real-time
-  exchange rate for any total that mixes currencies
+- Accounts can be in a **currency other than the user's base currency**
+  (e.g. a Dirham cash account for someone whose base is INR — or, for a
+  customer outside India, any other pairing entirely; see §5.13, base
+  currency is picked at first launch, not hardcoded). The app converts the
+  balance to the base currency using a live/real-time exchange rate for
+  any total that mixes currencies
   - **Recommended source: the Frankfurter API** (`api.frankfurter.dev`) —
     free, open-source, no API key or signup required, no usage limits.
     Use the newer v2 endpoint specifically (sources from 84 central
@@ -278,11 +286,22 @@ optional description.
 ### 5.5 Budget Mode 🚧 In Progress
 - A toggle in **Settings**, available both **globally** (whole app) and
   **per account**
-- **Budget limits are set per account, not per category.** When Budget
-  Mode is turned on for an account, it asks for that account's **monthly
-  budget amount**
+- **Budget limits can be set at both the account level and the category
+  level** — the earlier "per account, not per category" claim here was
+  wrong (confirmed against the real web app's Prisma schema, which has
+  budget fields on both `Account` and `Category`; corrected 2026-08-12).
+  When Budget Mode is turned on for an account, it asks for that
+  account's **monthly budget amount**
 - Once set, the app can compare actual spending on that account against
   its budget (e.g. in the account's own ring/summary view)
+- **Category-level budgets** (independent of the account-level toggle
+  above): any **expense** category can optionally have a monthly budget,
+  entered in the app's base currency (INR) since a category spans
+  transactions across accounts/currencies. Always compares against the
+  **current calendar month only** — no month navigation, matching the
+  real app's categories page. Shown as a spend-vs-budget bar on each
+  category's row in the Categories list, red when spending exceeds the
+  budget. Built 2026-08-12, on-device verification pending.
 
 ### 5.6 Show/Hide Future Transactions 🚧 In Progress
 - A toggle that controls whether transactions dated in the future show
@@ -305,21 +324,44 @@ optional description.
   through the same window
 
 ### 5.8 Dashboard (Landing Page) 🚧 In Progress
-- The first screen you see after logging in
-- Shows an at-a-glance overview of your whole financial picture:
-  - Overall balance across all accounts (in INR)
-  - The balance ring/progress view (income vs. expense for the current month)
-  - A list of your accounts with individual balances
-  - Recent transactions (a short list, with a link to see all)
-  - Quick access to the Income / Expense / Transfer actions
+- The first screen you land on; a persistent month-nav pill at the top
+  scopes every figure below to the viewed month (not just "always today")
+- **Rebuilt 2026-08-12 to match the real app exactly**, superseding the
+  original simpler description below:
+  - Over-budget banner (only shown when any expense category is over its
+    monthly budget this month) — one line per category with a link to
+    Categories to review
+  - **Net worth** card: a capacity gauge (`GaugeRing`), not an income-
+    vs-expense ratio — ring capacity is Carry Forward + Income, Used is
+    Expense, center shows the month + net worth figure + "X% of
+    available used"; "Overdrawn by X" below if negative
+  - **Net worth trend** card: a line chart over up to 12 months, capped
+    to the account's actual transaction history (a new profile shows
+    just the 1 real point it has, not 11 months of misleading padding)
+  - 4-up stat row: Carry forward / Income / Expense / Credit card debt
+  - **Asset allocation** card: a donut over Liquid/Deposits/Invested
+    balances (credit card debt excluded, shown as its own line instead)
+  - **Goals** card: top 3 goals with progress bars, "View all"/"Set a
+    goal" link to the full Goals list (§5.17)
+  - Embedded **calendar** (the month grid, with +Income/+Expense/
+    +Transfer quick-add buttons above it — same component the dedicated
+    Calendar screen uses)
+  - **Accounts** card: every account listed with its balance, "View all"
+    link to the Accounts tab
+  - **Recent transactions** card: the 5 most recent transactions (across
+    all accounts, up to the viewed month's end), with inline Edit/Delete
+    icon buttons per row instead of tap-to-edit — Delete on a recurring
+    row prompts "just this one" vs "this and all future"
 - Acts as the "home base" you can always return to
 
 ### 5.9 Navigation 🚧 In Progress
-- A persistent bottom tab bar to move between the main sections
-  (Dashboard, Accounts, Transactions, Categories, Profile) from
-  anywhere in the app
+- A persistent bottom tab bar to move between the main sections —
+  **6 tabs**: Dashboard, Accounts, Transactions, Commitments (§5.16),
+  Categories, Profile
 - The floating Claude assistant icon (section 5.7) stays visible and
   accessible no matter which page you're on
+- Goals (§5.17) is deliberately not a tab, matching the real app — it's
+  reached via the Dashboard's Goals card
 
 ### 5.10 Profile Page 🚧 In Progress
 - No account/login (see section 4), so no email, password, or sign-out —
@@ -384,6 +426,158 @@ now stale and kept only for history.
   account, but that account can still be changed there before the
   transaction is confirmed — the widget's account is a default, not a lock
 
+### 5.13 First-Run Onboarding & Base Currency 🚧 In Progress
+- **Decided 2026-08-12.** The real web app hardcodes `INR` as the base
+  currency everywhere (`BASE_CURRENCY = "INR"` in its Dashboard,
+  Transactions, Categories, and `CurrencyAmount` — it's a single-market,
+  India-first product). This mobile app is being built for **global
+  customers**, so that assumption doesn't carry over: base currency
+  becomes a real per-install user setting (`settings.baseCurrency`),
+  not a fixed constant.
+- **First-run onboarding**, shown once before the main tabs are reachable
+  at all:
+  1. Pick a default/base currency
+  2. Enter a name
+  3. Add at least one account (can't finish onboarding with zero accounts)
+  4. A lightweight one-time "here's what this app does" screen introducing
+     the key features
+- Every place that currently assumes/hardcodes INR needs to read
+  `settings.baseCurrency` instead once this ships: `services/currency.ts`
+  (`getRatesToINR` generalizes to a base-currency parameter, not a fixed
+  target), the Dashboard's net worth/income/expense aggregation, the
+  Transactions summary band's "All Accounts" conversion, the Categories
+  budget spend calculation, and `CurrencyAmount`'s "≈ {base}" equivalent
+  line. Profile's existing Base Currency field becomes real instead of
+  inert.
+- **Base currency is a live setting, not a one-time onboarding choice**
+  (clarified 2026-08-12): the user must be able to change it anytime from
+  Profile, same field used at onboarding. Every conversion in the app
+  always calibrates to whichever base currency is *current*, not
+  whichever was picked at first launch — e.g. pick USD at onboarding, add
+  an AED account (converts against USD); later switch base currency to
+  EUR in Profile, and that same AED account's conversion immediately
+  re-references EUR, no stale USD figures left anywhere. Concretely:
+  `getRatesToINR` → `getRatesToBase(db, currencies, baseCurrency)`, with
+  the Frankfurter query's `base=` param and the `exchangeRateCache` read
+  (`eq(exchangeRateCache.targetCurrency, baseCurrency)`) both driven by
+  the live setting — the cache schema already keys rows by an arbitrary
+  `targetCurrency`, so switching base currency naturally starts a fresh
+  set of cache rows rather than needing an explicit cache-clear step.
+- **Not the same as §5.15** (In-App Info/Tips) — the first-run feature
+  intro is a short, one-time thing shown at install; the Info/Tips page is
+  a fuller, always-available reference living in Profile, built later.
+- **Currency picker is a full searchable dropdown, not a handful of pills**
+  (requested 2026-08-13, after seeing Profile's field only offered ~6
+  quick picks): new `services/currency.ts`'s `getSupportedCurrencies()`
+  fetches Frankfurter's `/v2/currencies` (all ~170 supported currencies,
+  code+name+symbol), cached in-memory for the app session; new
+  `components/CurrencyPicker.tsx` — a modal with a search box over that
+  list — used for base-currency selection (onboarding step 1 + Profile).
+  Account-level currency (`AccountForm`) keeps its existing pill+free-text
+  field for now, unaffected.
+- Code-complete 2026-08-13: `settings.onboardingCompleted` column
+  (migration 0005, backfilled to `true` for any row that already has
+  accounts so existing installs with real data never see onboarding),
+  `components/OnboardingFlow.tsx` (4 steps: currency → name → first
+  account via `AccountForm` inline → feature intro), gated in
+  `app/_layout.tsx` by rendering it in place of the normal `<Stack>`
+  rather than as a routed screen. `services/currency.ts`'s
+  `getRatesToINR`/`getExchangeRate` generalized to
+  `getRatesToBase(db, currencies, baseCurrency)` — `getExchangeRate` got
+  simpler in the process (a direct single-hop Frankfurter call using
+  `target` as the pivot, instead of the old always-through-INR two-hop),
+  9 tests including a non-INR-base case. Swept every hardcoded
+  `BASE_CURRENCY = "INR"` module constant (8 files: Dashboard,
+  Transactions, Categories, Commitments, Calendar, Goals, Tag summary,
+  `CurrencyAmount`) to read `settings.baseCurrency` live via `useSettings()`
+  instead. On-device verification pending — this is the largest
+  cross-cutting change since the useLiveQuery fix, worth checking
+  broadly (onboarding flow itself, plus every foreign-currency figure
+  after changing base currency in Profile).
+- **Sequencing decided 2026-08-12: Phase 12**, after Phases 5-10
+  (Recurring, Commitments, Goals, net worth series, Dashboard rebuild,
+  Accounts/Transactions parity) and before the final audit — the
+  currency-conversion code already built in Phases 3-4 today will get
+  touched a second time when this lands, a deliberate tradeoff to keep
+  momentum on the page-by-page parity work first.
+
+### 5.14 CSV Export ✅ Built & Verified
+- **Decided 2026-08-12, Phase 11.** Matches the web app's Profile-page
+  export: pick zero or more accounts (unchecked = every account), a
+  From/To date range, then export. Columns: Date, Type, Account,
+  Category, Description, Amount, Currency, Tags, Recurring (Yes/No).
+- Web app implementation is a server route generating a CSV response;
+  mobile has no server, so this needs `expo-file-system` (write the CSV
+  string to a file) + `expo-sharing` (hand it to the OS share sheet) —
+  the CSV's actual row/column shape stays identical, only the delivery
+  mechanism differs.
+- Code-complete 2026-08-12: `services/csv.ts` (`toCsv`/`csvField`, ported
+  verbatim from the real app's RFC-4180 escaping + UTF-8 BOM),
+  `services/export.ts`'s `buildTransactionsCsv` (account + inclusive
+  date-range filter, matching either leg of a transfer, tag names joined
+  with "; ", Opening Balance/Uncategorized category fallback — 5 tests),
+  `components/ExportTransactionsForm.tsx` on the Profile page (account
+  toggle pills, From/To pickers defaulting to Jan 1 this year → today,
+  writes via the new `expo-file-system` `File`/`Paths` API, hands off to
+  `expo-sharing`). One deliberate divergence from the web app: a
+  transfer's Currency column uses the source account's own currency
+  instead of a hardcoded "INR" — the web app is INR-only, mobile already
+  supports per-account currencies. Required a native rebuild
+  (`expo run:android`) since `expo-file-system`/`expo-sharing` are new
+  native modules, not just JS. Verified on-device 2026-08-12: exported,
+  opened the CSV, and confirmed a transfer row, an opening-balance row,
+  and a tagged transaction all matched the expected column values.
+
+### 5.15 In-App Info/Tips ⏸️ Deferred
+- **Decided 2026-08-12, explicitly deferred by the user** ("later we
+  will build") — a reference page in Profile explaining the app's
+  features in more depth than the one-time onboarding intro (§5.13) does.
+  No phase assigned yet.
+
+### 5.16 Commitments 🚧 In Progress
+- **New, discovered during the 2026-08-12 repo comparison** — not in the
+  original spec, since the earlier knowledge-transfer summary this app
+  started from missed it entirely.
+- A dedicated **Commitments** tab (6th tab, between Transactions and
+  Categories) showing every active recurring rule, normalized to a single
+  "per month" figure regardless of its actual cadence (a yearly charge and
+  a weekly one both roll into one monthly number) via `monthlyEquivalent`
+  (services/recurrence.ts, built in Phase 5).
+- **Total committed** card: sum of every recurring expense + transfer's
+  monthly-equivalent, plus "X% of your recurring income" when there's any
+  recurring income to compare against.
+- Three sections (only shown if non-empty): **Recurring expenses**,
+  **Recurring transfers & investments**, **Recurring income (for
+  reference)** — each row shows the monthly-equivalent amount plus the
+  rule's real amount/cadence/note underneath (e.g. "₹6,737.00 · Repeats
+  every month · TRIUMPH SPEED 400").
+- Built 2026-08-12: `app/(tabs)/commitments.tsx`,
+  `db/queries/recurringRules.ts`. On-device verification pending.
+
+### 5.17 Goals 🚧 In Progress
+- **New, discovered during the 2026-08-12 repo comparison** — not in the
+  original spec, same as Commitments.
+- A net-worth target (name, target amount in the base currency, optional
+  target date) tracked against the whole portfolio, not any one account.
+- **Progress bar** = current net worth ÷ target, clamped 0-100%, turns
+  green and shows "🎉 Goal reached" once hit.
+- **Pace projection**: `services/balance.ts`'s new `getNetWorthSeries`
+  computes net worth today and 6 months ago; the trailing monthly growth
+  rate projects a date the goal will be hit at the current pace ("At
+  current pace, projected around April 2030"), or "Not currently trending
+  toward this goal" if net worth isn't growing. If a target date is set
+  and the projection lands after it, a "Behind pace for your target date"
+  warning shows.
+- **Not a tab** — matches the real app, which reaches Goals via a card on
+  the Dashboard, not the bottom nav. Reached for now via a temporary
+  "Goals →" link on the current Dashboard; Phase 9's Dashboard rebuild
+  replaces it with the real top-3-goals card (progress bars, same
+  treatment as the full list).
+- Built 2026-08-12: `getNetWorthSeries` (unit-tested, `__tests__/balance.test.ts`),
+  `db/actions/goals.ts`, `db/queries/goals.ts`, `components/GoalForm.tsx`,
+  `app/goal/index.tsx` + `new.tsx` + `[id]/edit.tsx`. On-device verification
+  pending.
+
 ## 6. Explicitly out of scope for v1
 
 (Move these up if you want them sooner — just say so.)
@@ -408,9 +602,9 @@ add-on — see section 3.
       (Vercel, Cloudflare Workers) is the likely fit, but not yet chosen.
 - [ ] **Which cloud backup providers beyond Dropbox, if any, and in what
       order?** (Google Drive, iCloud)
-- [ ] **App Store / Play Store submission specifics** — developer
-      account setup, review guideline considerations for a finance app,
-      screenshots/listing content — not yet scoped out.
+- [ ] **App Store / Play Store submission specifics** — Play Store side
+      now tracked in detail in §9 (Play Store Launch Readiness); iOS/App
+      Store equivalent still not scoped out.
 - [ ] (Add your own notes here)
 
 ---
@@ -541,6 +735,83 @@ attempted again.
 3. Phase 2, in the order listed in the phase plan: recurring
    transactions → Budget Mode/Show-Future-Tx enforcement → Carry
    Forward + pie charts.
+
+## 9. Play Store Launch Readiness
+
+_Last updated: 2026-08-12. Tracked separately from the Status Dashboard
+above since these are Play Console/submission requirements, not app
+features — reviewed against Google's Play Store requirements
+2026-08-12. Re-check the "Privacy & data" items every time a feature
+that talks to the network or a third party lands (Dropbox backup,
+Claude smart features, analytics, IAP)._
+
+### Technical / build
+- [x] Production build outputs a signed `.aab`, not `.apk` —
+      `eas.json`'s `production` profile has no `buildType` override
+      (only `development`/`preview` force `apk`, correctly, for
+      internal test installs).
+- [x] Play App Signing — default behavior for EAS-managed builds,
+      nothing in the repo opts out of it.
+- [x] Minimal, justified permissions — no `expo-location`/
+      `expo-camera`/`expo-notifications`/`expo-media-library` in
+      `package.json`, no explicit `android.permissions` block in
+      `app.json`.
+- [ ] Confirm the actual EAS build targets API 36 (Android 16) and,
+      if any native `.so` libs end up in the build, that they're
+      16KB-page-aligned — not independently verifiable from source;
+      check the EAS build output once a production build is run.
+
+### Store listing
+- [ ] App icon (512×512), feature graphic (1024×500), 2-8
+      screenshots — none exist yet. `assets/` currently only has the
+      in-app-bundle icon set (adaptive icon layers, splash, favicon),
+      not dedicated store-listing assets.
+- [ ] Title (≤30 chars) / short description (≤80 chars) / full
+      description (≤4,000 chars) — not drafted.
+- [ ] Content Rating questionnaire — not started (Play Console step,
+      no code dependency).
+- [ ] Target Audience declaration — not started (Play Console step,
+      no code dependency).
+
+### Privacy & data
+- [ ] **Privacy policy hosted at a public URL.** Required — this is a
+      finance app storing transaction/account/balance data, and
+      becomes mandatory the moment Dropbox backup (§3) ships. Decided
+      2026-08-12: host via GitHub Pages, not a raw
+      `github.com/.../blob/main/*.md` link (which needs the repo to
+      stay public forever and renders inside GitHub's code viewer
+      rather than as a page) — likely a small dedicated public repo
+      just for the policy page, keeping the main app repo private.
+- [ ] **Data Safety form.** Today's real network surface is narrow —
+      `services/currency.ts` calls the Frankfurter exchange-rate API
+      with only currency codes, no personal data — so the form should
+      be simple to fill honestly right now. Must be revisited the
+      moment Dropbox backup, analytics, or crash reporting is added; a
+      stale form is one of the most common suspension/rejection causes.
+
+### Monetization
+- [ ] §7 already flags "one-time purchase" as confirmed but unscoped
+      (Claude features' pricing model still undecided). Not yet
+      built: no `expo-iap`/RevenueCat in `package.json`. When it is
+      built: must go through Google Play Billing (not
+      Stripe/Razorpay/etc. — grounds for rejection), needs a Restore
+      Purchases flow, needs the Payments Merchant account (separate
+      verification queue from the developer-account ID check, start
+      early), and needs testing via an EAS dev-client build (IAP
+      can't be tested in Expo Go).
+
+### Accounts & process
+- [ ] Google Play Developer account ($25, individual, government-ID
+      verification, few days to a week) — not started.
+- [ ] Google Payments Merchant account — only needed once
+      monetization is built; separate KYC queue from the developer
+      account, start it early once IAP is scoped.
+- [ ] **Closed testing (12 opted-in testers, 14 continuous days).**
+      Mandatory for personal developer accounts created after Nov
+      2023, and the single longest lead-time item in the whole
+      process. Can run in parallel with development once the app
+      reaches a stable/demoable state — don't wait for 100% feature
+      completion to start this.
 
 ---
 *Once this file reflects what you want, the next step is setting up a

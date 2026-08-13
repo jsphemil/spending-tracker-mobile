@@ -11,6 +11,7 @@ export function updateSettings(
     displayName: string | null;
     baseCurrency: string;
     themePreference: ThemePreference;
+    onboardingCompleted: boolean;
   }>,
 ): void {
   db.update(settings).set(patch).where(eq(settings.id, id)).run();

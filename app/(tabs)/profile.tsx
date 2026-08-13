@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Pressable, ScrollView, Switch, Text, TextInput, View } from "react-native";
 
+import { CurrencyPicker } from "../../components/CurrencyPicker";
+import { ExportTransactionsForm } from "../../components/ExportTransactionsForm";
 import { updateSettings } from "../../db/actions/settings";
 import { useSettings } from "../../db/queries/settings";
 import { THEME_PREFERENCES, type ThemePreference } from "../../db/schema";
@@ -87,17 +89,18 @@ export default function ProfileScreen() {
       </View>
 
       <View className="gap-2">
-        <Text className="text-sm font-medium text-fg-muted">Base Currency</Text>
-        <TextInput
+        <CurrencyPicker
+          label="Base Currency"
           value={settings.baseCurrency}
-          onChangeText={(text) =>
-            updateSettings(settings.id, { baseCurrency: text.toUpperCase() })
-          }
-          autoCapitalize="characters"
-          maxLength={3}
-          className="rounded-lg border border-border bg-surface px-3 py-2 text-base text-fg"
+          onChange={(code) => updateSettings(settings.id, { baseCurrency: code })}
         />
+        <Text className="text-xs text-fg-subtle">
+          Every cross-currency figure in the app (net worth, budgets, foreign-currency
+          accounts) recalculates against this currency immediately.
+        </Text>
       </View>
+
+      <ExportTransactionsForm />
 
       <View className="gap-2 rounded-lg border border-border bg-surface p-4">
         <Text className="text-base text-fg">Dropbox Backup</Text>

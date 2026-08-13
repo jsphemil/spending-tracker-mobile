@@ -1,11 +1,7 @@
-import { useEffect, useState } from "react";
 import { Text, View, type TextProps } from "react-native";
 
-import { db } from "../db/client";
-import { getExchangeRate } from "../services/currency";
-import { formatMoney, majorToMinor, minorToMajor } from "../services/format";
-
-const BASE_CURRENCY = "INR";
+import { useBaseCurrencyEquivalent } from "../hooks/useBaseCurrencyEquivalent";
+import { formatMoney } from "../services/format";
 
 interface CurrencyAmountProps extends TextProps {
   amountMinor: number;
@@ -13,8 +9,8 @@ interface CurrencyAmountProps extends TextProps {
   /** e.g. a "+"/"-" sign shown before the native amount, kept in the same Text node so it wraps as one unit. */
   prefix?: string;
   /**
-   * Render the ≈INR equivalent on its own line below, in parens, instead of
-   * inline after "·" — avoids several side-by-side amounts (e.g. the
+   * Render the ≈base equivalent on its own line below, in parens, instead
+   * of inline after "·" — avoids several side-by-side amounts (e.g. the
    * Income/Expense/Balance row) running into each other on narrow columns.
    */
   stacked?: boolean;
@@ -22,7 +18,9 @@ interface CurrencyAmountProps extends TextProps {
 
 // Foreign-currency accounts show both figures wherever an amount appears
 // (spec.md §5.4), e.g. "AED 500.00 · ≈ ₹11,310.00" (or, when stacked,
-// "AED 500.00" then "(≈ ₹11,310.00)" on the line below).
+// "AED 500.00" then "(≈ ₹11,310.00)" on the line below) — only when the
+// account's currency actually differs from the app's live base currency;
+// useBaseCurrencyEquivalent returns null otherwise.
 export function CurrencyAmount({
   amountMinor,
   currency,
@@ -31,23 +29,7 @@ export function CurrencyAmount({
   className,
   ...textProps
 }: CurrencyAmountProps) {
-  const [baseEquivalent, setBaseEquivalent] = useState<number | null>(null);
-
-  useEffect(() => {
-    if (currency === BASE_CURRENCY) {
-      setBaseEquivalent(null);
-      return;
-    }
-    let cancelled = false;
-    getExchangeRate(db, currency, BASE_CURRENCY).then((rate) => {
-      if (!cancelled) {
-        setBaseEquivalent(majorToMinor(minorToMajor(amountMinor, currency) * rate, BASE_CURRENCY));
-      }
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [amountMinor, currency]);
+  const { baseEquivalentMinor, baseCurrency } = useBaseCurrencyEquivalent(amountMinor, currency);
 
   if (stacked) {
     return (
@@ -56,9 +38,9 @@ export function CurrencyAmount({
           {prefix}
           {formatMoney(amountMinor, currency)}
         </Text>
-        {baseEquivalent !== null ? (
+        {baseEquivalentMinor !== null ? (
           <Text className="font-data text-xs tabular-nums text-fg-subtle">
-            (≈ {formatMoney(baseEquivalent, BASE_CURRENCY)})
+            (≈ {formatMoney(baseEquivalentMinor, baseCurrency)})
           </Text>
         ) : null}
       </View>
@@ -69,7 +51,7 @@ export function CurrencyAmount({
     <Text className={`font-data tabular-nums ${className ?? ""}`} {...textProps}>
       {prefix}
       {formatMoney(amountMinor, currency)}
-      {baseEquivalent !== null ? ` · ≈ ${formatMoney(baseEquivalent, BASE_CURRENCY)}` : ""}
+      {baseEquivalentMinor !== null ? ` · ≈ ${formatMoney(baseEquivalentMinor, baseCurrency)}` : ""}
     </Text>
   );
 }

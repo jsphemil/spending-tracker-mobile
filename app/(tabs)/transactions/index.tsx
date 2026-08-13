@@ -1,63 +1,87 @@
 import { useEffect, useMemo, useState } from "react";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import { Link } from "expo-router";
 import { FlatList, Pressable, ScrollView, Text, View } from "react-native";
 
+import { confirmDeleteTransaction } from "../../../components/confirmDeleteTransaction";
 import { SummaryBand } from "../../../components/SummaryBand";
 import { TransactionListItem } from "../../../components/TransactionListItem";
 import { EmptyState } from "../../../components/ui/EmptyState";
 import { db } from "../../../db/client";
 import { useAccounts } from "../../../db/queries/accounts";
 import { useCategories } from "../../../db/queries/categories";
+import { useSettings } from "../../../db/queries/settings";
 import { useFilteredTransactions } from "../../../db/queries/transactions";
-import { getRatesToINR } from "../../../services/currency";
+import { getRatesToBase } from "../../../services/currency";
 import { majorToMinor, minorToMajor } from "../../../services/format";
 import { currentMonthPeriod, monthLabel, monthRange, shiftMonth } from "../../../services/period";
+import { ensureMaterialized } from "../../../services/recurrence";
 
-const BASE_CURRENCY = "INR";
+type FilterMode = "month" | "custom" | "allTime";
 
 export default function TransactionsListScreen() {
+  const { settings } = useSettings();
+  const baseCurrency = settings?.baseCurrency ?? "INR";
+  const [filterMode, setFilterMode] = useState<FilterMode>("month");
   const [period, setPeriod] = useState(currentMonthPeriod());
+  const [customFrom, setCustomFrom] = useState(() => monthRange(currentMonthPeriod()).start);
+  const [customTo, setCustomTo] = useState(() => new Date());
+  const [showFromPicker, setShowFromPicker] = useState(false);
+  const [showToPicker, setShowToPicker] = useState(false);
   const [accountId, setAccountId] = useState<number | undefined>(undefined);
   const [categoryId, setCategoryId] = useState<number | undefined>(undefined);
 
   const { data: accounts } = useAccounts();
   const { data: categories } = useCategories();
-  const range = useMemo(() => monthRange(period), [period]);
+  const monthRangeValue = useMemo(() => monthRange(period), [period]);
+  // Custom range's `end` is exclusive everywhere else in the app (matches
+  // range.end/asOfDate convention), so the picked "To" date needs +1 day to
+  // actually include transactions dated on that day.
+  const customRangeValue = useMemo(
+    () => ({ start: customFrom, end: new Date(customTo.getFullYear(), customTo.getMonth(), customTo.getDate() + 1) }),
+    [customFrom, customTo],
+  );
+  const range =
+    filterMode === "allTime" ? undefined : filterMode === "custom" ? customRangeValue : monthRangeValue;
+  useEffect(() => {
+    ensureMaterialized(db, range ? { through: range.end } : undefined);
+  }, [range?.end]);
   const { data: rows } = useFilteredTransactions({ accountId, categoryId, range });
 
   // When a single account is selected every row already shares that
   // account's currency, so the band shows it natively. Across "All
   // Accounts" the rows can mix currencies — everything gets converted to
-  // INR before summing (matching the Dashboard's toBaseMinor pattern)
-  // instead of adding raw minor units of different currencies together.
+  // the base currency before summing (matching the Dashboard's
+  // toBaseMinor pattern) instead of adding raw minor units of different
+  // currencies together.
   const currency = accountId
-    ? accounts?.find((a) => a.id === accountId)?.currency ?? "INR"
-    : BASE_CURRENCY;
+    ? accounts?.find((a) => a.id === accountId)?.currency ?? baseCurrency
+    : baseCurrency;
 
   const foreignCurrencies = useMemo(() => {
     const set = new Set<string>();
     for (const a of accounts ?? []) {
-      if (a.currency !== BASE_CURRENCY) set.add(a.currency);
+      if (a.currency !== baseCurrency) set.add(a.currency);
     }
     return Array.from(set);
-  }, [accounts]);
+  }, [accounts, baseCurrency]);
 
   const [rates, setRates] = useState<Record<string, number>>({});
   useEffect(() => {
     let cancelled = false;
-    getRatesToINR(db, foreignCurrencies).then((result) => {
+    getRatesToBase(db, foreignCurrencies, baseCurrency).then((result) => {
       if (!cancelled) setRates(result);
     });
     return () => {
       cancelled = true;
     };
-  }, [foreignCurrencies.join(",")]);
+  }, [foreignCurrencies.join(","), baseCurrency]);
 
   function toBaseMinor(amountMinor: number, txCurrency: string): number {
-    if (txCurrency === BASE_CURRENCY) return amountMinor;
+    if (txCurrency === baseCurrency) return amountMinor;
     const rate = rates[txCurrency];
     if (rate === undefined) return 0;
-    return majorToMinor(minorToMajor(amountMinor, txCurrency) * rate, BASE_CURRENCY);
+    return majorToMinor(minorToMajor(amountMinor, txCurrency) * rate, baseCurrency);
   }
 
   const totals = (rows ?? []).reduce(
@@ -77,15 +101,99 @@ export default function TransactionsListScreen() {
   return (
     <View className="flex-1 bg-bg">
       <View className="gap-3 border-b border-border p-4">
-        <View className="flex-row items-center justify-between">
-          <Pressable onPress={() => setPeriod((p) => shiftMonth(p, -1))} className="p-2">
-            <Text className="text-lg text-fg">‹</Text>
-          </Pressable>
-          <Text className="text-base font-medium text-fg">{monthLabel(period)}</Text>
-          <Pressable onPress={() => setPeriod((p) => shiftMonth(p, 1))} className="p-2">
-            <Text className="text-lg text-fg">›</Text>
-          </Pressable>
+        <View className="flex-row gap-1.5 rounded-lg bg-surface-2 p-1">
+          {(
+            [
+              ["month", "This month"],
+              ["custom", "Custom range"],
+              ["allTime", "All time"],
+            ] as const
+          ).map(([mode, label]) => (
+            <Pressable
+              key={mode}
+              onPress={() => setFilterMode(mode)}
+              className={`flex-1 items-center rounded py-1.5 ${filterMode === mode ? "bg-surface" : ""}`}
+              style={
+                filterMode === mode
+                  ? {
+                      shadowColor: "#000",
+                      shadowOffset: { width: 0, height: 1 },
+                      shadowOpacity: 0.05,
+                      shadowRadius: 2,
+                      elevation: 1,
+                    }
+                  : undefined
+              }
+            >
+              <Text className={`text-xs font-medium ${filterMode === mode ? "text-fg" : "text-fg-muted"}`}>
+                {label}
+              </Text>
+            </Pressable>
+          ))}
         </View>
+
+        {filterMode === "month" && (
+          <View className="flex-row items-center justify-between">
+            <Pressable
+              onPress={() => setPeriod((p) => shiftMonth(p, -1))}
+              className="p-3"
+              hitSlop={8}
+            >
+              <Text className="text-xl text-fg">‹</Text>
+            </Pressable>
+            <Text className="text-base font-medium text-fg">{monthLabel(period)}</Text>
+            <Pressable
+              onPress={() => setPeriod((p) => shiftMonth(p, 1))}
+              className="p-3"
+              hitSlop={8}
+            >
+              <Text className="text-xl text-fg">›</Text>
+            </Pressable>
+          </View>
+        )}
+
+        {filterMode === "custom" && (
+          <View className="flex-row items-center gap-2">
+            <Pressable
+              onPress={() => setShowFromPicker(true)}
+              className="flex-1 rounded-lg border border-border bg-surface px-3 py-2"
+            >
+              <Text className="text-xs text-fg-muted">From</Text>
+              <Text className="text-sm text-fg">{customFrom.toDateString()}</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => setShowToPicker(true)}
+              className="flex-1 rounded-lg border border-border bg-surface px-3 py-2"
+            >
+              <Text className="text-xs text-fg-muted">To</Text>
+              <Text className="text-sm text-fg">{customTo.toDateString()}</Text>
+            </Pressable>
+            {showFromPicker && (
+              <DateTimePicker
+                value={customFrom}
+                mode="date"
+                onChange={(_, selected) => {
+                  setShowFromPicker(false);
+                  if (selected) setCustomFrom(selected);
+                }}
+              />
+            )}
+            {showToPicker && (
+              <DateTimePicker
+                value={customTo}
+                mode="date"
+                onChange={(_, selected) => {
+                  setShowToPicker(false);
+                  if (selected) setCustomTo(selected);
+                }}
+              />
+            )}
+          </View>
+        )}
+
+        {filterMode === "allTime" && (
+          <Text className="text-center text-base font-medium text-fg">All time</Text>
+        )}
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row gap-2">
           <Pressable
@@ -156,9 +264,12 @@ export default function TransactionsListScreen() {
             transaction={item}
             currency={accounts?.find((a) => a.id === item.accountId)?.currency ?? "INR"}
             categoryName={categoryName(item.categoryId)}
-            transferAccountName={
-              item.type === "transfer" ? accountName(item.toAccountId) : undefined
-            }
+            fromAccountName={item.type === "transfer" ? accountName(item.accountId) : undefined}
+            toAccountName={item.type === "transfer" ? accountName(item.toAccountId) : undefined}
+            viewingAccountId={accountId}
+            showActionIcons
+            showDuplicateIcon
+            onDelete={() => confirmDeleteTransaction(db, item, () => {})}
           />
         )}
       />

@@ -9,7 +9,9 @@ import { Stack } from "expo-router";
 import { vars } from "nativewind";
 import { useMigrations } from "drizzle-orm/expo-sqlite/migrator";
 
+import { OnboardingFlow } from "../components/OnboardingFlow";
 import { db } from "../db/client";
+import { useSettings } from "../db/queries/settings";
 import { ensureSeeded } from "../db/seed";
 import { cssVars, useResolvedTheme, useThemeColors } from "../theme/palette";
 import migrations from "../drizzle/migrations";
@@ -18,6 +20,7 @@ export default function RootLayout() {
   const { success, error } = useMigrations(db, migrations);
   const scheme = useResolvedTheme();
   const colors = useThemeColors();
+  const { settings } = useSettings();
 
   useEffect(() => {
     if (success) ensureSeeded(db);
@@ -39,10 +42,12 @@ export default function RootLayout() {
               Database migration failed: {error.message}
             </Text>
           </View>
-        ) : !success ? (
+        ) : !success || !settings ? (
           <View className="flex-1 items-center justify-center bg-bg">
             <Text className="text-fg">Setting up database…</Text>
           </View>
+        ) : !settings.onboardingCompleted ? (
+          <OnboardingFlow settings={settings} />
         ) : (
           <Stack
             screenOptions={{

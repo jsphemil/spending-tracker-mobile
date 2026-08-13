@@ -40,3 +40,31 @@ const CURRENCY_SYMBOLS: Record<string, string> = {
 export function currencySymbol(currency: string): string {
   return CURRENCY_SYMBOLS[currency.toUpperCase()] ?? `${currency.toUpperCase()} `;
 }
+
+function trimTrailingZero(n: number): string {
+  return n.toFixed(1).replace(/\.0$/, "");
+}
+
+// Compact axis-label formatting for charts (e.g. the Dashboard's net worth
+// trend Y-axis) — "₹14L" not "₹14,00,000.00". Indian lakh/crore for INR,
+// matching the real app's chart labels; a generic K/M/B abbreviation for
+// everything else. Chart-label use only — regular money display always
+// stays on formatMoney's full Indian-grouped format per spec.md §5.4.
+export function formatCompactMoney(amountMinor: number, currency: string): string {
+  const major = minorToMajor(amountMinor, currency);
+  const abs = Math.abs(major);
+  const sign = major < 0 ? "-" : "";
+  const symbol = currencySymbol(currency);
+
+  if (currency.toUpperCase() === "INR") {
+    if (abs >= 1e7) return `${sign}${symbol}${trimTrailingZero(abs / 1e7)}Cr`;
+    if (abs >= 1e5) return `${sign}${symbol}${trimTrailingZero(abs / 1e5)}L`;
+    if (abs >= 1e3) return `${sign}${symbol}${trimTrailingZero(abs / 1e3)}K`;
+    return `${sign}${symbol}${Math.round(abs)}`;
+  }
+
+  if (abs >= 1e9) return `${sign}${symbol}${trimTrailingZero(abs / 1e9)}B`;
+  if (abs >= 1e6) return `${sign}${symbol}${trimTrailingZero(abs / 1e6)}M`;
+  if (abs >= 1e3) return `${sign}${symbol}${trimTrailingZero(abs / 1e3)}K`;
+  return `${sign}${symbol}${Math.round(abs)}`;
+}

@@ -2,10 +2,12 @@ import { useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 
+import { AmountOperatorRow } from "./AmountOperatorRow";
 import { ACCOUNT_TYPE_ICONS, ACCOUNT_TYPE_LABELS } from "../constants/accountTypes";
 import { COLOR_PALETTE } from "../constants/colorPalette";
 import { CURRENCY_OPTIONS } from "../constants/currencies";
 import { ACCOUNT_TYPES, type AccountType } from "../db/schema";
+import { evaluateExpression } from "../services/calculator";
 import { majorToMinor, minorToMajor } from "../services/format";
 import { useThemeColors } from "../theme/palette";
 
@@ -129,6 +131,11 @@ export function AccountForm({
       setError("Monthly budget must be greater than 0");
       return;
     }
+    const openingBalanceNum = openingBalanceText.trim() ? evaluateExpression(openingBalanceText) : 0;
+    if (openingBalanceNum === null) {
+      setError("Enter a valid opening balance or expression (e.g. 1000-250)");
+      return;
+    }
     setError(null);
 
     onSubmit({
@@ -141,7 +148,7 @@ export function AccountForm({
         type === "credit_card" && creditLimitNum !== null
           ? majorToMinor(creditLimitNum, normalizedCurrency)
           : null,
-      openingBalanceMinor: majorToMinor(Number(openingBalanceText) || 0, normalizedCurrency),
+      openingBalanceMinor: majorToMinor(openingBalanceNum, normalizedCurrency),
       openingDate,
       budgetModeEnabled,
       showFutureTxEnabled,
@@ -247,11 +254,12 @@ export function AccountForm({
         <TextInput
           value={openingBalanceText}
           onChangeText={setOpeningBalanceText}
-          keyboardType="numbers-and-punctuation"
+          keyboardType="numeric"
           placeholder="0"
           placeholderTextColor={colors.fgSubtle}
           className="rounded-lg border border-border bg-surface px-3 py-2 text-base text-fg"
         />
+        <AmountOperatorRow value={openingBalanceText} onChange={setOpeningBalanceText} />
       </View>
 
       <View className="gap-2">

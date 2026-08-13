@@ -2,6 +2,7 @@ import { transactions } from "../db/schema";
 import {
   getAccountBalanceMinor,
   getCreditCardOwedMinor,
+  getNetWorthSeries,
   getPeriodTotals,
 } from "../services/balance";
 import { closeTestDb, createTestDb, insertAccount, type TestDb } from "./testDb";
@@ -171,5 +172,59 @@ describe("getCreditCardOwedMinor", () => {
 
     expect(getAccountBalanceMinor(db, accountId)).toBe(-6000);
     expect(getCreditCardOwedMinor(db, accountId)).toBe(6000);
+  });
+});
+
+describe("getNetWorthSeries", () => {
+  const identity = (amountMinor: number) => amountMinor;
+
+  it("sums balances across accounts, one figure per cutoff", () => {
+    const accountA = insertAccount(db, { name: "A" });
+    const accountB = insertAccount(db, { name: "B" });
+    db.insert(transactions)
+      .values([
+        { type: "income", amountMinor: 10000, date: new Date("2026-01-15"), accountId: accountA },
+        { type: "income", amountMinor: 5000, date: new Date("2026-03-15"), accountId: accountB },
+      ])
+      .run();
+
+    const series = getNetWorthSeries(
+      db,
+      [
+        { id: accountA, currency: "INR" },
+        { id: accountB, currency: "INR" },
+      ],
+      [new Date("2026-02-01"), new Date("2026-04-01")],
+      identity,
+    );
+
+    // As of Feb 1: only A's January income counts. As of Apr 1: both do.
+    expect(series).toEqual([10000, 15000]);
+  });
+
+  it("converts each account's currency to the base currency before summing", () => {
+    const accountInr = insertAccount(db, { currency: "INR" });
+    const accountAed = insertAccount(db, { currency: "AED" });
+    db.insert(transactions)
+      .values([
+        { type: "income", amountMinor: 10000, date: new Date("2026-01-01"), accountId: accountInr },
+        { type: "income", amountMinor: 1000, date: new Date("2026-01-01"), accountId: accountAed },
+      ])
+      .run();
+
+    const toBaseMinor = (amountMinor: number, currency: string) =>
+      currency === "AED" ? amountMinor * 20 : amountMinor;
+
+    const series = getNetWorthSeries(
+      db,
+      [
+        { id: accountInr, currency: "INR" },
+        { id: accountAed, currency: "AED" },
+      ],
+      [new Date("2026-02-01")],
+      toBaseMinor,
+    );
+
+    expect(series).toEqual([10000 + 1000 * 20]);
   });
 });

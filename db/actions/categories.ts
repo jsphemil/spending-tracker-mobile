@@ -8,6 +8,7 @@ export interface CategoryInput {
   kind: CategoryKind;
   icon: string;
   color: string;
+  monthlyBudgetMinor?: number | null;
 }
 
 export function createCategory(input: CategoryInput): number {

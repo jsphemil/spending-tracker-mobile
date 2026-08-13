@@ -31,6 +31,7 @@ export default function TabsLayout() {
           name="transactions"
           options={{ title: "Transactions", headerShown: false }}
         />
+        <Tabs.Screen name="commitments" options={{ title: "Commitments" }} />
         <Tabs.Screen name="categories" options={{ title: "Categories" }} />
         <Tabs.Screen name="profile" options={{ title: "Profile" }} />
       </Tabs>

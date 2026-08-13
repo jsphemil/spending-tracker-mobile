@@ -29,7 +29,8 @@
       "expo-router",
       "expo-status-bar",
       "expo-sqlite",
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      "expo-sharing"
     ],
     "extra": {
       "router": {},

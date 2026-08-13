@@ -42,15 +42,23 @@ export function createTransaction(input: TransactionInput): number {
 // db/actions/accounts.ts) — not directly editable/deletable through the
 // normal transaction UI (app/transaction/[id]/edit.tsx already blocks
 // this), these two checks are a backstop against any other call path.
+// Same reasoning applies to recurring-generated rows: editing one directly
+// here would silently skip services/recurrence.ts's occurrenceDate-anchor
+// and isRecurringException bookkeeping — the edit screen routes those
+// through editSingleOccurrence/editFutureOccurrences instead, and this is
+// the backstop against any other call path doing it wrong.
 export function updateTransaction(id: number, input: TransactionInput): void {
   db.transaction((tx) => {
     const existing = tx
-      .select({ isOpeningBalance: transactions.isOpeningBalance })
+      .select({ isOpeningBalance: transactions.isOpeningBalance, recurringRuleId: transactions.recurringRuleId })
       .from(transactions)
       .where(eq(transactions.id, id))
       .get();
     if (existing?.isOpeningBalance) {
       throw new Error("Edit the opening balance from the account's own edit page instead.");
+    }
+    if (existing?.recurringRuleId != null) {
+      throw new Error("Edit a recurring transaction through its own edit flow instead.");
     }
 
     tx.update(transactions)

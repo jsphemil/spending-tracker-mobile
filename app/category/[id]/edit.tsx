@@ -13,6 +13,7 @@ export default function EditCategoryScreen() {
   const categoryId = Number(id);
   const { data } = useLiveQuery(
     db.select().from(categories).where(eq(categories.id, categoryId)),
+    [categoryId],
   );
   const category = data?.[0];
 

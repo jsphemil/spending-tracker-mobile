@@ -13,6 +13,7 @@ export function useAccounts() {
 export function useAccount(id: number) {
   const { data, ...rest } = useLiveQuery(
     db.select().from(accounts).where(eq(accounts.id, id)),
+    [id],
   );
   return { account: data?.[0], ...rest };
 }
@@ -29,6 +30,7 @@ export function useAccountOpeningBalance(id: number) {
       .where(
         and(eq(transactions.accountId, id), eq(transactions.isOpeningBalance, true)),
       ),
+    [id],
   );
   return { openingBalanceTx: data?.[0] ?? null, isLoading: data === undefined };
 }
