@@ -580,6 +580,15 @@ now stale and kept only for history.
   `db/actions/goals.ts`, `db/queries/goals.ts`, `components/GoalForm.tsx`,
   `app/goal/index.tsx` + `new.tsx` + `[id]/edit.tsx`. On-device verification
   pending.
+- **Fixed 2026-08-19**: `goal/new` and `goal/[id]/edit` were never registered
+  as screens in `app/_layout.tsx`'s root Stack — every other entity's
+  new/edit screens (account, transaction, category) get
+  `presentation: "modal", headerShown: true`, but Goals' were missing
+  entirely, so they fell back to the Stack's default `headerShown: false`
+  with no modal treatment. Reported by the user as "the 'goals' heading is
+  too close to the top border — should be a pop-up like adding a
+  transaction." Added the same two `Stack.Screen` entries used for the
+  other three entities. On-device verification pending.
 
 ## 6. Explicitly out of scope for v1
 

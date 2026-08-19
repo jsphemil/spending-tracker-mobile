@@ -83,6 +83,14 @@ export default function RootLayout() {
               options={{ presentation: "modal", headerShown: true, title: "Edit Category" }}
             />
             <Stack.Screen
+              name="goal/new"
+              options={{ presentation: "modal", headerShown: true, title: "New Goal" }}
+            />
+            <Stack.Screen
+              name="goal/[id]/edit"
+              options={{ presentation: "modal", headerShown: true, title: "Edit Goal" }}
+            />
+            <Stack.Screen
               name="tag/[name]"
               options={{ headerShown: true, title: "Tag" }}
             />
