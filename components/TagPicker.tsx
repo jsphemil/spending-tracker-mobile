@@ -3,6 +3,7 @@ import { Pressable, Text, TextInput, View } from "react-native";
 
 import { findOrCreateTag } from "../db/actions/tags";
 import { useTags } from "../db/queries/tags";
+import { useThemeColors } from "../theme/palette";
 
 interface TagPickerProps {
   selectedTagIds: number[];
@@ -12,6 +13,7 @@ interface TagPickerProps {
 export function TagPicker({ selectedTagIds, onChange }: TagPickerProps) {
   const { data: tags } = useTags();
   const [newTagName, setNewTagName] = useState("");
+  const colors = useThemeColors();
 
   function toggle(tagId: number) {
     onChange(
@@ -54,7 +56,7 @@ export function TagPicker({ selectedTagIds, onChange }: TagPickerProps) {
           value={newTagName}
           onChangeText={setNewTagName}
           placeholder="New tag"
-          placeholderTextColor="#9498a8"
+          placeholderTextColor={colors.fgSubtle}
           className="flex-1 rounded-lg border border-border bg-surface px-3 py-2 text-base text-fg"
         />
         <Pressable

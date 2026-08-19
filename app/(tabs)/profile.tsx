@@ -6,6 +6,7 @@ import { ExportTransactionsForm } from "../../components/ExportTransactionsForm"
 import { updateSettings } from "../../db/actions/settings";
 import { useSettings } from "../../db/queries/settings";
 import { THEME_PREFERENCES, type ThemePreference } from "../../db/schema";
+import { useThemeColors } from "../../theme/palette";
 
 const THEME_LABELS: Record<ThemePreference, string> = {
   light: "Light",
@@ -15,6 +16,7 @@ const THEME_LABELS: Record<ThemePreference, string> = {
 
 export default function ProfileScreen() {
   const { settings } = useSettings();
+  const colors = useThemeColors();
   const [displayName, setDisplayName] = useState("");
   const [editedName, setEditedName] = useState(false);
 
@@ -34,7 +36,7 @@ export default function ProfileScreen() {
           }}
           onBlur={() => updateSettings(settings.id, { displayName: nameValue.trim() || null })}
           placeholder="Your name"
-          placeholderTextColor="#9498a8"
+          placeholderTextColor={colors.fgSubtle}
           className="rounded-lg border border-border bg-surface px-3 py-2 text-base text-fg"
         />
       </View>

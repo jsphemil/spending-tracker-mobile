@@ -46,6 +46,7 @@ export function CreditUsageRing({
       color={colors.transfer}
       percent={percent}
       overflowPercent={overflowPercent}
+      overflowColor={colors.danger}
     >
       <Text className="text-xs text-fg-muted">Owed</Text>
       <Text

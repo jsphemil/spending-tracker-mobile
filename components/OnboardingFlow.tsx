@@ -6,6 +6,7 @@ import { CurrencyPicker } from "./CurrencyPicker";
 import { createAccount } from "../db/actions/accounts";
 import { updateSettings } from "../db/actions/settings";
 import type { settings as settingsTable } from "../db/schema";
+import { useThemeColors } from "../theme/palette";
 
 type Settings = typeof settingsTable.$inferSelect;
 
@@ -23,6 +24,7 @@ const FEATURES = [
 // in place of the normal Stack, not as a routed screen, since step 3 needs
 // AccountForm inline and this flow has no back-navigation to worry about.
 export function OnboardingFlow({ settings }: { settings: Settings }) {
+  const colors = useThemeColors();
   const [step, setStep] = useState(0);
   const [name, setName] = useState("");
 
@@ -73,7 +75,7 @@ export function OnboardingFlow({ settings }: { settings: Settings }) {
               value={name}
               onChangeText={setName}
               placeholder="Your name"
-              placeholderTextColor="#9498a8"
+              placeholderTextColor={colors.fgSubtle}
               className="rounded-lg border border-border bg-surface px-3 py-2 text-base text-fg"
             />
           </View>

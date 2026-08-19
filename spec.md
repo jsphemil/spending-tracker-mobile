@@ -10,7 +10,7 @@
 ## Status Dashboard
 
 _Kept current per CLAUDE.md's Idea Backlog Protocol — updated the
-moment a status genuinely changes, not batched. Last updated: 2026-08-11._
+moment a status genuinely changes, not batched. Last updated: 2026-08-13._
 
 **Legend:** ✅ Built & Verified (built *and* confirmed working on a
 real device/build) · 🚧 In Progress (code exists, not yet verified, or
@@ -23,9 +23,9 @@ pushed to a later phase) · ❌ Dropped (cut from scope).
 | §5.2 | Transactions | 🚧 In Progress | Entry/edit/list/filters/calendar built; recurring transactions (Phase 5) code-complete 2026-08-12 — engine (`services/recurrence.ts`) unit-tested (13 tests), "make recurring" toggle, just-this-one/this-and-future edit+delete scope picker, 🔁 badge, `ensureMaterialized` wired into Dashboard/Transactions/Accounts/Categories/Calendar. Phase 10 (2026-08-12): "Clear (show all time)" toggle, SummaryBand proportional bar, Duplicate+Edit+Delete icons, Duplicate-transaction flow, inline "+ New category" on the transaction form — on-device verification pending |
 | §5.3 | Categories | 🚧 In Progress | Full CRUD + starter seed built |
 | §5.3a | Tags | 🚧 In Progress | Inline creation + per-tag summary (with currency conversion) built |
-| §5.4 | Spending Summary | 🚧 In Progress | Month nav, net worth, Indian formatting built; Carry Forward + pie charts ⏸️ deferred to Phase 2 |
-| §5.5 | Budget Mode | 🚧 In Progress | Account-level toggle + schema built, spend-vs-budget comparison still not wired in; category-level budgets (separate from the toggle) built 2026-08-12 with spend-vs-budget bars on the Categories list — on-device verification pending for both |
-| §5.6 | Show/Hide Future Transactions | 🚧 In Progress | Toggle + schema built; filtering not yet applied (⏸️ Phase 2) — same as above |
+| §5.4 | Spending Summary | 🚧 In Progress | Month nav, net worth, Indian formatting, Carry Forward (Dashboard + Account Detail), asset allocation donut all built; a literal income/expense-by-category pie chart specifically hasn't been built (Categories list's spend-vs-budget bars cover the budget-comparison need, but not a pie visualization) — on-device verification pending |
+| §5.5 | Budget Mode | 🚧 In Progress | Account-level toggle + schema built, spend-vs-budget comparison now wired up (Phase 10, `resolveAccountSettings` actually called from Account Detail's Budget Mode bar); category-level budgets (separate from the toggle) built 2026-08-12 with spend-vs-budget bars on the Categories list — on-device verification pending for both |
+| §5.6 | Show/Hide Future Transactions | 🚧 In Progress | Toggle + schema built; filtering now applied (Phase 10, Account Detail hides future-dated rows when the resolved setting is off) — on-device verification pending |
 | §5.7 | Smart Features (Claude) | ⏸️ Deferred | Phase 4. Inert FAB placeholder only |
 | §5.8 | Dashboard | 🚧 In Progress | Fully rebuilt 2026-08-12 to match the real app: net worth capacity gauge, net worth trend chart (history-capped), asset allocation donut, over-budget banner, embedded calendar with quick-add buttons, Accounts card, Goals card (top 3), Recent Transactions card with inline edit/delete icons — on-device verification pending |
 | §5.9 | Navigation | 🚧 In Progress | Built; Commitments tab added 2026-08-12 (Dashboard, Accounts, Transactions, Commitments, Categories, Profile — 6 tabs total, matching the real app's order) |
@@ -39,9 +39,12 @@ pushed to a later phase) · ❌ Dropped (cut from scope).
 | §5.17 | Goals | 🚧 In Progress | New — discovered during repo comparison, Phases 7-8. Code-complete 2026-08-12: `services/balance.ts`'s `getNetWorthSeries` (Phase 8, unit-tested), goal CRUD + trailing-6-month pace projection + behind-pace flag (Phase 7). Reached via a temporary "Goals →" link on the Dashboard (not a tab, matching the real app) — Phase 9's Dashboard rebuild replaces it with the real top-3-goals card. On-device verification pending |
 | §3 | Dropbox Backup/Restore | ⏸️ Deferred | Phase 3 |
 
-Nothing is marked ✅ yet — Phase 1 is code-complete and type-checked,
-but real on-device verification (spec §8, Next Priorities) hasn't run
-yet, so nothing has cleared the bar for "Verified."
+§5.14 CSV Export is the only section marked ✅ so far — everything else
+above is code-complete and type-checked but hasn't individually cleared
+a full on-device verification pass yet (spot-checks of specific bug
+fixes have gone well, per backlog.md's Triaged/Done sections, but that's
+not the same as a systematic per-feature pass). Clearing the rest of
+these is Phase 13's job (spec §8).
 
 ## 1. What this app is
 
@@ -611,97 +614,24 @@ add-on — see section 3.
 
 ## 8. Build Progress
 
-_Last updated: 2026-08-11. Maintained per CLAUDE.md's Idea Backlog
-Protocol — kept current as work lands, not written once and forgotten._
+_Last updated: 2026-08-13. Maintained per CLAUDE.md's Idea Backlog
+Protocol. **The Status Dashboard at the top of this file is the
+authoritative, currently-accurate per-feature status** — check that
+first. This section is a short narrative history; day-to-day
+what-shipped-when detail lives in `backlog.md`'s Triaged/Done sections,
+not duplicated here._
 
-Build is phased (Phase 1 = core offline ledger, Phase 2 = recurring +
-budgets + summary polish, Phase 3 = Dropbox backup, Phase 4 = Claude
-smart features, Phase 5 = widget + store prep). **Phase 1 is complete
-and type-checks clean; on-device verification on a physical Android
-device is the one remaining Phase 1 step, blocked on local Android
-build tooling being set up.**
-
-### Built and working (Phase 1)
-
-- **§5.1 Accounts** — full CRUD, all 5 account types, opening balance
-  materialized as a real flagged transaction row, credit limit field,
-  account list + detail page with the balance ring scoped to that
-  account's period, the 3 Income/Expense/Transfer buttons.
-- **§5.1 Credit Card ring** — `CreditUsageRing` is a distinct component
-  from the regular `BalanceRing` (not a shared generic with a mode
-  flag), per an explicit correction during planning: fill = % of
-  credit limit used, center figure = net amount owed, second warning
-  lap when over the limit.
-- **§5.2 Transactions** — entry form for Income/Expense/Transfer,
-  edit/delete, transactions list with account/category/date filters,
-  summary band, calendar view with per-day expense totals.
-- **§5.3 Categories** — separate Expense/Income lists, full CRUD,
-  starter categories auto-seeded on first launch.
-- **§5.3a Tags** — inline creation at entry time, per-tag summary view
-  with income/expense/net converted to a common base currency across
-  accounts (spec's own trip example spans multiple accounts/currencies,
-  so this was built properly rather than deferred).
-- **§5.4 Spending Summary (partial)** — month navigation, Income/Expense
-  as plain figures alongside the ring, "All Accounts" total as a true
-  net-worth figure with credit card debt broken out as its own line,
-  Indian numbering format (`₹1,53,168.00`) throughout. Carry Forward
-  and the monthly pie charts are correctly deferred to Phase 2 (see
-  below) — not a gap, a planned sequencing choice.
-- **§5.8 Dashboard** — net-worth ring, accounts list, recent
-  transactions, quick Income/Expense/Transfer actions.
-- **§5.9 Navigation** — bottom tab bar (Dashboard/Accounts/Transactions/
-  Categories/Profile); a disabled placeholder FAB occupies the Claude
-  assistant's slot so the layout matches what Phase 4 will fill in.
-- **§5.10 Profile** — display name, global Budget Mode / Show Future
-  Transactions toggles, base currency preference. Dropbox section shows
-  a disabled "coming soon" state (Phase 3), not a broken control.
-- Multi-currency conversion via Frankfurter v2, cached 6h in
-  `exchange_rate_cache`, used for the Dashboard net-worth total and tag
-  summaries.
-- 10 Jest unit tests (`__tests__/`) covering `services/balance.ts`
-  (transfer sign convention, period-range filtering, credit card owed
-  calc) and `services/currency.ts` (cache hit/miss/expiry), run against
-  an in-memory SQLite instance via `better-sqlite3` as a stand-in for
-  `expo-sqlite`.
-
-### Known gaps — fixed 2026-08-11
-
-Both items below were flagged as gaps and have since been fixed
-(type-checked + unit tests still passing; on-device confirmation still
-pending along with the rest of Phase 1):
-
-- **Foreign-currency dual display.** New `components/CurrencyAmount.tsx`
-  shows both figures ("AED 500.00 · ≈ ₹11,310.00") and is now used
-  everywhere a per-account amount appears: `TransactionListItem`, the
-  account detail page's Income/Expense/Balance/Available-credit
-  figures, and the Dashboard's per-account balance row. Already-
-  aggregated totals (Dashboard's Overall Balance, Income, Expense) are
-  intentionally left as plain INR — they're sums across accounts, not
-  one account's own figure, so there's no second currency to show.
-- **`TransactionForm`'s initial amount-field text** now looks up the
-  actual account's currency (via a lazy `useState` initializer plus a
-  one-time corrective `useEffect` for when the accounts list hasn't
-  loaded yet on first render) instead of assuming INR.
-
-### Deliberately deferred (per the approved phase plan)
-
-- **Budget Mode / Show Future Transactions enforcement.** The toggles,
-  schema fields (including per-account `budgetMonthlyMinor`), and
-  Settings/account-edit UI all exist and persist correctly — but
-  nothing reads them yet (`services/settings.ts`'s
-  `resolveAccountSettings` is written but unused so far). Toggling
-  either setting today has no visible effect. This is Phase 2 work
-  (applying the resolved settings to Dashboard/account detail/
-  Transactions list), not a bug.
-- **§5.2 Recurring transactions** — the "make recurring" toggle,
-  schedule fields, and materialization engine are Phase 2.
-- **§5.4 Carry Forward line + monthly pie charts** — Phase 2.
-- **§3 Dropbox backup/restore** — Phase 3. Profile page has an inert
-  placeholder.
-- **§5.7 Claude-powered smart features** — Phase 4, including the
-  serverless API-key proxy. FAB slot exists and is inert, matching
-  spec §5.9's "stays visible" requirement without implying it works.
-- **§5.11 Home-screen widget** — Phase 5.
+**History, briefly:** the app was first built as a simpler v1 (core
+offline ledger — accounts, transactions, categories, tags, a basic
+dashboard). Comparing against the real web app repo
+(github.com/jsphemil/claude-spending-tracker — see
+[[project-repo-source-of-truth]]) then showed the gap to full
+logic+design parity was much bigger than originally scoped, so the plan
+was redone as 13 phases (see `C:\Users\jsphe\.claude\plans\idempotent-kindling-quilt.md`
+for the full phase-by-phase plan). Phases 1-12 are code-complete;
+several have cleared on-device verification (marked ✅ in the Status
+Dashboard). **Phase 13 (this final audit) is in progress as of
+2026-08-13.**
 
 ### Tech stack in use
 
@@ -728,13 +658,18 @@ attempted again.
 
 ### Next priorities
 
-1. Fix the two Known Gaps above (dual-currency display, the
-   TransactionForm currency-assumption bug).
-2. Finish Phase 1's one remaining step: on-device golden-path
-   verification, currently blocked on local Android build tooling.
-3. Phase 2, in the order listed in the phase plan: recurring
-   transactions → Budget Mode/Show-Future-Tx enforcement → Carry
-   Forward + pie charts.
+1. **Finish Phase 13 (this final audit)**: spec.md/backlog.md sync
+   sweep (in progress), hardcoded-color grep (done 2026-08-13 — found
+   and fixed 2 real gaps: `placeholderTextColor` hardcoded to the
+   light-mode value in 3 files, `CreditUsageRing`'s overflow-arc color
+   not passed through to the theme's danger color), full on-device pass
+   across every screen in both themes.
+2. Clear the remaining "on-device verification pending" items in the
+   Status Dashboard — most Phase 4-10 features are code-complete but
+   not yet individually confirmed working live.
+3. Once Phase 13 is done and the user considers the app genuinely
+   complete: add a README.md (per backlog.md's Triaged section), then
+   revisit spec.md §9's Play Store Launch Readiness checklist for real.
 
 ## 9. Play Store Launch Readiness
 
