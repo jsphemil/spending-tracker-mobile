@@ -43,3 +43,211 @@
 - **Account Detail's ring and the Accounts list page's balance figure never showed a base-currency equivalent, even when the account's own currency differed from the live base currency** (spec.md §5.1/§5.13). Reported 2026-08-13 after switching base currency from INR to EUR: the ring center on Account Detail kept showing plain ₹ with no €, and the Accounts list page's balance figure did too — inconsistent with the 4 stat boxes right below the ring (Carry forward/Total in/Total out/Left to spend), which already correctly showed "₹X · ≈ €Y" via `CurrencyAmount`. User clarified the exact rule: the base-currency equivalent should show **only** for accounts whose own currency differs from the live base currency — which is exactly what `CurrencyAmount` already implements (`useBaseCurrencyEquivalent` returns `null` when they match); the actual gap was that the ring (`GaugeRing`/`CreditUsageRing`, plain `formatMoney`, no `CurrencyAmount`) and the Accounts list page (same) never had an equivalent-computing code path at all. Fixed 2026-08-13: extracted `CurrencyAmount`'s conversion logic into a shared `hooks/useBaseCurrencyEquivalent.ts`, added an optional `centerEquivalent`/`owedEquivalent` prop to `GaugeRing`/`CreditUsageRing`, wired it in `app/(tabs)/accounts/[id].tsx`, and swapped the Accounts list page's plain `formatMoney` balance for `CurrencyAmount`. User confirmed on-device 2026-08-13: "all good, so far."
 - **No discoverable Edit/Delete Account entry point** (spec.md §5.1). Both already existed (`app/account/[id]/edit.tsx` has always had full edit + a destructive-confirm delete), but the only way in was a plain, easy-to-miss "Edit Account" text link buried after the Breakdown section on the Account Detail page. Reported 2026-08-13, fixed same day: moved the entry point to a header-right pencil icon on the Account Detail screen, via the standard expo-router `<Stack.Screen options={{headerRight}}>` pattern, and removed the now-redundant buried text link. User confirmed on-device 2026-08-13: "all good so far."
 - **CSV Export** (spec.md §5.14, task-list Phase 11) — built and verified 2026-08-12: `services/csv.ts` (`toCsv`/`csvField`, ported verbatim from the real app's RFC-4180 escaping + UTF-8 BOM), `services/export.ts`'s `buildTransactionsCsv` (account filter matching either leg of a transfer, inclusive To-date, tag names joined with "; ", 5 tests), `components/ExportTransactionsForm.tsx` wired onto the Profile page, using `expo-file-system`'s new `File`/`Paths` API to write the CSV and `expo-sharing` to hand it to the OS share sheet. Required installing two new native packages and a full `expo run:android` rebuild (JS-only reload isn't enough for new native modules — confirmed live 2026-08-12 via a "cannot find native module 'ExpoSharing'" error before the rebuild). The rebuild itself hit an unrelated environment issue worth remembering: Android Studio's bundled JDK is version 25, which is too new for this project's Gradle/CMake native toolchain and broke `react-native-worklets`' CMake configure step ("restricted method in java.lang.System has been called"). Fixed by pointing `JAVA_HOME` at the JDK 17 install already present at `C:\Program Files\Eclipse Adoptium\jdk-17.0.20.8-hotspot` instead — any future native rebuild (`expo run:android`) on this machine needs that same JAVA_HOME, not Android Studio's default. User confirmed on-device 2026-08-12: exported, opened the CSV, and every column (including a transfer's "A → B" account, an opening-balance row's category label, and a tagged transaction's "; "-joined tags) matched expectations.
+
+## UAT Checklist (Phase 13 — started 2026-08-19)
+
+**How to use this:** work through each item on the physical device. Tick
+`[x]` when it behaves as described. Whether it passes or not, use the
+line under it to write down what you actually saw — for a pass, a short
+"looks right" is enough; for anything off, describe it (what you tapped,
+what you expected, what happened instead — a screenshot helps but isn't
+required). Report a batch back whenever it's convenient — doesn't have
+to be all in one sitting. Anything you flag gets pulled into the Inbox
+above and triaged/fixed the same way every bug so far has been.
+
+Do a first pass in your normal theme, then a lighter second pass in
+**Settings → Profile → Theme** switched to the other one (Section 15
+below has the details) — you don't need to redo every single item in
+both themes, just re-look at each *screen* once more for anything that
+reads wrong (low contrast, invisible text, a color that didn't flip).
+
+### 1. First-Run Onboarding & Base Currency (§5.13)
+_You've likely already been through onboarding once — if you don't want to wipe app data to re-trigger it, skip straight to the Profile sub-items below and just confirm you remember the flow matching this description._
+- [ ] A brand-new install (or app data cleared) opens straight into onboarding, not the main tabs
+  - Observations:
+- [ ] Step 1: currency picker search works (try typing a currency name and an ISO code); selecting one updates the label
+  - Observations:
+- [ ] Step 2: name field is optional — leaving it blank and continuing works
+  - Observations:
+- [ ] Step 3: the account form embedded in onboarding works the same as creating an account normally, and it actually creates the account
+  - Observations:
+- [ ] Step 4 (feature intro) "Get Started" drops you into the real app, onboarding never shows again on relaunch
+  - Observations:
+- [ ] Profile → Base Currency: changing it updates the currency picker label immediately
+  - Observations:
+- [ ] After changing base currency in Profile, every ≈-equivalent figure across the app (Dashboard, Accounts list, Account Detail ring, Transactions, Goals, Categories, Commitments) recalculates against the *new* base currency, not the old one
+  - Observations:
+
+### 2. Accounts (§5.1)
+- [ ] Create a new account of each type (savings, wallet, credit card, deposit, investment) — each saves correctly
+  - Observations:
+- [ ] Opening balance ≠ 0 shows as an "Opening balance" transaction row; opening balance = 0 does not create a row at all
+  - Observations:
+- [ ] Account currency field rejects anything that isn't exactly 3 letters
+  - Observations:
+- [ ] Credit card account: credit limit and monthly budget fields reject 0/negative values
+  - Observations:
+- [ ] Account Detail header pencil icon → opens Edit Account (with delete available there)
+  - Observations:
+- [ ] Deleting an account that has transactions is blocked with a clear message; deleting one that's safe to delete actually removes it
+  - Observations:
+- [ ] Account Detail ring: for an account whose currency differs from base currency, shows "≈ {base}" under the main figure; for an account in the base currency, no ≈ line appears
+  - Observations:
+- [ ] Account Detail: Carry Forward / Total In / Total Out / Left to Spend row looks correct for the current month
+  - Observations:
+- [ ] Account Detail: navigating to a past month updates Balance, Income, Expense correctly (Balance should reflect "as of" that month, not always-today)
+  - Observations:
+- [ ] Account Detail (current month only): Safe-to-spend/day figure appears and looks sane; disappears/changes appropriately when viewing a past or future month
+  - Observations:
+- [ ] Credit card account: debt payoff projection line appears and the number looks plausible
+  - Observations:
+- [ ] Account Detail: category/counterpart Breakdown section lists categories with correct totals for the viewed month
+  - Observations:
+- [ ] Accounts list: month-nav arrows work and per-account Income/Expense/Transfers figures update for the selected month
+  - Observations:
+- [ ] Accounts list: balance figure per account matches what Account Detail shows for the same period
+  - Observations:
+
+### 3. Transactions (§5.2)
+- [ ] Create an expense, an income, and a transfer between two accounts — all three save and show correctly in the list
+  - Observations:
+- [ ] Category is required — submitting without one shows an error instead of silently saving "Uncategorized"
+  - Observations:
+- [ ] Amount must be positive — 0 or negative is rejected
+  - Observations:
+- [ ] Amount field accepts a math expression (e.g. "1200+350") and evaluates it correctly; the +/−/×/÷ quick-insert buttons work
+  - Observations:
+- [ ] "+ New category" inline from the transaction form creates a category that's immediately usable and shows up correctly on the Categories screen afterward
+  - Observations:
+- [ ] Tags: adding a new tag inline and re-selecting an existing tag both work; tag chips show correctly on the transaction row
+  - Observations:
+- [ ] Duplicate icon on a transaction row prefills a new transaction with the same details (except date)
+  - Observations:
+- [ ] Edit and Delete icons on a transaction row work correctly
+  - Observations:
+- [ ] Opening-balance transaction rows cannot be edited/deleted from the normal transaction screen — tapping them redirects to the account's own edit page instead
+  - Observations:
+- [ ] Transferring money into an account: the inward leg shows up in that account's own transaction list (not just the balance)
+  - Observations:
+- [ ] Viewing a transfer from the "from" account shows a "-" sign; viewing the same transfer from the "to" account shows a "+"; viewing it from Dashboard/unfiltered Transactions shows it unsigned
+  - Observations:
+- [ ] Transactions list: "This month" / "Custom range" / "All time" segmented control all work, including picking a custom From/To date range
+  - Observations:
+- [ ] Transactions list: switching month or account filter actually changes the rows shown (not frozen on whatever loaded first)
+  - Observations:
+- [ ] SummaryBand's green/red proportional bar looks correct relative to income vs. expense for the selected period
+  - Observations:
+
+### 4. Categories & Budgets (§5.3, §5.5)
+- [ ] Create, edit, and delete a category (icon + color + optional monthly budget)
+  - Observations:
+- [ ] Category-level monthly budget shows a spend-vs-budget bar on the Categories screen, red when over budget
+  - Observations:
+- [ ] Account-level Budget Mode toggle (Profile global switch, and any per-account override) actually changes what Account Detail's Budget Mode bar shows
+  - Observations:
+
+### 5. Tags (§5.3a)
+- [ ] Tapping a tag anywhere opens its summary page with the correct total (converted to base currency if needed) and transaction list
+  - Observations:
+
+### 6. Recurring Transactions (part of §5.2)
+- [ ] Creating a transaction with "Make recurring" turned on generates future occurrences automatically (check the Calendar or a future month in Transactions)
+  - Observations:
+- [ ] Recurring interval count + unit (day/week/month/year) pills all work and don't overflow the screen
+  - Observations:
+- [ ] Editing a recurring occurrence: choosing "just this one" only changes that occurrence; choosing "this and future" changes it and everything after
+  - Observations:
+- [ ] Deleting a recurring occurrence: same "just this one" vs. "this and future" choice, and both behave correctly
+  - Observations:
+- [ ] Recurring transactions show a 🔁 badge on their row
+  - Observations:
+- [ ] An optional end date on a recurring rule actually stops generating occurrences after that date
+  - Observations:
+
+### 7. Commitments (§5.16)
+- [ ] Commitments tab lists active recurring rules split into expense/transfer/income sections
+  - Observations:
+- [ ] Monthly-equivalent amounts look correct for a weekly/yearly recurring rule (not just monthly ones)
+  - Observations:
+- [ ] "% of recurring income committed" figure looks plausible given your recurring rules
+  - Observations:
+
+### 8. Goals (§5.17)
+- [ ] Goals add page now opens as a proper pop-up/modal with a header (not flush against the top) — this was just fixed, worth a specific re-check
+  - Observations:
+- [ ] Create a goal (name, target net worth, optional target date)
+  - Observations:
+- [ ] Progress bar reflects current net worth ÷ target correctly, turns green + "🎉 Goal reached" once hit
+  - Observations:
+- [ ] Projected-date text is reasonable given your recent net worth trend; "Not currently trending toward this goal" shows when net worth isn't growing
+  - Observations:
+- [ ] "Behind pace for your target date" warning appears only when it should (projection lands after your target date)
+  - Observations:
+- [ ] Edit and delete a goal
+  - Observations:
+
+### 9. Dashboard (§5.8)
+- [ ] Net worth capacity gauge (ring) center figure and ≈-equivalent (if applicable) look correct
+  - Observations:
+- [ ] Net worth trend chart shows a sensible history length (capped to your actual earliest transaction, not always 12 months)
+  - Observations:
+- [ ] Asset allocation donut buckets (Liquid/Deposits/Invested) look right; credit card debt is excluded from the donut and shown as its own figure
+  - Observations:
+- [ ] Over-budget banner appears when a category is over its monthly budget, and not otherwise
+  - Observations:
+- [ ] Carry Forward / Income / Expense / Credit card debt stat row looks correct for the selected month
+  - Observations:
+- [ ] Embedded calendar month grid on the Dashboard matches the full Calendar screen for the same month
+  - Observations:
+- [ ] Accounts card and Goals card (top 3) both look right and link through correctly
+  - Observations:
+- [ ] Recent Transactions card: inline Edit/Delete icons work directly from the Dashboard
+  - Observations:
+- [ ] Dashboard month-nav arrows (now icon chevrons, just changed) are easy to see and tap
+  - Observations:
+
+### 10. Calendar (part of §5.2)
+- [ ] Calendar screen's month-nav works; each day's expense total looks right
+  - Observations:
+- [ ] Quick-add from a calendar day (if present) opens a prefilled new-transaction form for that date
+  - Observations:
+
+### 11. Show/Hide Future Transactions (§5.6)
+- [ ] Toggling this off in Profile (global) or per-account hides future-dated transactions on Account Detail, with a "N hidden" notice
+  - Observations:
+
+### 12. CSV Export (§5.14 — previously verified, quick re-confirm)
+- [ ] Export still works after all the currency/base-currency changes since it was last checked — account filter, date range, and all 9 columns still look right
+  - Observations:
+
+### 13. Profile & Settings (§5.10)
+- [ ] Display name saves and persists after closing/reopening the app
+  - Observations:
+- [ ] Theme toggle (Light/Dark/System) actually changes the app's appearance
+  - Observations:
+- [ ] Budget Mode and Show Future Transactions global switches both work as described above
+  - Observations:
+
+### 14. Navigation & General UX (§5.9)
+- [ ] All 6 tabs (Dashboard, Accounts, Transactions, Commitments, Categories, Profile) are present and in that order
+  - Observations:
+- [ ] Back-navigation after creating a new account/transaction/category/goal never leaves you on a broken screen or requires a reload
+  - Observations:
+- [ ] New Account / New Transaction / New Category / New Goal / Edit variants of each all open as a pop-up/modal with a header (consistent presentation across all four entities)
+  - Observations:
+
+### 15. Visual Design / Theming (§5.12)
+- [ ] Switch Profile → Theme to the opposite of what you normally use, then skim every tab once — no invisible text, no jarringly wrong colors, danger/success/accent colors still read clearly
+  - Observations:
+- [ ] Money figures throughout the app use a monospace/tabular font (numbers align in columns, e.g. in a list)
+  - Observations:
+- [ ] The bottom-left "Ask (coming soon)" placeholder button never overlaps a screen's own "+" button (bottom-right)
+  - Observations:
+- [ ] Loading states never show a bare blank screen while data loads; empty lists (e.g. no goals yet, no transactions yet) show a proper empty-state message instead of nothing
+  - Observations:
+
+### 16. Multi-Currency Edge Cases
+- [ ] Create an account in a currency different from your base currency, add a transaction to it, and confirm every screen that shows that account's figures displays both the native amount and the "≈ {base}" conversion
+  - Observations:
+- [ ] With no internet connection, currency conversion falls back gracefully (cached rate or a sane default) instead of crashing
+  - Observations:
