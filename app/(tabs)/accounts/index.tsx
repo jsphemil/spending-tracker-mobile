@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "expo-router";
 import { FlatList, Pressable, Text, View } from "react-native";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 import { db } from "../../../db/client";
 import { useAccounts } from "../../../db/queries/accounts";
@@ -12,6 +13,7 @@ import { currentMonthPeriod, monthLabel, monthRange, shiftMonth } from "../../..
 import { ensureMaterialized } from "../../../services/recurrence";
 import { CurrencyAmount } from "../../../components/CurrencyAmount";
 import { EmptyState } from "../../../components/ui/EmptyState";
+import { useThemeColors } from "../../../theme/palette";
 
 interface AccountFlow {
   incomeMinor: number;
@@ -21,6 +23,7 @@ interface AccountFlow {
 }
 
 export default function AccountsListScreen() {
+  const colors = useThemeColors();
   const { data: accounts } = useAccounts();
   const [period, setPeriod] = useState(currentMonthPeriod());
   const range = useMemo(() => monthRange(period), [period]);
@@ -60,11 +63,11 @@ export default function AccountsListScreen() {
         ListHeaderComponent={
           <View className="mb-3 flex-row items-center justify-center gap-2">
             <Pressable onPress={() => setPeriod((p) => shiftMonth(p, -1))} className="p-3" hitSlop={8}>
-              <Text className="text-xl text-fg">‹</Text>
+              <MaterialCommunityIcons name="chevron-left" size={28} color={colors.fg} />
             </Pressable>
             <Text className="text-base font-medium text-fg">{monthLabel(period)}</Text>
             <Pressable onPress={() => setPeriod((p) => shiftMonth(p, 1))} className="p-3" hitSlop={8}>
-              <Text className="text-xl text-fg">›</Text>
+              <MaterialCommunityIcons name="chevron-right" size={28} color={colors.fg} />
             </Pressable>
           </View>
         }

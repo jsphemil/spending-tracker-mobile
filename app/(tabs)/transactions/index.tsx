@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Link } from "expo-router";
 import { FlatList, Pressable, ScrollView, Text, View } from "react-native";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 import { confirmDeleteTransaction } from "../../../components/confirmDeleteTransaction";
 import { SummaryBand } from "../../../components/SummaryBand";
@@ -16,10 +17,12 @@ import { getRatesToBase } from "../../../services/currency";
 import { majorToMinor, minorToMajor } from "../../../services/format";
 import { currentMonthPeriod, monthLabel, monthRange, shiftMonth } from "../../../services/period";
 import { ensureMaterialized } from "../../../services/recurrence";
+import { useThemeColors } from "../../../theme/palette";
 
 type FilterMode = "month" | "custom" | "allTime";
 
 export default function TransactionsListScreen() {
+  const colors = useThemeColors();
   const { settings } = useSettings();
   const baseCurrency = settings?.baseCurrency ?? "INR";
   const [filterMode, setFilterMode] = useState<FilterMode>("month");
@@ -139,7 +142,7 @@ export default function TransactionsListScreen() {
               className="p-3"
               hitSlop={8}
             >
-              <Text className="text-xl text-fg">‹</Text>
+              <MaterialCommunityIcons name="chevron-left" size={28} color={colors.fg} />
             </Pressable>
             <Text className="text-base font-medium text-fg">{monthLabel(period)}</Text>
             <Pressable
@@ -147,7 +150,7 @@ export default function TransactionsListScreen() {
               className="p-3"
               hitSlop={8}
             >
-              <Text className="text-xl text-fg">›</Text>
+              <MaterialCommunityIcons name="chevron-right" size={28} color={colors.fg} />
             </Pressable>
           </View>
         )}

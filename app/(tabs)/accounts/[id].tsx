@@ -215,7 +215,7 @@ export default function AccountDetailScreen() {
                 className="p-3"
                 hitSlop={8}
               >
-                <Text className="text-xl text-fg">‹</Text>
+                <MaterialCommunityIcons name="chevron-left" size={28} color={colors.fg} />
               </Pressable>
               <Text className="text-base font-medium text-fg">{monthLabel(period)}</Text>
               <Pressable
@@ -223,7 +223,7 @@ export default function AccountDetailScreen() {
                 className="p-3"
                 hitSlop={8}
               >
-                <Text className="text-xl text-fg">›</Text>
+                <MaterialCommunityIcons name="chevron-right" size={28} color={colors.fg} />
               </Pressable>
             </View>
 

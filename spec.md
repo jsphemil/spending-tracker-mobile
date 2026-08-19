@@ -10,7 +10,7 @@
 ## Status Dashboard
 
 _Kept current per CLAUDE.md's Idea Backlog Protocol — updated the
-moment a status genuinely changes, not batched. Last updated: 2026-08-13._
+moment a status genuinely changes, not batched. Last updated: 2026-08-19._
 
 **Legend:** ✅ Built & Verified (built *and* confirmed working on a
 real device/build) · 🚧 In Progress (code exists, not yet verified, or
@@ -31,7 +31,7 @@ pushed to a later phase) · ❌ Dropped (cut from scope).
 | §5.9 | Navigation | 🚧 In Progress | Built; Commitments tab added 2026-08-12 (Dashboard, Accounts, Transactions, Commitments, Categories, Profile — 6 tabs total, matching the real app's order) |
 | §5.10 | Profile Page | 🚧 In Progress | Built; Dropbox section is an inert placeholder |
 | §5.11 | Home Screen Widget | ⏸️ Deferred | Phase 5 |
-| §5.12 | Visual Design System | 📋 Planned | Full port of the web app's dark-first token theme, monospace tabular numerals, gauge-over-pie pattern, and card/FAB/empty-state conventions — decided 2026-08-11, supersedes the earlier "out of scope" call in §6 |
+| §5.12 | Visual Design System | 🚧 In Progress | Full port of the web app's dark-first token theme, monospace tabular numerals, gauge-over-pie pattern, and card/FAB/empty-state conventions — decided 2026-08-11, supersedes the earlier "out of scope" call in §6. Status corrected 2026-08-19 (was stuck on 📋 Planned despite being built across Phases 1-3); month-nav arrows switched from thin text glyphs to proper icons same day — on-device verification pending |
 | §5.13 | First-Run Onboarding & Base Currency | 🚧 In Progress | New — decided 2026-08-12. Unlike the web app (INR-only, single market), mobile ships for global customers: base currency becomes a real, live-editable user setting, not hardcoded INR. Phase 12 code-complete 2026-08-13: onboarding flow + gate, base currency generalized across every screen, full searchable currency dropdown (Frankfurter's ~170 currencies) replacing the old 6-pill picker — on-device verification pending |
 | §5.14 | CSV Export | ✅ Built & Verified | New — decided 2026-08-12, matches the web app's account/date-filtered CSV export. Phase 11 code-complete 2026-08-12 (`services/csv.ts`, `services/export.ts`, `ExportTransactionsForm` on Profile), required a native rebuild for `expo-file-system`/`expo-sharing` — verified on-device 2026-08-12 |
 | §5.15 | In-App Info/Tips | ⏸️ Deferred | New — decided 2026-08-12, explicitly deferred by the user to a later pass |
@@ -372,7 +372,7 @@ optional description.
   (optional, cosmetic only), Dropbox connection status/management,
   currency/date-format preferences
 
-### 5.12 Visual Design System 📋 Planned
+### 5.12 Visual Design System 🚧 In Progress
 
 **Decided 2026-08-11: full port of the source web app's design language**,
 per `knowledge-transfer.md` §4 — supersedes the earlier "dark mode /
@@ -413,6 +413,28 @@ now stale and kept only for history.
   detail live in `knowledge-transfer.md` §4 and Appendix B — treat the
   hex values there as a starting point, not a mandate; light-theme
   values need their own tuning pass, not a mechanical inversion.
+- **Status correction, 2026-08-19**: this section had been left marked
+  📋 Planned since it was first written, but the actual work landed
+  across Phases 1-3 (`theme/palette.ts`, `tailwind.config.js`,
+  `global.css` — independently tuned light AND dark values, not a
+  mechanical inversion) and was never updated to say so — the dashboard
+  had drifted. Corrected to 🚧 In Progress, matching everything else
+  pending a full on-device pass. Confirmed built: token-based theming
+  (Phase 13's codebase-wide hardcoded-hex grep found only legitimate
+  exceptions — palette source, color-picker swatches — plus 2 real bugs,
+  both fixed, see backlog.md), monospace tabular money figures, gauge
+  rings for capacity questions, one shared card primitive, compact icon
+  row-actions, explicit loading/empty/error states everywhere. FAB
+  placement was audited (`app/(tabs)/_layout.tsx`'s comment documents the
+  bottom-left/bottom-right split to avoid the Claude-placeholder FAB
+  colliding with each tab's own "+" FAB). One real gap found during this
+  correction and fixed same day: all 5 month-nav arrow pairs (Dashboard,
+  Accounts list, Account Detail, Transactions list, Calendar) were plain
+  Unicode "‹"/"›" text glyphs — legible but visually thin regardless of
+  font size, which is why enlarging their tap target earlier didn't
+  address the user's "still look small" feedback. Replaced with
+  `MaterialCommunityIcons` `chevron-left`/`chevron-right` at 28px,
+  consistent with every other icon in the app.
 
 ### 5.11 Mobile Home Screen Widget ⏸️ Deferred
 - Since this app is native mobile from day one (not a wrapped web app),

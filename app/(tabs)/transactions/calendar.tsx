@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 import { CalendarMonthGrid } from "../../../components/CalendarMonthGrid";
 import { db } from "../../../db/client";
@@ -8,8 +9,10 @@ import { useSettings } from "../../../db/queries/settings";
 import { useFilteredTransactions } from "../../../db/queries/transactions";
 import { currentMonthPeriod, monthLabel, monthRange, shiftMonth } from "../../../services/period";
 import { ensureMaterialized } from "../../../services/recurrence";
+import { useThemeColors } from "../../../theme/palette";
 
 export default function TransactionsCalendarScreen() {
+  const colors = useThemeColors();
   const { settings } = useSettings();
   const baseCurrency = settings?.baseCurrency ?? "INR";
   const [period, setPeriod] = useState(currentMonthPeriod());
@@ -42,7 +45,7 @@ export default function TransactionsCalendarScreen() {
           className="p-3"
           hitSlop={8}
         >
-          <Text className="text-xl text-fg">‹</Text>
+          <MaterialCommunityIcons name="chevron-left" size={28} color={colors.fg} />
         </Pressable>
         <Text className="text-base font-medium text-fg">{monthLabel(period)}</Text>
         <Pressable
@@ -50,7 +53,7 @@ export default function TransactionsCalendarScreen() {
           className="p-3"
           hitSlop={8}
         >
-          <Text className="text-xl text-fg">›</Text>
+          <MaterialCommunityIcons name="chevron-right" size={28} color={colors.fg} />
         </Pressable>
       </View>
       <CalendarMonthGrid period={period} currency={baseCurrency} expenseByDay={expenseByDay} />

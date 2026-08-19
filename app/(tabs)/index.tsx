@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "expo-router";
 import { Pressable, ScrollView, Text, View } from "react-native";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 import { AssetAllocationChart } from "../../components/charts/AssetAllocationChart";
 import { NetWorthTrendChart } from "../../components/charts/NetWorthTrendChart";
@@ -30,6 +31,7 @@ import {
   type MonthPeriod,
 } from "../../services/period";
 import { ensureMaterialized } from "../../services/recurrence";
+import { useThemeColors } from "../../theme/palette";
 
 const ASSET_ALLOCATION_BUCKETS = [
   { name: "Liquid (Savings/Wallet)", types: ["savings", "wallet"], color: "#7c6ef2" },
@@ -38,6 +40,7 @@ const ASSET_ALLOCATION_BUCKETS = [
 ] as const;
 
 export default function DashboardScreen() {
+  const colors = useThemeColors();
   const [period, setPeriod] = useState(currentMonthPeriod());
   const range = useMemo(() => monthRange(period), [period]);
   useEffect(() => {
@@ -189,11 +192,11 @@ export default function DashboardScreen() {
     <ScrollView className="flex-1 bg-bg" contentContainerStyle={{ padding: 16, gap: 12 }}>
       <View className="flex-row items-center justify-between">
         <Pressable onPress={() => setPeriod((p) => shiftMonth(p, -1))} className="p-3" hitSlop={8}>
-          <Text className="text-xl text-fg">‹</Text>
+          <MaterialCommunityIcons name="chevron-left" size={28} color={colors.fg} />
         </Pressable>
         <Text className="text-base font-medium text-fg">{monthLabel(period)}</Text>
         <Pressable onPress={() => setPeriod((p) => shiftMonth(p, 1))} className="p-3" hitSlop={8}>
-          <Text className="text-xl text-fg">›</Text>
+          <MaterialCommunityIcons name="chevron-right" size={28} color={colors.fg} />
         </Pressable>
       </View>
 
