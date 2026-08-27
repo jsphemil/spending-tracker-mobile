@@ -10,7 +10,7 @@
 ## Status Dashboard
 
 _Kept current per CLAUDE.md's Idea Backlog Protocol — updated the
-moment a status genuinely changes, not batched. Last updated: 2026-08-19._
+moment a status genuinely changes, not batched. Last updated: 2026-08-20._
 
 **Legend:** ✅ Built & Verified (built *and* confirmed working on a
 real device/build) · 🚧 In Progress (code exists, not yet verified, or
@@ -19,7 +19,7 @@ pushed to a later phase) · ❌ Dropped (cut from scope).
 
 | Section | Feature | Status | Notes |
 |---|---|---|---|
-| §5.1 | Accounts | 🚧 In Progress | Full Phase 10 parity pass 2026-08-12: Account Detail page rebuilt (correct capacity-gauge ring, Carry Forward/Total In/Total Out/Left to Spend, Safe-to-spend/day, debt payoff projection, Budget Mode bar wired up, category/counterpart Breakdown section, Show-Future-Transactions hidden-count notice, Duplicate+Edit+Delete icons); Accounts list gained month nav + per-account Income/Expense/Transfers row + period-scoped balance — on-device verification pending |
+| §5.1 | Accounts | 🚧 In Progress | Full Phase 10 parity pass 2026-08-12: Account Detail page rebuilt (correct capacity-gauge ring, Carry Forward/Total In/Total Out/Left to Spend, Safe-to-spend/day, debt payoff projection, Budget Mode bar wired up, category/counterpart Breakdown section, Show-Future-Transactions hidden-count notice, Duplicate+Edit+Delete icons); Accounts list gained month nav + per-account Income/Expense/Transfers row + period-scoped balance. UAT round 1 (2026-08-20): 3 bugs found and fixed (credit limit now required for credit_card accounts, delete-account navigation, Breakdown icon rendering) — on-device re-verification pending |
 | §5.2 | Transactions | 🚧 In Progress | Entry/edit/list/filters/calendar built; recurring transactions (Phase 5) code-complete 2026-08-12 — engine (`services/recurrence.ts`) unit-tested (13 tests), "make recurring" toggle, just-this-one/this-and-future edit+delete scope picker, 🔁 badge, `ensureMaterialized` wired into Dashboard/Transactions/Accounts/Categories/Calendar. Phase 10 (2026-08-12): "Clear (show all time)" toggle, SummaryBand proportional bar, Duplicate+Edit+Delete icons, Duplicate-transaction flow, inline "+ New category" on the transaction form — on-device verification pending |
 | §5.3 | Categories | 🚧 In Progress | Full CRUD + starter seed built |
 | §5.3a | Tags | 🚧 In Progress | Inline creation + per-tag summary (with currency conversion) built |
@@ -138,8 +138,12 @@ Everything below is the "must-have" list. Anything not listed here
   Wallet/Cash, Credit Card — this list is final for v1
 - **Credit Card accounts:** balance is naturally negative (expenses are
   logged first, the bill payment is the "income" that brings it back
-  toward zero). Credit Card accounts have an optional **Credit Limit**
-  field, which enables:
+  toward zero). Credit Card accounts require a **Credit Limit** field
+  (corrected 2026-08-20 — previously documented as optional, but a credit
+  card account with no limit makes the usage ring/available-credit figures
+  meaningless; `AccountForm` now rejects saving a credit_card account with
+  the field left blank, not just an explicitly-entered 0/negative value),
+  which enables:
   - showing "available credit" (limit − amount owed)
   - a **visual usage bar** — fills up as expenses reduce the available
     credit, so utilization is visible at a glance rather than just as a
@@ -171,6 +175,12 @@ Everything below is the "must-have" list. Anything not listed here
   that account's income and expenses for the period (plus its own
   transaction list and the credit-limit line, if applicable)
 - Every account view has 3 clear buttons: **Income**, **Expense**, **Transfer**
+- **UAT round 1 fixes, 2026-08-20**: deleting an account now lands on the
+  Accounts list directly (`router.dismissTo`) instead of leaving a stale
+  screen for the just-deleted account; the Breakdown section's category
+  rows now render the category's icon as an actual icon glyph instead of
+  its internal name slug as literal text (e.g. "cash Salary" → 🪙 Salary) —
+  see backlog.md for full detail.
 
 ### 5.2 Transactions 🚧 In Progress
 

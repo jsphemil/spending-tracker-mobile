@@ -110,6 +110,7 @@ export default function AccountDetailScreen() {
         t.isOpeningBalance ? "opening-balance" : (t.categoryId ?? "uncategorized"),
         t.isOpeningBalance ? "Opening Balance" : (categoryInfo(t.categoryId)?.name ?? "Uncategorized"),
         t.isOpeningBalance ? "🏦" : (categoryInfo(t.categoryId)?.icon ?? "❓"),
+        t.isOpeningBalance || !categoryInfo(t.categoryId) ? "emoji" : "mdi",
         t.amountMinor,
       );
     } else if (t.type === "expense") {
@@ -119,12 +120,20 @@ export default function AccountDetailScreen() {
         t.isOpeningBalance ? "opening-balance" : (t.categoryId ?? "uncategorized"),
         t.isOpeningBalance ? "Opening Balance" : (categoryInfo(t.categoryId)?.name ?? "Uncategorized"),
         t.isOpeningBalance ? "🏦" : (categoryInfo(t.categoryId)?.icon ?? "❓"),
+        t.isOpeningBalance || !categoryInfo(t.categoryId) ? "emoji" : "mdi",
         t.amountMinor,
       );
     } else {
       if (t.toAccountId === accountId) {
         transferInMinor += t.amountMinor;
-        addToBucket(transferInByAccount, t.accountId, otherAccountName(t.accountId), "🏦", t.amountMinor);
+        addToBucket(
+          transferInByAccount,
+          t.accountId,
+          otherAccountName(t.accountId),
+          "🏦",
+          "emoji",
+          t.amountMinor,
+        );
       }
       if (t.accountId === accountId) {
         transferOutMinor += t.amountMinor;
@@ -133,6 +142,7 @@ export default function AccountDetailScreen() {
           t.toAccountId ?? "unknown",
           otherAccountName(t.toAccountId),
           "🏦",
+          "emoji",
           t.amountMinor,
         );
       }
@@ -389,10 +399,15 @@ export default function AccountDetailScreen() {
                       </Text>
                     </View>
                     {section.buckets.map((b) => (
-                      <View key={b.key} className="mt-1 flex-row items-center justify-between">
-                        <Text className="text-sm text-fg">
-                          {b.icon} {b.name}
-                        </Text>
+                      <View key={b.key} className="mt-1 flex-row items-center gap-1.5 justify-between">
+                        <View className="flex-1 flex-row items-center gap-1.5">
+                          {b.iconType === "mdi" ? (
+                            <MaterialCommunityIcons name={b.icon as never} size={14} color={colors.fgMuted} />
+                          ) : (
+                            <Text className="text-sm">{b.icon}</Text>
+                          )}
+                          <Text className="text-sm text-fg">{b.name}</Text>
+                        </View>
                         <Text className={`font-data text-sm font-medium tabular-nums ${section.color}`}>
                           {formatMoney(b.totalMinor, account.currency)}
                         </Text>

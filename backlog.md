@@ -2,6 +2,13 @@
 
 ## Inbox
 ## Triaged
+- **UAT round 1 (2026-08-20), 3 fixes.** From the first batch of Accounts-section checklist comments:
+  1. **Credit card accounts could be saved with no credit limit at all.** `AccountForm.handleSubmit()`'s validation only rejected an *explicitly entered* 0/negative credit limit (`creditLimitNum !== null && !(creditLimitNum > 0)`) — leaving the field blank produced `creditLimitNum = null`, which skipped validation entirely and saved `creditLimitMinor: null`. Reported: "credit limit and monthly budget fields shows blank as default and if i dont change it and keep it as blank it allows to save the account." Fixed: credit limit is now required (not just positive-if-present) whenever `type === "credit_card"`. Monthly budget stays optional-if-blank by design (not every account needs a Budget Mode limit) — that field wasn't actually broken, just easy to conflate with credit limit in the same report.
+  2. **Deleting an account left a stale, blank screen** showing the deleted account's name with only a manual back button, instead of returning somewhere valid. Root cause: `app/account/[id]/edit.tsx`'s delete handler called `router.back()`, which returns to whatever screen was directly underneath the Edit Account modal — usually the now-deleted account's own Detail screen (`app/(tabs)/accounts/[id].tsx`), which has no "this account no longer exists" handling and just sits on its loading guard forever. Fixed: `router.dismissTo("/accounts")` instead — dismisses every screen stacked on top of the modal and lands directly on the Accounts list, the only screen still valid after a delete, regardless of which of the two entry points (Account Detail's header pencil, or an opening-balance transaction row's edit icon) led there.
+  3. **Account Detail's Breakdown section showed a category's icon *slug* as literal text next to its name** — e.g. "cash Salary", "shopping Gift" instead of "🪙 Salary"/"🛍️ Gift" (icon glyph + name). Root cause: `services/breakdown.ts`'s `Bucket.icon` field is used for two genuinely different value shapes — a real emoji character for transfer/opening-balance buckets (🏦), and a category's raw `MaterialCommunityIcons` name slug (e.g. `"cash"`, `"shopping"`) for income/expense category buckets — but the render site in `app/(tabs)/accounts/[id].tsx` did `{b.icon} {b.name}` as plain text for every bucket, which only ever worked for the emoji case. Fixed: added a `Bucket.iconType: "emoji" | "mdi"` discriminator set correctly at each of the 4 `addToBucket` call sites, and the Breakdown row now renders `mdi`-typed buckets through an actual `<MaterialCommunityIcons>` component instead of as text. The totals themselves were never wrong — user confirmed "shows the correct amount" — only the label. `tsc`/`jest` (45/45) clean after all 3 fixes. On-device re-verification pending (same checklist items).
+  - **Flagged, not fixed — needs the user's input, not a code guess:**
+    - The same checklist round also reported the onboarding currency-selection screen has "the same problem... its boundaries are very small, i want it as a pop up window" — same wording as the Goals-add-page bug already fixed. But `components/CurrencyPicker.tsx`'s own picker already renders as a full-screen native `<Modal>` (`animationType="slide"`, `flex-1` content) — the same component Profile's base-currency field uses, which passed its own checklist item ("changing it updates the currency picker label immediately"). Unclear whether "boundaries are very small" means this picker modal specifically, or Onboarding Step 1's outer screen (`components/OnboardingFlow.tsx`, which is deliberately rendered in place of the Stack, not as a routed/modal screen, by design — see spec.md §5.13). Needs a screenshot or more specific description before touching anything, rather than guessing at native-Modal internals.
+    - **Changing an existing account's type after it already has transactions produces a ring that looks like it "forgot" prior activity.** Reported: switched a savings account (with a real income + expense transaction already recorded) to `credit_card` type; the ring showed 0% used / the full credit limit as available, ignoring those transactions, even though they still show correctly in the transaction list and Total In/Total Out. Investigated: this is very likely *not* a separate bug but the direct, correct consequence of fix #1 above being missing at the time — `CreditUsageRing`'s math is `owed = max(0, -endingBalanceMinor)`, i.e. only a *negative* running balance counts as credit-card debt; a positive balance (net income before the type switch) is mathematically "no debt owed, full credit available," which is arguably correct credit-card semantics, not a bug. This needs the user to re-test now that credit limit is required, and to confirm whether that "0% used, prior transactions don't count as debt" behavior is actually what they want when retroactively converting an account's type — the real web app's data model doesn't appear to anticipate changing an account's type post-hoc at all, so this may be an edge case outside designed scope rather than something to "fix" further.
 - **Goal add/edit screens had no header and weren't presented as a modal.** Reported 2026-08-19: "while checking the goals add page, the 'goals' heading is too close to the top border of the screen - it should appear as a pop up like we add a transaction." Root cause: `app/_layout.tsx`'s root Stack explicitly registers `presentation: "modal", headerShown: true` for account/transaction/category's new+edit screens, but `goal/new` and `goal/[id]/edit` were never added to that list — they fell back to the Stack's default `headerShown: false`, so `GoalForm`'s first field sat flush under the status bar with no title bar. Fixed same day: added the same two Stack.Screen entries ("New Goal" / "Edit Goal") matching the other three entities exactly. Folded into spec.md §5.17. On-device verification pending.
 - **Phase 13 final audit, first pass (2026-08-13).** Hardcoded-color grep across the whole codebase found 2 real gaps (everything else that matched was legitimate — theme/palette.ts itself, the account/category color-picker swatches, and one deliberately-literal white icon color already explained by its own comment): (1) `placeholderTextColor` hardcoded to the light-mode `fgSubtle` hex value in 3 files (`app/(tabs)/profile.tsx`, `components/OnboardingFlow.tsx`, `components/TagPicker.tsx`) instead of reading `useThemeColors()` — meant placeholder text never adapted to dark mode; (2) `CreditUsageRing` never passed `overflowColor` to `RingArc`, silently falling back to `RingArc`'s own hardcoded default (`#DC2626`) instead of the theme's `danger` color for the over-credit-limit warning lap — `GaugeRing` already did this correctly, `CreditUsageRing` was the one gap. Both fixed. Also found spec.md's §8 "Build Progress" section was entirely stale — described a superseded 5-phase plan (from before the repo-parity replan) with references to "Phase 1 blocked on Android build tooling" and other facts long since resolved, and directly contradicted the Status Dashboard (said "nothing is marked ✅ yet" when §5.14 already was). Rewrote §8 as a short pointer to the Status Dashboard as the single source of truth instead of a duplicate narrative. Also corrected 3 Status Dashboard rows (§5.4/§5.5/§5.6) that still said Carry Forward/Budget Mode enforcement/Show-Future-Transactions filtering were unbuilt — all three actually shipped as part of Phase 10, the dashboard just hadn't been updated to say so. `npx tsc --noEmit` and `npx jest` (45/45) both clean after the fixes.
 - **Add a README.md for the GitHub repo** (github.com/jsphemil/spending-tracker-mobile). Requested 2026-08-13, explicitly deferred by the user until the app is fully complete. Repo-hygiene item, not a product feature, so no spec.md Status Dashboard entry — tracked here only. Natural trigger point: right after task-list Phase 13 (final audit), once the app is genuinely done.
@@ -64,49 +71,49 @@ reads wrong (low contrast, invisible text, a color that didn't flip).
 ### 1. First-Run Onboarding & Base Currency (§5.13)
 _You've likely already been through onboarding once — if you don't want to wipe app data to re-trigger it, skip straight to the Profile sub-items below and just confirm you remember the flow matching this description._
 - [ ] A brand-new install (or app data cleared) opens straight into onboarding, not the main tabs
-  - Observations:
+  - Observations: currency selection screen also has the same problem with the display that i mentioned earlier for the goals add page, its boundaries are very small, i want it as a pop up window **Checked 2026-08-20 — the currency picker's modal is already coded as full-screen, so I'm not sure yet which screen/element you mean. Could you send a screenshot, or say whether this is the picker's search list (opens when you tap the currency field) or the screen behind it (the "Let's get your ledger set up" welcome screen)?**
 - [ ] Step 1: currency picker search works (try typing a currency name and an ISO code); selecting one updates the label
-  - Observations:
+  - Observations:passed
 - [ ] Step 2: name field is optional — leaving it blank and continuing works
-  - Observations:
+  - Observations:passed
 - [ ] Step 3: the account form embedded in onboarding works the same as creating an account normally, and it actually creates the account
-  - Observations:
+  - Observations:passed
 - [ ] Step 4 (feature intro) "Get Started" drops you into the real app, onboarding never shows again on relaunch
-  - Observations:
+  - Observations:passed. the feature description could be improved with listing all the major features of this app, and there must be an option to view the app usage manual from the profile page **Noted 2026-08-20 — the "app usage manual from Profile" part is the same thing as spec.md §5.15 (In-App Info/Tips), already logged as deferred by you earlier. Not touching it now since it'd mean pulling deferred scope forward mid-UAT — happy to do this as its own pass once the UAT sweep is done, unless you want it prioritized sooner.**
 - [ ] Profile → Base Currency: changing it updates the currency picker label immediately
-  - Observations:
+  - Observations:passed
 - [ ] After changing base currency in Profile, every ≈-equivalent figure across the app (Dashboard, Accounts list, Account Detail ring, Transactions, Goals, Categories, Commitments) recalculates against the *new* base currency, not the old one
-  - Observations:
+  - Observations:passed
 
 ### 2. Accounts (§5.1)
 - [ ] Create a new account of each type (savings, wallet, credit card, deposit, investment) — each saves correctly
-  - Observations:
+  - Observations:passed
 - [ ] Opening balance ≠ 0 shows as an "Opening balance" transaction row; opening balance = 0 does not create a row at all
-  - Observations:
+  - Observations:Passed
 - [ ] Account currency field rejects anything that isn't exactly 3 letters
-  - Observations:
+  - Observations:Passed
 - [ ] Credit card account: credit limit and monthly budget fields reject 0/negative values
-  - Observations:
+  - Observations: credit limit and monthly budget fields shows blank as default and if i dont change it and keep it as blank it allows to save the account ; **Fixed 2026-08-20** — credit limit is now required for credit_card accounts (see Triaged). Monthly budget stays optional by design (not every account needs one). Please re-check: try saving a credit card account with credit limit left blank — should now show an error.
 - [ ] Account Detail header pencil icon → opens Edit Account (with delete available there)
-  - Observations:
+  - Observations: passed. i added an account as a savings account and added one income and expense transaction, later i edited this account to be a credit card type. this changes the ring behaviour, but the prev transactions i added are not reflected in the ring, it got reset to the credit card limit. even thought these transactions are shows in transactions and in the total in and total out, **Investigated 2026-08-20 — see Triaged "flagged, not fixed" note. Likely correct behavior (a positive running balance = 0 debt owed), and likely connected to the blank-credit-limit bug just above, which is now fixed. Please retry with a real credit limit set and let me know if the ring still looks wrong to you, or if this is actually the behavior you'd expect.**
 - [ ] Deleting an account that has transactions is blocked with a clear message; deleting one that's safe to delete actually removes it
-  - Observations:
+  - Observations: Passed. after the account is deleted, it shows a blank page with that deleted accounts name with the back navigation button, it should automatically go back to the previous screen, i.e from where the user came to delete this account **Fixed 2026-08-20** — delete now lands directly on the Accounts list instead. Please re-check.
 - [ ] Account Detail ring: for an account whose currency differs from base currency, shows "≈ {base}" under the main figure; for an account in the base currency, no ≈ line appears
-  - Observations:
+  - Observations:passed
 - [ ] Account Detail: Carry Forward / Total In / Total Out / Left to Spend row looks correct for the current month
-  - Observations:
+  - Observations: passed
 - [ ] Account Detail: navigating to a past month updates Balance, Income, Expense correctly (Balance should reflect "as of" that month, not always-today)
-  - Observations:
+  - Observations:passed
 - [ ] Account Detail (current month only): Safe-to-spend/day figure appears and looks sane; disappears/changes appropriately when viewing a past or future month
   - Observations:
 - [ ] Credit card account: debt payoff projection line appears and the number looks plausible
   - Observations:
 - [ ] Account Detail: category/counterpart Breakdown section lists categories with correct totals for the viewed month
-  - Observations:
+  - Observations:I added an expense transaction with category as 'Gift', it shows correclty in the transactions list for the month, but in the breakdown, it shows as shopping Gift Rs. 5000., I added an income transaction with Category as "Salary", it shows in the breakdown as 'cash Salary' and shows the correct amount - the category wise summary for all categories of that transaction type should be correcly shown without stale or wrong data **Fixed 2026-08-20** — the amounts were always correct; the label was showing the category's internal icon slug ("cash", "shopping") as literal text instead of rendering it as an icon. Now renders as an actual icon glyph next to the name. Please re-check.
 - [ ] Accounts list: month-nav arrows work and per-account Income/Expense/Transfers figures update for the selected month
-  - Observations:
+  - Observations:pass
 - [ ] Accounts list: balance figure per account matches what Account Detail shows for the same period
-  - Observations:
+  - Observations:passed
 
 ### 3. Transactions (§5.2)
 - [ ] Create an expense, an income, and a transfer between two accounts — all three save and show correctly in the list

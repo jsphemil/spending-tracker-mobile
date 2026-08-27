@@ -122,8 +122,8 @@ export function AccountForm({
       return;
     }
     const creditLimitNum = creditLimitText ? Number(creditLimitText) : null;
-    if (creditLimitNum !== null && !(creditLimitNum > 0)) {
-      setError("Credit limit must be greater than 0");
+    if (type === "credit_card" && !(creditLimitNum !== null && creditLimitNum > 0)) {
+      setError("Credit limit is required for a credit card account and must be greater than 0");
       return;
     }
     const budgetNum = budgetMonthlyText ? Number(budgetMonthlyText) : null;

@@ -68,7 +68,12 @@ export default function EditAccountScreen() {
                 onPress: () => {
                   try {
                     deleteAccount(accountId);
-                    router.back();
+                    // Not router.back(): that would return to this account's
+                    // own (now-deleted) Detail screen, whichever screen this
+                    // modal was opened from — dismissTo instead drops every
+                    // screen on top and lands on the Accounts list directly,
+                    // the only place that's still valid after a delete.
+                    router.dismissTo("/accounts");
                   } catch (e) {
                     Alert.alert(
                       "Couldn't delete account",
