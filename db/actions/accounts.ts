@@ -127,23 +127,32 @@ export function updateAccount(id: number, input: AccountUpdateInput): void {
   });
 }
 
-// Three things block deletion, checked before anything is touched:
-// - Real (non-opening-balance) transactions referencing this account, as
-//   either leg — the FK's onDelete: "restrict" would catch this too, but
-//   checking first lets us return a friendly, specific count instead of a
-//   raw constraint-violation error.
-// - Recurring rules referencing this account, as either leg — same
-//   onDelete: "restrict" FK, and just as real a blocker: a rule can exist
-//   (and trip this) even with zero *current* transactions, e.g. one whose
-//   materialized occurrences were all deleted individually, or one that
-//   hasn't started yet. Found live 2026-08-20 — this check was missing
-//   entirely, so deleting an account with any recurring rule against it
-//   (active or not — the FK doesn't care) surfaced a raw "FOREIGN KEY
-//   constraint failed" instead of a usable message.
-// - The account's own opening-balance row does NOT block deletion (it's
-//   account metadata, not real activity) — but it still has to be deleted
-//   explicitly before the account, or that same FK restrict blocks
-//   deletion anyway, since it's a transaction row too.
+// Real (non-opening-balance) transactions referencing this account, as
+// either leg, are the only thing that blocks deletion — the FK's
+// onDelete: "restrict" would catch this too, but checking first lets us
+// return a friendly, specific count instead of a raw constraint-violation
+// error. It's real financial history, so the user has to consciously
+// delete or move it first rather than have it silently vanish.
+//
+// Two things do NOT block, and are cleaned up automatically instead:
+// - The account's own opening-balance row — account metadata, not real
+//   activity.
+// - Recurring rules referencing this account, as either leg. These also
+//   have an onDelete: "restrict" FK; blocking on them the same way
+//   transactions are blocked (added 2026-08-20, same day as this comment)
+//   turned out to be a dead end in practice, reported immediately: "delete
+//   this and future" on a recurring transaction only closes the rule off
+//   (isActive: false, endDate set) and removes its *future* occurrences —
+//   it never deletes the recurring_rules row itself, and there's no UI
+//   action anywhere that does. That left an account permanently
+//   undeletable the moment any recurring rule had ever targeted it, even
+//   after the user deleted every visible recurring transaction tied to
+//   it. Since the transaction check above has already confirmed zero real
+//   transactions reference this account by the time we get here, any
+//   recurring_rules row still pointing at it is safe to delete outright —
+//   transactions.recurringRuleId is onDelete: "set null", not cascade, so
+//   this can never delete a real transaction record, only the generating
+//   rule itself (and its tag links, which cascade).
 export function deleteAccount(id: number): void {
   db.transaction((tx) => {
     const inUse = tx
@@ -169,22 +178,8 @@ export function deleteAccount(id: number): void {
       );
     }
 
-    const ruleAsSource = tx
-      .select({ n: count() })
-      .from(recurringRules)
-      .where(eq(recurringRules.accountId, id))
-      .get();
-    const ruleAsTarget = tx
-      .select({ n: count() })
-      .from(recurringRules)
-      .where(eq(recurringRules.toAccountId, id))
-      .get();
-    const ruleCount = (ruleAsSource?.n ?? 0) + (ruleAsTarget?.n ?? 0);
-    if (ruleCount > 0) {
-      throw new Error(
-        `This account has ${ruleCount} recurring rule${ruleCount === 1 ? "" : "s"} set up against it — delete or edit ${ruleCount === 1 ? "it" : "them"} first.`,
-      );
-    }
+    tx.delete(recurringRules).where(eq(recurringRules.accountId, id)).run();
+    tx.delete(recurringRules).where(eq(recurringRules.toAccountId, id)).run();
 
     tx.delete(transactions)
       .where(and(eq(transactions.accountId, id), eq(transactions.isOpeningBalance, true)))
