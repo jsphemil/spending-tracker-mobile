@@ -21,7 +21,7 @@ import { resolveAccountSettings } from "../../../services/settings";
 import { useThemeColors } from "../../../theme/palette";
 
 type FilterMode = "month" | "custom" | "allTime";
-type TypeFilter = "all" | "recurring" | "openingBalance";
+type TypeFilter = "all" | "recurring" | "transfer";
 
 export default function TransactionsListScreen() {
   const colors = useThemeColors();
@@ -55,14 +55,14 @@ export default function TransactionsListScreen() {
   const { data: rows } = useFilteredTransactions({ accountId, categoryId, range });
 
   // Requested 2026-08-21: filter down to just recurring-generated rows or
-  // just opening-balance rows, on top of the existing account/category
-  // filters — applied here (client-side, over the already-fetched rows)
-  // rather than in the query, matching how future-hiding is layered on
-  // below. Unlike future-hiding this is a real filter, not a declutter
-  // toggle, so it affects totals too, not just which rows are listed.
+  // just transfers, on top of the existing account/category filters —
+  // applied here (client-side, over the already-fetched rows) rather than
+  // in the query, matching how future-hiding is layered on below. Unlike
+  // future-hiding this is a real filter, not a declutter toggle, so it
+  // affects totals too, not just which rows are listed.
   const typeFilteredRows = (rows ?? []).filter((t) => {
     if (typeFilter === "recurring") return t.recurringRuleId != null;
-    if (typeFilter === "openingBalance") return t.isOpeningBalance;
+    if (typeFilter === "transfer") return t.type === "transfer";
     return true;
   });
 
@@ -303,7 +303,7 @@ export default function TransactionsListScreen() {
             [
               ["all", "All Types"],
               ["recurring", "Recurring"],
-              ["openingBalance", "Opening Balance"],
+              ["transfer", "Transfers"],
             ] as const
           ).map(([value, label]) => (
             <Pressable
