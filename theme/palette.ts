@@ -1,14 +1,9 @@
-import { useColorScheme as useSystemColorScheme } from "react-native";
-
-import { useSettings } from "../db/queries/settings";
-import type { ThemePreference } from "../db/schema";
-
 // Mirrors global.css's CSS-variable tokens as literal hex values, for the
 // handful of consumers that can't take a Tailwind className (react-native-svg
-// stroke/fill props, @expo/vector-icons' color prop). Values verified
-// directly against the source web app's src/app/globals.css (spec.md §5.12)
-// — keep both in sync by hand if either changes, the token set is small and
-// changes rarely.
+// stroke/fill props, @expo/vector-icons' color prop). Dark values are the
+// Erebor design system's tokens (Claude Design project
+// d5887e1e-2512-436b-9f64-e086c0c538de, tokens/colors.css) — keep both in
+// sync by hand if either changes, the token set is small and changes rarely.
 export interface ThemeColors {
   bg: string;
   surface: string;
@@ -24,9 +19,19 @@ export interface ThemeColors {
   success: string;
   danger: string;
   transfer: string;
+  // Frosted-glass panel tiers (translucent — approximated with plain
+  // semi-transparent fills, no real blur; see spec's design-refresh plan).
+  glassFill: string;
+  glassFillStrong: string;
+  glassFillPress: string;
+  glassBorder: string;
+  glassBorderStrong: string;
 }
 
 export const palette: Record<"light" | "dark", ThemeColors> = {
+  // Unreachable now that useResolvedTheme() always resolves "dark" (Erebor
+  // is a dark-only design system) — kept only so the Record<"light"|"dark",
+  // ThemeColors> type shape doesn't need a wider refactor.
   light: {
     bg: "#f5f5f8",
     surface: "#ffffff",
@@ -42,22 +47,32 @@ export const palette: Record<"light" | "dark", ThemeColors> = {
     success: "#12a57c",
     danger: "#e0435a",
     transfer: "#b45309",
+    glassFill: "rgba(0, 0, 0, 0.04)",
+    glassFillStrong: "rgba(0, 0, 0, 0.07)",
+    glassFillPress: "rgba(0, 0, 0, 0.10)",
+    glassBorder: "rgba(0, 0, 0, 0.08)",
+    glassBorderStrong: "rgba(0, 0, 0, 0.14)",
   },
   dark: {
-    bg: "#0b0c10",
-    surface: "#14161c",
-    surface2: "#1a1d25",
-    surface3: "#20232d",
-    border: "#262a35",
-    borderStrong: "#333748",
-    fg: "#ecedf2",
-    fgMuted: "#8b90a0",
-    fgSubtle: "#5c6072",
-    accent: "#8b7ffb",
-    accentStrong: "#a89bff",
-    success: "#35d0a0",
-    danger: "#ff6b80",
-    transfer: "#f5c451",
+    bg: "#0c1120",
+    surface: "#131a2c",
+    surface2: "#1a2338",
+    surface3: "#212b45",
+    border: "#1f2432",
+    borderStrong: "#2e323f",
+    fg: "#f6f8fc",
+    fgMuted: "#97a1bc",
+    fgSubtle: "#5c6584",
+    accent: "#48e7f5",
+    accentStrong: "#4c7dff",
+    success: "#2fe39b",
+    danger: "#ff5c72",
+    transfer: "#ffc24b",
+    glassFill: "rgba(255, 255, 255, 0.06)",
+    glassFillStrong: "rgba(255, 255, 255, 0.10)",
+    glassFillPress: "rgba(255, 255, 255, 0.14)",
+    glassBorder: "rgba(255, 255, 255, 0.12)",
+    glassBorderStrong: "rgba(255, 255, 255, 0.20)",
   },
 };
 
@@ -73,10 +88,10 @@ const SOFT: Record<"light" | "dark", Record<"accentSoft" | "successSoft" | "dang
     transferSoft: "rgba(180, 83, 9, 0.1)",
   },
   dark: {
-    accentSoft: "rgba(139, 127, 251, 0.14)",
-    successSoft: "rgba(53, 208, 160, 0.12)",
-    dangerSoft: "rgba(255, 107, 128, 0.12)",
-    transferSoft: "rgba(245, 196, 81, 0.14)",
+    accentSoft: "rgba(72, 231, 245, 0.14)",
+    successSoft: "rgba(47, 227, 155, 0.14)",
+    dangerSoft: "rgba(255, 92, 114, 0.14)",
+    transferSoft: "rgba(255, 194, 75, 0.14)",
   },
 };
 
@@ -116,20 +131,20 @@ export function cssVars(scheme: "light" | "dark"): Record<string, string> {
     "--danger-soft": s.dangerSoft,
     "--transfer": hexToRgbTriplet(p.transfer),
     "--transfer-soft": s.transferSoft,
+    "--glass-fill": p.glassFill,
+    "--glass-fill-strong": p.glassFillStrong,
+    "--glass-fill-press": p.glassFillPress,
+    "--glass-border": p.glassBorder,
+    "--glass-border-strong": p.glassBorderStrong,
   };
 }
 
-// Single source of truth for "light" or "dark" right now — resolves
-// settings.themePreference ("light"|"dark"|"system") against the OS's
-// actual current appearance for the "system" case, via React Native's own
-// useColorScheme (reactive to real OS changes independent of the broken
-// nativewind colorScheme path above).
+// Erebor is a dark-only design system — no light theme exists in the
+// source. `settings.themePreference` (schema/storage/Profile's former
+// 3-way toggle) is left untouched elsewhere, this is the one place that
+// now ignores it in favor of always resolving "dark".
 export function useResolvedTheme(): "light" | "dark" {
-  const { settings } = useSettings();
-  const systemScheme = useSystemColorScheme();
-  const preference: ThemePreference = settings?.themePreference ?? "system";
-  if (preference === "system") return systemScheme === "dark" ? "dark" : "light";
-  return preference;
+  return "dark";
 }
 
 export function useThemeColors(): ThemeColors {

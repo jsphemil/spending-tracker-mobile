@@ -30,23 +30,33 @@
   --transfer-soft: rgba(180, 83, 9, 0.1);
 }
 
+/* Erebor design system (Claude Design project
+   d5887e1e-2512-436b-9f64-e086c0c538de, tokens/colors.css) — dark-only, so
+   this is the only palette that's actually reachable (see
+   theme/palette.ts's useResolvedTheme). Kept in sync with palette.ts's
+   `dark` object and its cssVars() output by hand. */
 .dark {
-  --bg: 11 12 16;
-  --surface: 20 22 28;
-  --surface-2: 26 29 37;
-  --surface-3: 32 35 45;
-  --border: 38 42 53;
-  --border-strong: 51 55 72;
-  --fg: 236 237 242;
-  --fg-muted: 139 144 160;
-  --fg-subtle: 92 96 114;
-  --accent: 139 127 251;
-  --accent-strong: 168 155 255;
-  --accent-soft: rgba(139, 127, 251, 0.14);
-  --success: 53 208 160;
-  --success-soft: rgba(53, 208, 160, 0.12);
-  --danger: 255 107 128;
-  --danger-soft: rgba(255, 107, 128, 0.12);
-  --transfer: 245 196 81;
-  --transfer-soft: rgba(245, 196, 81, 0.14);
+  --bg: 12 17 32;
+  --surface: 19 26 44;
+  --surface-2: 26 35 56;
+  --surface-3: 33 43 69;
+  --border: 31 36 50;
+  --border-strong: 46 50 63;
+  --fg: 246 248 252;
+  --fg-muted: 151 161 188;
+  --fg-subtle: 92 101 132;
+  --accent: 72 231 245;
+  --accent-strong: 76 125 255;
+  --accent-soft: rgba(72, 231, 245, 0.14);
+  --success: 47 227 155;
+  --success-soft: rgba(47, 227, 155, 0.14);
+  --danger: 255 92 114;
+  --danger-soft: rgba(255, 92, 114, 0.14);
+  --transfer: 255 194 75;
+  --transfer-soft: rgba(255, 194, 75, 0.14);
+  --glass-fill: rgba(255, 255, 255, 0.06);
+  --glass-fill-strong: rgba(255, 255, 255, 0.10);
+  --glass-fill-press: rgba(255, 255, 255, 0.14);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --glass-border-strong: rgba(255, 255, 255, 0.20);
 }
