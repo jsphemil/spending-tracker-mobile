@@ -206,7 +206,7 @@ export default function DashboardScreen() {
         <View className="gap-1 rounded-xl border border-danger/30 bg-danger-soft px-4 py-3">
           {overBudgetCategories.map((c) => (
             <Text key={c.id} className="text-xs font-medium text-danger">
-              {c.icon} {c.name} is {formatMoney(c.spentMinor - c.monthlyBudgetMinor!, baseCurrency)} over
+              {c.name} is {formatMoney(c.spentMinor - c.monthlyBudgetMinor!, baseCurrency)} over
               its {formatMoney(c.monthlyBudgetMinor!, baseCurrency)}/mo budget
             </Text>
           ))}

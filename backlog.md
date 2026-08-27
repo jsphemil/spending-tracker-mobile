@@ -3,6 +3,7 @@
 ## Inbox
 ## Triaged
 - **Goals list page had no header, flush against the top** — the same bug class as the earlier Goals-add-page fix, but on the list screen this time. Reported 2026-08-20: "the goal add page appear as pop-up with a header but the goal list page is flush against the top, without a header 'Goals'." Root cause: `app/_layout.tsx`'s root Stack registered `goal/new` and `goal/[id]/edit` but never `goal/index` — it fell back to the Stack's default `headerShown: false`. Fixed same day: added a `Stack.Screen` entry for `goal/index` (`headerShown: true, title: "Goals"`, not a modal — it's a browse/list screen reached via a Dashboard link, same treatment as `tag/index`). `tsc`/`jest` (45/45) clean. On-device re-verification pending.
+- **Dashboard's over-budget banner had the same icon-slug-as-text bug as Breakdown/Commitments.** Reported 2026-08-20 against the "Over-budget banner appears..." checklist item: "categories are not shown at all in dashboard." Found the same root cause at `app/(tabs)/index.tsx`'s banner line — `{c.icon} {c.name} is ... over its ... budget` printed the category's raw `MaterialCommunityIcons` slug as literal text. Fixed same day, but differently from the Breakdown/Commitments fix: this is one line of a full sentence inside a single `<Text>`, not a list row, so an inline icon component would read awkwardly there — just dropped `{c.icon}` from the sentence rather than wiring in a `<MaterialCommunityIcons>`. `tsc`/`jest` (45/45) clean. **Still needs the user's confirmation**: unclear whether "categories are not shown at all" meant this icon-text bug specifically, or that the banner never appeared even when a category genuinely was over budget (a second, separate, unconfirmed bug in the `overBudgetCategories` filter) — or simply that nothing was over budget at test time, which is correct behavior (no banner). Please re-check by actually pushing a category over its monthly budget this month and confirming the banner shows up with a clean category name.
 - **UAT round 1 (2026-08-20), 3 fixes.** From the first batch of Accounts-section checklist comments:
   1. **Credit card accounts could be saved with no credit limit at all.** `AccountForm.handleSubmit()`'s validation only rejected an *explicitly entered* 0/negative credit limit (`creditLimitNum !== null && !(creditLimitNum > 0)`) — leaving the field blank produced `creditLimitNum = null`, which skipped validation entirely and saved `creditLimitMinor: null`. Reported: "credit limit and monthly budget fields shows blank as default and if i dont change it and keep it as blank it allows to save the account." Fixed: credit limit is now required (not just positive-if-present) whenever `type === "credit_card"`. Monthly budget stays optional-if-blank by design (not every account needs a Budget Mode limit) — that field wasn't actually broken, just easy to conflate with credit limit in the same report.
   2. **Deleting an account left a stale, blank screen** showing the deleted account's name with only a manual back button, instead of returning somewhere valid. Root cause: `app/account/[id]/edit.tsx`'s delete handler called `router.back()`, which returns to whatever screen was directly underneath the Edit Account modal — usually the now-deleted account's own Detail screen (`app/(tabs)/accounts/[id].tsx`), which has no "this account no longer exists" handling and just sits on its loading guard forever. Fixed: `router.dismissTo("/accounts")` instead — dismisses every screen stacked on top of the modal and lands directly on the Accounts list, the only screen still valid after a delete, regardless of which of the two entry points (Account Detail's header pencil, or an opening-balance transaction row's edit icon) led there.
@@ -220,17 +221,17 @@ _You've likely already been through onboarding once — if you don't want to wip
 - [ ] Asset allocation donut buckets (Liquid/Deposits/Invested) look right; credit card debt is excluded from the donut and shown as its own figure
   - Observations:passed
 - [ ] Over-budget banner appears when a category is over its monthly budget, and not otherwise
-  - Observations:
+  - Observations:categories are not shown at all in dashboard **Fixed 2026-08-20** — same icon-slug-as-text bug as Breakdown/Commitments, in the banner's sentence text; dropped the icon from that line. Not fully sure this is what you meant by "not shown at all" though — could you push a category over its monthly budget this month and confirm the banner actually appears with a clean category name? If it still doesn't appear at all, that's a second, different bug I haven't found yet.
 - [ ] Carry Forward / Income / Expense / Credit card debt stat row looks correct for the selected month
-  - Observations:
+  - Observations:passed
 - [ ] Embedded calendar month grid on the Dashboard matches the full Calendar screen for the same month
-  - Observations:
+  - Observations:passed
 - [ ] Accounts card and Goals card (top 3) both look right and link through correctly
-  - Observations:
+  - Observations:passed
 - [ ] Recent Transactions card: inline Edit/Delete icons work directly from the Dashboard
-  - Observations:
+  - Observations:passed
 - [ ] Dashboard month-nav arrows (now icon chevrons, just changed) are easy to see and tap
-  - Observations:
+  - Observations:passed
 
 ### 10. Calendar (part of §5.2)
 - [ ] Calendar screen's month-nav works; each day's expense total looks right
