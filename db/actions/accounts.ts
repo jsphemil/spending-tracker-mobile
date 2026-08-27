@@ -1,7 +1,7 @@
 import { and, count, eq } from "drizzle-orm";
 
 import { db } from "../client";
-import { accounts, transactions, type AccountType } from "../schema";
+import { accounts, recurringRules, transactions, type AccountType } from "../schema";
 
 export interface AccountInput {
   name: string;
@@ -127,11 +127,19 @@ export function updateAccount(id: number, input: AccountUpdateInput): void {
   });
 }
 
-// Two things block deletion, checked before anything is touched:
+// Three things block deletion, checked before anything is touched:
 // - Real (non-opening-balance) transactions referencing this account, as
 //   either leg — the FK's onDelete: "restrict" would catch this too, but
 //   checking first lets us return a friendly, specific count instead of a
 //   raw constraint-violation error.
+// - Recurring rules referencing this account, as either leg — same
+//   onDelete: "restrict" FK, and just as real a blocker: a rule can exist
+//   (and trip this) even with zero *current* transactions, e.g. one whose
+//   materialized occurrences were all deleted individually, or one that
+//   hasn't started yet. Found live 2026-08-20 — this check was missing
+//   entirely, so deleting an account with any recurring rule against it
+//   (active or not — the FK doesn't care) surfaced a raw "FOREIGN KEY
+//   constraint failed" instead of a usable message.
 // - The account's own opening-balance row does NOT block deletion (it's
 //   account metadata, not real activity) — but it still has to be deleted
 //   explicitly before the account, or that same FK restrict blocks
@@ -158,6 +166,23 @@ export function deleteAccount(id: number): void {
     if (inUseCount > 0) {
       throw new Error(
         `This account has ${inUseCount} transaction${inUseCount === 1 ? "" : "s"} — delete or move them first.`,
+      );
+    }
+
+    const ruleAsSource = tx
+      .select({ n: count() })
+      .from(recurringRules)
+      .where(eq(recurringRules.accountId, id))
+      .get();
+    const ruleAsTarget = tx
+      .select({ n: count() })
+      .from(recurringRules)
+      .where(eq(recurringRules.toAccountId, id))
+      .get();
+    const ruleCount = (ruleAsSource?.n ?? 0) + (ruleAsTarget?.n ?? 0);
+    if (ruleCount > 0) {
+      throw new Error(
+        `This account has ${ruleCount} recurring rule${ruleCount === 1 ? "" : "s"} set up against it — delete or edit ${ruleCount === 1 ? "it" : "them"} first.`,
       );
     }
 
