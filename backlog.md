@@ -9,6 +9,9 @@
   - **Flagged, not fixed — needs the user's input, not a code guess:**
     - The same checklist round also reported the onboarding currency-selection screen has "the same problem... its boundaries are very small, i want it as a pop up window" — same wording as the Goals-add-page bug already fixed. But `components/CurrencyPicker.tsx`'s own picker already renders as a full-screen native `<Modal>` (`animationType="slide"`, `flex-1` content) — the same component Profile's base-currency field uses, which passed its own checklist item ("changing it updates the currency picker label immediately"). Unclear whether "boundaries are very small" means this picker modal specifically, or Onboarding Step 1's outer screen (`components/OnboardingFlow.tsx`, which is deliberately rendered in place of the Stack, not as a routed/modal screen, by design — see spec.md §5.13). Needs a screenshot or more specific description before touching anything, rather than guessing at native-Modal internals.
     - **Changing an existing account's type after it already has transactions produces a ring that looks like it "forgot" prior activity.** Reported: switched a savings account (with a real income + expense transaction already recorded) to `credit_card` type; the ring showed 0% used / the full credit limit as available, ignoring those transactions, even though they still show correctly in the transaction list and Total In/Total Out. Investigated: this is very likely *not* a separate bug but the direct, correct consequence of fix #1 above being missing at the time — `CreditUsageRing`'s math is `owed = max(0, -endingBalanceMinor)`, i.e. only a *negative* running balance counts as credit-card debt; a positive balance (net income before the type switch) is mathematically "no debt owed, full credit available," which is arguably correct credit-card semantics, not a bug. This needs the user to re-test now that credit limit is required, and to confirm whether that "0% used, prior transactions don't count as debt" behavior is actually what they want when retroactively converting an account's type — the real web app's data model doesn't appear to anticipate changing an account's type post-hoc at all, so this may be an edge case outside designed scope rather than something to "fix" further.
+- **UAT round 2 (2026-08-20), Transactions section — 1 open question, 1 needs more info.**
+  1. **No discoverable way to browse all tags.** Reported: "how to get the entire transactions in a particular tag, this feature is not yet built... there must be a tag section somewhere in the app that lets me see all the tags and see all transactions in a tag when i click that tag name." `app/tag/[name].tsx` already exists and correctly shows a tag's total + full transaction list (converted to base currency if needed) — but the *only* way to reach it is tapping a tag chip on a transaction row that already has that tag visible, via `TransactionListItem`'s `Link href={/tag/${name}}`. There's no standalone "all tags" list screen, so a tag you're not currently looking at is unreachable. This is a genuine new-scope feature request, not a bug fix — not building it yet. Needs a placement decision first: where should a "Tags" list live? Candidates: a link from the Profile page, a section on the Categories screen, or its own new tab. Asked the user 2026-08-20, not yet answered.
+  2. **Duplicate icon reported as not prefilling account/category/etc.** Reported: "duplicates without the account, category, etc not having any default selected, it must be with a default values as per the duplicated transaction." Investigated 2026-08-20: read `app/transaction/new.tsx`'s `duplicateId` handling (waits for the live query to resolve before rendering the form at all, then passes `accountId`/`toAccountId`/`categoryId`/`amountMinor`/`type`/`description`/`tagIds` from the source row as `initialValues`) and `TransactionForm.tsx`'s state init (`useState(initialValues?.accountId ?? null)` etc., account/category pills highlight via `accountId === a.id`/`categoryId === c.id`) — both look correct, no code path found that would leave them blank. Not applying a guessed fix against working-looking code. Needs a screenshot of what the duplicated form actually shows, or confirmation of exactly which fields appeared unselected, before touching anything.
 - **Goal add/edit screens had no header and weren't presented as a modal.** Reported 2026-08-19: "while checking the goals add page, the 'goals' heading is too close to the top border of the screen - it should appear as a pop up like we add a transaction." Root cause: `app/_layout.tsx`'s root Stack explicitly registers `presentation: "modal", headerShown: true` for account/transaction/category's new+edit screens, but `goal/new` and `goal/[id]/edit` were never added to that list — they fell back to the Stack's default `headerShown: false`, so `GoalForm`'s first field sat flush under the status bar with no title bar. Fixed same day: added the same two Stack.Screen entries ("New Goal" / "Edit Goal") matching the other three entities exactly. Folded into spec.md §5.17. On-device verification pending.
 - **Phase 13 final audit, first pass (2026-08-13).** Hardcoded-color grep across the whole codebase found 2 real gaps (everything else that matched was legitimate — theme/palette.ts itself, the account/category color-picker swatches, and one deliberately-literal white icon color already explained by its own comment): (1) `placeholderTextColor` hardcoded to the light-mode `fgSubtle` hex value in 3 files (`app/(tabs)/profile.tsx`, `components/OnboardingFlow.tsx`, `components/TagPicker.tsx`) instead of reading `useThemeColors()` — meant placeholder text never adapted to dark mode; (2) `CreditUsageRing` never passed `overflowColor` to `RingArc`, silently falling back to `RingArc`'s own hardcoded default (`#DC2626`) instead of the theme's `danger` color for the over-credit-limit warning lap — `GaugeRing` already did this correctly, `CreditUsageRing` was the one gap. Both fixed. Also found spec.md's §8 "Build Progress" section was entirely stale — described a superseded 5-phase plan (from before the repo-parity replan) with references to "Phase 1 blocked on Android build tooling" and other facts long since resolved, and directly contradicted the Status Dashboard (said "nothing is marked ✅ yet" when §5.14 already was). Rewrote §8 as a short pointer to the Status Dashboard as the single source of truth instead of a duplicate narrative. Also corrected 3 Status Dashboard rows (§5.4/§5.5/§5.6) that still said Carry Forward/Budget Mode enforcement/Show-Future-Transactions filtering were unbuilt — all three actually shipped as part of Phase 10, the dashboard just hadn't been updated to say so. `npx tsc --noEmit` and `npx jest` (45/45) both clean after the fixes.
 - **Add a README.md for the GitHub repo** (github.com/jsphemil/spending-tracker-mobile). Requested 2026-08-13, explicitly deferred by the user until the app is fully complete. Repo-hygiene item, not a product feature, so no spec.md Status Dashboard entry — tracked here only. Natural trigger point: right after task-list Phase 13 (final audit), once the app is genuinely done.
@@ -117,33 +120,34 @@ _You've likely already been through onboarding once — if you don't want to wip
 
 ### 3. Transactions (§5.2)
 - [ ] Create an expense, an income, and a transfer between two accounts — all three save and show correctly in the list
-  - Observations:
+  - Observations:passed
 - [ ] Category is required — submitting without one shows an error instead of silently saving "Uncategorized"
-  - Observations:
+  - Observations:passed
 - [ ] Amount must be positive — 0 or negative is rejected
-  - Observations:
+  - Observations:passed
 - [ ] Amount field accepts a math expression (e.g. "1200+350") and evaluates it correctly; the +/−/×/÷ quick-insert buttons work
-  - Observations:
+  - Observations:passed
 - [ ] "+ New category" inline from the transaction form creates a category that's immediately usable and shows up correctly on the Categories screen afterward
-  - Observations:
+  - Observations:passed
 - [ ] Tags: adding a new tag inline and re-selecting an existing tag both work; tag chips show correctly on the transaction row
-  - Observations:
+  - Observations:passed; but how to get the entire transactions in a particular tag, this feature is not yet build in this app
+  i must be able to pull all transactions relating to a tag, there must be a tag section somewhere in the app that lets me see all the tags and see all transactions in a tag when i click that tag name **Checked 2026-08-20 — the per-tag page you're describing already exists (`/tag/[name]`), reachable today only by tapping a tag chip on a transaction. Building a standalone "browse all tags" screen is new scope, not a bug fix, so I want your call on where it should live before I build it: a link on Profile, a section on Categories, or its own tab? See Triaged.**
 - [ ] Duplicate icon on a transaction row prefills a new transaction with the same details (except date)
-  - Observations:
+  - Observations: duplicates without the account, category, etc not having any default selected, it must be with a default values as per the duplicated transaction, which must be changeable before saving the transaction **Investigated 2026-08-20 — read through the duplicate-prefill code path (`app/transaction/new.tsx` + `TransactionForm.tsx`) and it looks correct: account/category/amount/description/tags should all come from the original transaction. Didn't find a bug to fix. Could you send a screenshot of what the duplicated form actually shows, or confirm exactly which field(s) looked unselected?**
 - [ ] Edit and Delete icons on a transaction row work correctly
-  - Observations:
+  - Observations:passed
 - [ ] Opening-balance transaction rows cannot be edited/deleted from the normal transaction screen — tapping them redirects to the account's own edit page instead
-  - Observations:
+  - Observations:passed
 - [ ] Transferring money into an account: the inward leg shows up in that account's own transaction list (not just the balance)
-  - Observations:
+  - Observations:passed
 - [ ] Viewing a transfer from the "from" account shows a "-" sign; viewing the same transfer from the "to" account shows a "+"; viewing it from Dashboard/unfiltered Transactions shows it unsigned
-  - Observations:
+  - Observations:passed
 - [ ] Transactions list: "This month" / "Custom range" / "All time" segmented control all work, including picking a custom From/To date range
-  - Observations:
+  - Observations:passed
 - [ ] Transactions list: switching month or account filter actually changes the rows shown (not frozen on whatever loaded first)
-  - Observations:
+  - Observations:passed
 - [ ] SummaryBand's green/red proportional bar looks correct relative to income vs. expense for the selected period
-  - Observations:
+  - Observations:passed
 
 ### 4. Categories & Budgets (§5.3, §5.5)
 - [ ] Create, edit, and delete a category (icon + color + optional monthly budget)
