@@ -23,6 +23,15 @@ export default function TransactionsCalendarScreen() {
   const { data: rows } = useFilteredTransactions({ range });
   const { data: accounts } = useAccounts();
 
+  // Spec 5.6: same declutter-only semantics as the other screens — hides
+  // future day-cells, only while genuinely viewing the current month; no
+  // per-account scoping here (this view is always all-accounts), so it's
+  // the global setting alone.
+  const now = new Date();
+  const todayDateOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const isCurrentMonth = now.getFullYear() === period.year && now.getMonth() === period.month;
+  const hidingFuture = isCurrentMonth && !(settings?.showFutureTxGlobal ?? true);
+
   // Day totals only include base-currency accounts — summing raw amounts
   // across different currencies without conversion would be silently wrong.
   const expenseByDay = useMemo(() => {
@@ -31,11 +40,12 @@ export default function TransactionsCalendarScreen() {
     for (const row of rows ?? []) {
       if (row.type !== "expense") continue;
       if (currencyByAccount.get(row.accountId) !== baseCurrency) continue;
+      if (hidingFuture && row.date > todayDateOnly) continue;
       const day = row.date.getDate();
       totals[day] = (totals[day] ?? 0) + row.amountMinor;
     }
     return totals;
-  }, [rows, accounts]);
+  }, [rows, accounts, hidingFuture]);
 
   return (
     <ScrollView className="flex-1 bg-bg" contentContainerStyle={{ padding: 16 }}>

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { Link } from "expo-router";
+import { Link, Stack } from "expo-router";
 import { FlatList, Pressable, ScrollView, Text, View } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 
@@ -17,6 +17,7 @@ import { getRatesToBase } from "../../../services/currency";
 import { majorToMinor, minorToMajor } from "../../../services/format";
 import { currentMonthPeriod, monthLabel, monthRange, shiftMonth } from "../../../services/period";
 import { ensureMaterialized } from "../../../services/recurrence";
+import { resolveAccountSettings } from "../../../services/settings";
 import { useThemeColors } from "../../../theme/palette";
 
 type FilterMode = "month" | "custom" | "allTime";
@@ -50,6 +51,27 @@ export default function TransactionsListScreen() {
     ensureMaterialized(db, range ? { through: range.end } : undefined);
   }, [range?.end]);
   const { data: rows } = useFilteredTransactions({ accountId, categoryId, range });
+
+  // Spec 5.6: same declutter-only semantics as Account Detail — hides
+  // future-dated *rows*, never touches totals, and only while genuinely
+  // viewing the current month (a future/custom/all-time view has no
+  // "haven't happened yet" concept to declutter). With one account
+  // selected, its own override (if any) wins over the global setting; with
+  // "All Accounts" there's no single account to resolve an override
+  // against, so it's the global setting alone.
+  const now = new Date();
+  const todayDateOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const isCurrentMonth =
+    filterMode === "month" && now.getFullYear() === period.year && now.getMonth() === period.month;
+  const selectedAccount = accountId ? accounts?.find((a) => a.id === accountId) : undefined;
+  const showFutureTxEnabled =
+    selectedAccount && settings
+      ? resolveAccountSettings(selectedAccount, settings).showFutureTxEnabled
+      : settings?.showFutureTxGlobal ?? true;
+  const hidingFuture = isCurrentMonth && !showFutureTxEnabled;
+  const allRows = rows ?? [];
+  const visibleRows = hidingFuture ? allRows.filter((t) => t.date <= todayDateOnly) : allRows;
+  const hiddenFutureCount = allRows.length - visibleRows.length;
 
   // When a single account is selected every row already shares that
   // account's currency, so the band shows it natively. Across "All
@@ -103,6 +125,17 @@ export default function TransactionsListScreen() {
 
   return (
     <View className="flex-1 bg-bg">
+      <Stack.Screen
+        options={{
+          headerRight: () => (
+            <Link href="/transactions/calendar" asChild>
+              <Pressable hitSlop={8} className="px-2">
+                <MaterialCommunityIcons name="calendar-month-outline" size={22} color={colors.accent} />
+              </Pressable>
+            </Link>
+          ),
+        }}
+      />
       <View className="gap-3 border-b border-border p-4">
         <View className="flex-row gap-1.5 rounded-lg bg-surface-2 p-1">
           {(
@@ -255,10 +288,16 @@ export default function TransactionsListScreen() {
           expenseMinor={totals.expenseMinor}
           currency={currency}
         />
+        {hiddenFutureCount > 0 && (
+          <Text className="text-xs text-fg-muted">
+            {hiddenFutureCount} upcoming transaction{hiddenFutureCount === 1 ? "" : "s"} hidden — Show
+            Future Transactions is off.
+          </Text>
+        )}
       </View>
 
       <FlatList
-        data={rows ?? []}
+        data={visibleRows}
         keyExtractor={(item) => String(item.id)}
         contentContainerStyle={{ padding: 16 }}
         ListEmptyComponent={<EmptyState message="No transactions for this filter." />}

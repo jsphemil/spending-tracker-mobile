@@ -61,7 +61,24 @@ export default function DashboardScreen() {
   const { data: recentTransactionsRaw } = useFilteredTransactions({
     range: { start: new Date(2000, 0, 1), end: range.end },
   });
-  const recentTransactions = (recentTransactionsRaw ?? []).slice(0, 5);
+
+  // Spec 5.6: same declutter-only semantics as Account Detail and the
+  // Transactions list — hides future-dated rows/day-cells, never touches
+  // totals, only while genuinely viewing the current month. Dashboard is
+  // never scoped to one account, so there's no per-account override to
+  // resolve — just the global setting.
+  const now = new Date();
+  const todayDateOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const isCurrentMonth = now.getFullYear() === period.year && now.getMonth() === period.month;
+  const hidingFuture = isCurrentMonth && !(settings?.showFutureTxGlobal ?? true);
+  const visibleMonthTransactions = hidingFuture
+    ? (monthTransactions ?? []).filter((t) => t.date <= todayDateOnly)
+    : (monthTransactions ?? []);
+  const recentTransactionsAll = hidingFuture
+    ? (recentTransactionsRaw ?? []).filter((t) => t.date <= todayDateOnly)
+    : (recentTransactionsRaw ?? []);
+  const recentTransactions = recentTransactionsAll.slice(0, 5);
+  const hiddenFutureCount = (recentTransactionsRaw ?? []).length - recentTransactionsAll.length;
 
   const foreignCurrencies = useMemo(() => {
     const set = new Set<string>();
@@ -172,7 +189,7 @@ export default function DashboardScreen() {
     .filter((c) => c.spentMinor > c.monthlyBudgetMinor!);
 
   const expenseByDay: Record<number, number> = {};
-  for (const t of monthTransactions ?? []) {
+  for (const t of visibleMonthTransactions) {
     if (t.type !== "expense") continue;
     const acctCurrency = accounts?.find((a) => a.id === t.accountId)?.currency ?? baseCurrency;
     const day = t.date.getDate();
@@ -403,6 +420,12 @@ export default function DashboardScreen() {
             </Pressable>
           </Link>
         </View>
+        {hiddenFutureCount > 0 && (
+          <Text className="mb-2 text-xs text-fg-muted">
+            {hiddenFutureCount} upcoming transaction{hiddenFutureCount === 1 ? "" : "s"} hidden — Show
+            Future Transactions is off.
+          </Text>
+        )}
         {recentTransactions.length === 0 ? (
           <EmptyState message="No transactions yet." />
         ) : (
