@@ -25,10 +25,10 @@ pushed to a later phase) · ❌ Dropped (cut from scope).
 | §5.3a | Tags | 🚧 In Progress | Inline creation + per-tag summary (with currency conversion) built. Added 2026-08-20 per UAT feedback: Dashboard "Tags" card (recent tags) + a new `/tag` list screen ("More" link), since a tag's summary page was previously only reachable via a chip on a transaction already showing it — on-device verification pending |
 | §5.4 | Spending Summary | 🚧 In Progress | Month nav, net worth, Indian formatting, Carry Forward (Dashboard + Account Detail), asset allocation donut all built; a literal income/expense-by-category pie chart specifically hasn't been built (Categories list's spend-vs-budget bars cover the budget-comparison need, but not a pie visualization) — on-device verification pending |
 | §5.5 | Budget Mode | 🚧 In Progress | Account-level toggle + schema built, spend-vs-budget comparison now wired up (Phase 10, `resolveAccountSettings` actually called from Account Detail's Budget Mode bar); category-level budgets (separate from the toggle) built 2026-08-12 with spend-vs-budget bars on the Categories list — on-device verification pending for both |
-| §5.6 | Show/Hide Future Transactions | 🚧 In Progress | Toggle + schema built; filtering applied (Phase 10, Account Detail hides future-dated rows when the resolved setting is off). UAT found 2026-08-20 that Dashboard, the Transactions list, and the standalone Calendar never had this wired in at all — fixed same day, same declutter-only semantics (rows/day-cells hidden, totals unaffected, current-month-only) — on-device re-verification pending |
-| §5.7 | Smart Features (Claude) | ⏸️ Deferred | Phase 4. Inert FAB placeholder only |
-| §5.8 | Dashboard | 🚧 In Progress | Fully rebuilt 2026-08-12 to match the real app: net worth capacity gauge, net worth trend chart (history-capped), asset allocation donut, over-budget banner, embedded calendar with quick-add buttons, Accounts card, Goals card (top 3), Recent Transactions card with inline edit/delete icons. Tags card added 2026-08-20 (see §5.3a). UAT round (2026-08-20): fixed the over-budget banner's same icon-slug-as-text bug as Breakdown/Commitments — on-device re-verification pending |
-| §5.9 | Navigation | 🚧 In Progress | Built; Commitments tab added 2026-08-12 (Dashboard, Accounts, Transactions, Commitments, Categories, Profile — 6 tabs total, matching the real app's order) |
+| §5.6 | Show/Hide Future Transactions | ✅ Built & Verified | Toggle + schema built; filtering applied (Phase 10, Account Detail hides future-dated rows when the resolved setting is off). UAT found 2026-08-20 that Dashboard, the Transactions list, and the standalone Calendar never had this wired in at all — fixed same day, same declutter-only semantics (rows/day-cells hidden, totals unaffected, current-month-only). User confirmed on-device 2026-08-20: all 4 screens pass |
+| §5.7 | Smart Features (Claude) | ❌ Dropped | User confirmed 2026-08-20 this isn't getting built — inert FAB placeholder removed same day |
+| §5.8 | Dashboard | 🚧 In Progress | Fully rebuilt 2026-08-12 to match the real app: net worth capacity gauge, net worth trend chart (history-capped), asset allocation donut, over-budget banner, embedded calendar with quick-add buttons, Accounts card, Goals card (top 3), Recent Transactions card with inline edit/delete icons. Tags card added 2026-08-20 (see §5.3a). UAT round (2026-08-20): fixed the over-budget banner's same icon-slug-as-text bug as Breakdown/Commitments, and the Show-Future-Transactions gap (see §5.6) — on-device re-verification pending |
+| §5.9 | Navigation | 🚧 In Progress | Built; Commitments tab added 2026-08-12 (Dashboard, Accounts, Transactions, Commitments, Categories, Profile — 6 tabs total, matching the real app's order). UAT (2026-08-20): tabs never had icons set (`tabBarIcon` missing entirely, showing a broken-icon placeholder) — fixed same day with a `MaterialCommunityIcons` per tab — on-device re-verification pending |
 | §5.10 | Profile Page | 🚧 In Progress | Built; Dropbox section is an inert placeholder |
 | §5.11 | Home Screen Widget | ⏸️ Deferred | Phase 5 |
 | §5.12 | Visual Design System | 🚧 In Progress | Full port of the web app's dark-first token theme, monospace tabular numerals, gauge-over-pie pattern, and card/FAB/empty-state conventions — decided 2026-08-11, supersedes the earlier "out of scope" call in §6. Status corrected 2026-08-19 (was stuck on 📋 Planned despite being built across Phases 1-3); month-nav arrows switched from thin text glyphs to proper icons same day — on-device verification pending |
@@ -330,7 +330,7 @@ optional description.
   up in lists/summaries
 - Can be set **globally** or **per account**, same pattern as Budget Mode
 
-### 5.7 Smart Features (powered by Claude) ⏸️ Deferred
+### 5.7 Smart Features (powered by Claude) ❌ Dropped
 - **Add transactions by typing plain English**, e.g. "spent 200 on lunch
   today from HDFC card" — the app reads this, figures out the amount,
   category, account, and date, shows you what it understood, and only
@@ -339,11 +339,15 @@ optional description.
   did I spend on eating out last month?" or "which account has the
   highest expenses this year?" — the app answers using your real
   transaction data
-- **Entry point:** a floating round icon, always visible in the bottom
-  corner of the screen (the familiar "chat bubble" pattern used by
-  website chat widgets). Tapping it opens a chat-style panel where you
-  can either type a transaction to log or ask a question — both go
-  through the same window
+- **Entry point (removed):** was going to be a floating round icon,
+  always visible in the bottom corner of the screen (the familiar "chat
+  bubble" pattern used by website chat widgets), opening a chat-style
+  panel for either logging a transaction or asking a question.
+- **Dropped 2026-08-20**: the user confirmed during UAT this isn't
+  getting built ("it can actually be removed, i am not going to build
+  this feature") — the inert placeholder FAB (`app/(tabs)/_layout.tsx`)
+  was removed the same day, along with the bottom-left/right FAB-
+  collision-avoidance logic it existed for.
 
 ### 5.8 Dashboard (Landing Page) 🚧 In Progress
 - The first screen you land on; a persistent month-nav pill at the top
@@ -381,9 +385,12 @@ optional description.
 ### 5.9 Navigation 🚧 In Progress
 - A persistent bottom tab bar to move between the main sections —
   **6 tabs**: Dashboard, Accounts, Transactions, Commitments (§5.16),
-  Categories, Profile
-- The floating Claude assistant icon (section 5.7) stays visible and
-  accessible no matter which page you're on
+  Categories, Profile, each with its own icon (added 2026-08-20 — UAT
+  found the tabs had never had `tabBarIcon` set, showing a broken/missing-
+  icon placeholder instead)
+- ~~The floating Claude assistant icon (section 5.7) stays visible and
+  accessible no matter which page you're on~~ — removed 2026-08-20, §5.7
+  dropped
 - Goals (§5.17) is deliberately not a tab, matching the real app — it's
   reached via the Dashboard's Goals card
 
@@ -425,9 +432,10 @@ now stale and kept only for history.
   actions, with a truncating content column and a non-shrinking action
   column.
 - **FAB placement is planned, not defaulted** — audit every screen for
-  existing bottom-right occupants (month-nav arrows, the Claude
-  assistant placeholder FAB) before adding another one there; measure
-  actual stacking gaps rather than eyeballing them.
+  existing bottom-right occupants (month-nav arrows) before adding
+  another one there; measure actual stacking gaps rather than
+  eyeballing them. (The Claude assistant placeholder FAB this
+  originally had to dodge is gone — §5.7 dropped 2026-08-20.)
 - **Explicit loading/empty/error states** for every list and async
   boundary — no bare blank areas, no silent freezes.
 - Full reference palette (dark theme values) and the rest of the

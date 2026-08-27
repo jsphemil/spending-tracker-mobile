@@ -2,6 +2,11 @@
 
 ## Inbox
 ## Triaged
+- **UAT round (2026-08-20), Navigation & Theming section — 2 fixed, 1 flagged for a scope decision.**
+  1. **Bottom tab bar icons were never set at all — showed a broken/missing-icon placeholder ("x in a box") instead.** Reported: "yes, but the icons for these are not defined, it now shows an x in a box." `app/(tabs)/_layout.tsx` never set `tabBarIcon` on any `Tabs.Screen` — React Navigation's bottom-tabs falls back to a visible missing-icon placeholder when none is provided, rather than just showing text-only tabs. Fixed same day: added a `MaterialCommunityIcons` icon per tab (Dashboard: `view-dashboard-outline`, Accounts: `wallet-outline`, Transactions: `swap-horizontal`, Commitments: `calendar-sync-outline`, Categories: `shape-outline`, Profile: `account-circle-outline`), tinted via the existing `tabBarActiveTintColor`/`tabBarInactiveTintColor`.
+  2. **Removed the inert "Ask (coming soon)" Smart Features placeholder FAB entirely**, per explicit instruction: "passed, it can actually be removed, i am not going to build this feature." spec.md §5.7 (Smart Features / Claude-powered assistant) changed from ⏸️ Deferred to ❌ Dropped. Removed the placeholder `Pressable` from `app/(tabs)/_layout.tsx` along with the now-pointless bottom-left/right FAB-collision-avoidance logic it existed for (each screen's own "+" FAB can now use whichever corner makes sense without dodging a chat-bubble icon that will never exist). Simplified the layout file's now-unnecessary wrapping `<View>` in the same pass.
+  3. **Flagged, not built — needs a scope decision.** Reported: "the tiles are a bit difficult to discern from the background in dark mode, a glass effect would be nice, in both dark and light modes." This is a genuine design request (glassmorphism/frosted-glass card surfaces), not a bug — and a real scope expansion: it would mean a new native dependency (`expo-blur` or equivalent), reworking every card surface across the app, and careful separate tuning for light and dark (a translucent blur reads very differently against each). Not started. Want this as its own design pass? If so, worth scoping properly rather than folding into UAT bug-fixing.
+  `tsc`/`jest` (45/45) clean for the 2 fixes. On-device re-verification pending.
 - **The standalone Calendar screen had no discoverable entry point.** Reported 2026-08-20: "I don't see a calendar screen other than the calendar in the dashboard." `app/(tabs)/transactions/calendar.tsx` already existed, fully functional, registered in the Transactions tab's own nested Stack with a "Calendar" title — but nothing in the UI ever linked to it. Fixed same day: added a header-right calendar icon on the Transactions list screen (`Stack.Screen options={{headerRight}}`, same pattern as Account Detail's edit pencil), linking to `/transactions/calendar`.
 - **Show Future Transactions toggle only ever worked on Account Detail — Dashboard, the Transactions list, and the standalone Calendar never respected it at all.** Reported 2026-08-20: "even after hiding the future transactions in profile, future transactions still show in the dashboard calendar, transactions page, and the account page." A grep confirmed the filtering logic (`showFutureTx`/`hidingFuture`/`resolveAccountSettings`) only existed in `app/(tabs)/accounts/[id].tsx` — it was never wired into the other 3 screens despite spec.md documenting it as a general app setting. Fixed same day, matching Account Detail's exact declutter-only semantics (hides future-dated rows/day-cells, never touches totals/sums, only while genuinely viewing the actual current month):
   - **Transactions list** (`app/(tabs)/transactions/index.tsx`): filters `visibleRows` before the FlatList, resolves per-account override when one account is selected (via `resolveAccountSettings`) or the global setting under "All Accounts," adds the same "N upcoming transaction(s) hidden" notice Account Detail already had.
@@ -252,36 +257,36 @@ _You've likely already been through onboarding once — if you don't want to wip
 
 ### 12. CSV Export (§5.14 — previously verified, quick re-confirm)
 - [ ] Export still works after all the currency/base-currency changes since it was last checked — account filter, date range, and all 9 columns still look right
-  - Observations:
+  - Observations:passed
 
 ### 13. Profile & Settings (§5.10)
 - [ ] Display name saves and persists after closing/reopening the app
-  - Observations:
+  - Observations:passed
 - [ ] Theme toggle (Light/Dark/System) actually changes the app's appearance
-  - Observations:
+  - Observations:passed
 - [ ] Budget Mode and Show Future Transactions global switches both work as described above
-  - Observations:
+  - Observations:passed
 
 ### 14. Navigation & General UX (§5.9)
 - [ ] All 6 tabs (Dashboard, Accounts, Transactions, Commitments, Categories, Profile) are present and in that order
-  - Observations:
+  - Observations:yes, but the icons for these are not defined, it now shows an x in a box **Fixed 2026-08-20** — the tabs never had icons set at all (`tabBarIcon` missing), so React Navigation showed its own missing-icon placeholder. Added a proper icon to each tab. Please re-check.
 - [ ] Back-navigation after creating a new account/transaction/category/goal never leaves you on a broken screen or requires a reload
-  - Observations:
+  - Observations: passed
 - [ ] New Account / New Transaction / New Category / New Goal / Edit variants of each all open as a pop-up/modal with a header (consistent presentation across all four entities)
-  - Observations:
+  - Observations:passed
 
 ### 15. Visual Design / Theming (§5.12)
 - [ ] Switch Profile → Theme to the opposite of what you normally use, then skim every tab once — no invisible text, no jarringly wrong colors, danger/success/accent colors still read clearly
-  - Observations:
+  - Observations:the tiles are a bit difficult to discern from the background in dark mode, a glass effect would be nice, in both dark and light modes **Logged 2026-08-20, not built** — this is real design scope (new blur dependency, every card surface, separate light/dark tuning), not a quick fix. See Triaged. Want this as its own pass?
 - [ ] Money figures throughout the app use a monospace/tabular font (numbers align in columns, e.g. in a list)
-  - Observations:
+  - Observations:passed
 - [ ] The bottom-left "Ask (coming soon)" placeholder button never overlaps a screen's own "+" button (bottom-right)
-  - Observations:
+  - Observations:passed, it can actually be removed, i am not going to build this feature **Removed 2026-08-20** — spec.md §5.7 marked ❌ Dropped, the inert placeholder FAB deleted from the tab layout.
 - [ ] Loading states never show a bare blank screen while data loads; empty lists (e.g. no goals yet, no transactions yet) show a proper empty-state message instead of nothing
-  - Observations:
+  - Observations:passed
 
 ### 16. Multi-Currency Edge Cases
 - [ ] Create an account in a currency different from your base currency, add a transaction to it, and confirm every screen that shows that account's figures displays both the native amount and the "≈ {base}" conversion
-  - Observations:
+  - Observations:passed
 - [ ] With no internet connection, currency conversion falls back gracefully (cached rate or a sane default) instead of crashing
-  - Observations:
+  - Observations: cant test this yet as i cannot test without internet
