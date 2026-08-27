@@ -1,4 +1,5 @@
 import { ScrollView, Text, View } from "react-native";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 import { EmptyState } from "../../components/ui/EmptyState";
 import { useAccounts } from "../../db/queries/accounts";
@@ -7,6 +8,7 @@ import { useActiveRecurringRules } from "../../db/queries/recurringRules";
 import { useSettings } from "../../db/queries/settings";
 import { formatMoney } from "../../services/format";
 import { describeSchedule, monthlyEquivalent } from "../../services/recurrence";
+import { useThemeColors } from "../../theme/palette";
 
 const SECTION_DEFS = [
   { type: "expense" as const, title: "Recurring expenses", color: "text-danger" },
@@ -15,6 +17,7 @@ const SECTION_DEFS = [
 ];
 
 export default function CommitmentsScreen() {
+  const colors = useThemeColors();
   const { settings } = useSettings();
   const baseCurrency = settings?.baseCurrency ?? "INR";
   const { data: rules } = useActiveRecurringRules();
@@ -75,11 +78,23 @@ export default function CommitmentsScreen() {
             {section.rows.map(({ rule, monthly }, i) => (
               <View key={rule.id} className={`py-2.5 ${i > 0 ? "border-t border-border" : ""}`}>
                 <View className="flex-row items-center justify-between gap-2">
-                  <Text className="flex-1 text-sm font-medium text-fg">
-                    {rule.type === "transfer"
-                      ? `${accountName(rule.accountId)} → ${accountName(rule.toAccountId)}`
-                      : `${categoryInfo(rule.categoryId)?.icon ?? "❓"} ${categoryInfo(rule.categoryId)?.name ?? "Uncategorized"} · ${accountName(rule.accountId)}`}
-                  </Text>
+                  <View className="flex-1 flex-row items-center gap-1.5">
+                    {rule.type !== "transfer" &&
+                      (categoryInfo(rule.categoryId) ? (
+                        <MaterialCommunityIcons
+                          name={categoryInfo(rule.categoryId)!.icon as never}
+                          size={14}
+                          color={colors.fgMuted}
+                        />
+                      ) : (
+                        <Text className="text-sm">❓</Text>
+                      ))}
+                    <Text className="flex-1 text-sm font-medium text-fg">
+                      {rule.type === "transfer"
+                        ? `${accountName(rule.accountId)} → ${accountName(rule.toAccountId)}`
+                        : `${categoryInfo(rule.categoryId)?.name ?? "Uncategorized"} · ${accountName(rule.accountId)}`}
+                    </Text>
+                  </View>
                   <Text className={`font-data text-sm font-medium tabular-nums ${section.color}`}>
                     {formatMoney(monthly, baseCurrency)}/mo
                   </Text>
