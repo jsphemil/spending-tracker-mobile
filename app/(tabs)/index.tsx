@@ -17,6 +17,7 @@ import { useAccounts } from "../../db/queries/accounts";
 import { useCategories } from "../../db/queries/categories";
 import { useGoals } from "../../db/queries/goals";
 import { useSettings } from "../../db/queries/settings";
+import { useRecentTagNames } from "../../db/queries/tags";
 import { useFilteredTransactions } from "../../db/queries/transactions";
 import { getAccountBalanceMinor, getEarliestTransactionDate, getNetWorthSeries, getPeriodTotals } from "../../services/balance";
 import { getRatesToBase } from "../../services/currency";
@@ -52,6 +53,7 @@ export default function DashboardScreen() {
   const { data: accounts } = useAccounts();
   const { data: categories } = useCategories();
   const { data: goals } = useGoals();
+  const recentTagNames = useRecentTagNames(8);
   const { data: monthTransactions } = useFilteredTransactions({ range });
   // "Recent transactions" is the 5 most recent up to the viewed period's
   // end — not scoped to its start too — so a month with under 5 rows still
@@ -416,6 +418,34 @@ export default function DashboardScreen() {
               onDelete={() => confirmDeleteTransaction(db, item, () => {})}
             />
           ))
+        )}
+      </View>
+
+      <View className={card}>
+        <View className="mb-3 flex-row items-center justify-between">
+          <Text className={cardTitle}>Tags</Text>
+          <Link href="/tag" asChild>
+            <Pressable>
+              <Text className="text-xs font-medium text-accent">
+                {recentTagNames.length === 0 ? "" : "More"}
+              </Text>
+            </Pressable>
+          </Link>
+        </View>
+        {recentTagNames.length === 0 ? (
+          <Text className="text-sm text-fg-muted">
+            No tags yet — add one from any transaction.
+          </Text>
+        ) : (
+          <View className="flex-row flex-wrap gap-2">
+            {recentTagNames.map((name) => (
+              <Link key={name} href={`/tag/${encodeURIComponent(name)}`} asChild>
+                <Pressable className="rounded-full bg-surface-2 px-3 py-1.5">
+                  <Text className="text-sm text-fg-muted">{name}</Text>
+                </Pressable>
+              </Link>
+            ))}
+          </View>
         )}
       </View>
     </ScrollView>

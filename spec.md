@@ -22,12 +22,12 @@ pushed to a later phase) · ❌ Dropped (cut from scope).
 | §5.1 | Accounts | 🚧 In Progress | Full Phase 10 parity pass 2026-08-12: Account Detail page rebuilt (correct capacity-gauge ring, Carry Forward/Total In/Total Out/Left to Spend, Safe-to-spend/day, debt payoff projection, Budget Mode bar wired up, category/counterpart Breakdown section, Show-Future-Transactions hidden-count notice, Duplicate+Edit+Delete icons); Accounts list gained month nav + per-account Income/Expense/Transfers row + period-scoped balance. UAT round 1 (2026-08-20): 3 bugs found and fixed (credit limit now required for credit_card accounts, delete-account navigation, Breakdown icon rendering) — on-device re-verification pending |
 | §5.2 | Transactions | 🚧 In Progress | Entry/edit/list/filters/calendar built; recurring transactions (Phase 5) code-complete 2026-08-12 — engine (`services/recurrence.ts`) unit-tested (13 tests), "make recurring" toggle, just-this-one/this-and-future edit+delete scope picker, 🔁 badge, `ensureMaterialized` wired into Dashboard/Transactions/Accounts/Categories/Calendar. Phase 10 (2026-08-12): "Clear (show all time)" toggle, SummaryBand proportional bar, Duplicate+Edit+Delete icons, Duplicate-transaction flow, inline "+ New category" on the transaction form — on-device verification pending |
 | §5.3 | Categories | 🚧 In Progress | Full CRUD + starter seed built |
-| §5.3a | Tags | 🚧 In Progress | Inline creation + per-tag summary (with currency conversion) built |
+| §5.3a | Tags | 🚧 In Progress | Inline creation + per-tag summary (with currency conversion) built. Added 2026-08-20 per UAT feedback: Dashboard "Tags" card (recent tags) + a new `/tag` list screen ("More" link), since a tag's summary page was previously only reachable via a chip on a transaction already showing it — on-device verification pending |
 | §5.4 | Spending Summary | 🚧 In Progress | Month nav, net worth, Indian formatting, Carry Forward (Dashboard + Account Detail), asset allocation donut all built; a literal income/expense-by-category pie chart specifically hasn't been built (Categories list's spend-vs-budget bars cover the budget-comparison need, but not a pie visualization) — on-device verification pending |
 | §5.5 | Budget Mode | 🚧 In Progress | Account-level toggle + schema built, spend-vs-budget comparison now wired up (Phase 10, `resolveAccountSettings` actually called from Account Detail's Budget Mode bar); category-level budgets (separate from the toggle) built 2026-08-12 with spend-vs-budget bars on the Categories list — on-device verification pending for both |
 | §5.6 | Show/Hide Future Transactions | 🚧 In Progress | Toggle + schema built; filtering now applied (Phase 10, Account Detail hides future-dated rows when the resolved setting is off) — on-device verification pending |
 | §5.7 | Smart Features (Claude) | ⏸️ Deferred | Phase 4. Inert FAB placeholder only |
-| §5.8 | Dashboard | 🚧 In Progress | Fully rebuilt 2026-08-12 to match the real app: net worth capacity gauge, net worth trend chart (history-capped), asset allocation donut, over-budget banner, embedded calendar with quick-add buttons, Accounts card, Goals card (top 3), Recent Transactions card with inline edit/delete icons — on-device verification pending |
+| §5.8 | Dashboard | 🚧 In Progress | Fully rebuilt 2026-08-12 to match the real app: net worth capacity gauge, net worth trend chart (history-capped), asset allocation donut, over-budget banner, embedded calendar with quick-add buttons, Accounts card, Goals card (top 3), Recent Transactions card with inline edit/delete icons. Tags card added 2026-08-20 (see §5.3a) — on-device verification pending |
 | §5.9 | Navigation | 🚧 In Progress | Built; Commitments tab added 2026-08-12 (Dashboard, Accounts, Transactions, Commitments, Categories, Profile — 6 tabs total, matching the real app's order) |
 | §5.10 | Profile Page | 🚧 In Progress | Built; Dropbox section is an inert placeholder |
 | §5.11 | Home Screen Widget | ⏸️ Deferred | Phase 5 |
@@ -267,6 +267,15 @@ optional description.
   either lose the real category on each transaction or clutter the
   category list (and skew the category pie chart) with a new entry per
   trip. Tags keep these as two separate, independent dimensions
+- **Browsing tags, added 2026-08-20**: a tag's own summary page
+  (`/tag/[name]`) was previously only reachable by tapping a tag chip on
+  a transaction that already had it — no way to see or reach a tag you
+  weren't currently looking at. Per the user's request: the Dashboard
+  gets a **Tags card** showing the most recently-used tags (up to 8, most
+  recent first, deduped) as tappable chips, each opening straight into
+  that tag's summary; a **"More" link** opens a new standalone **Tags
+  list screen** (`/tag`, alphabetical, every tag that exists) for
+  anything not recent enough to show on the Dashboard card.
 
 ### 5.4 Spending Summary 🚧 In Progress
 - Pick a month (or "all accounts" vs. a single account) and see:
@@ -365,6 +374,8 @@ optional description.
     all accounts, up to the viewed month's end), with inline Edit/Delete
     icon buttons per row instead of tap-to-edit — Delete on a recurring
     row prompts "just this one" vs "this and all future"
+  - **Tags** card, added 2026-08-20 (see §5.3a): up to 8 most-recently-used
+    tags as tappable chips, "More" link to the full Tags list (`/tag`)
 - Acts as the "home base" you can always return to
 
 ### 5.9 Navigation 🚧 In Progress
