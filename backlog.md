@@ -2,6 +2,7 @@
 
 ## Inbox
 ## Triaged
+- **Goals list page had no header, flush against the top** — the same bug class as the earlier Goals-add-page fix, but on the list screen this time. Reported 2026-08-20: "the goal add page appear as pop-up with a header but the goal list page is flush against the top, without a header 'Goals'." Root cause: `app/_layout.tsx`'s root Stack registered `goal/new` and `goal/[id]/edit` but never `goal/index` — it fell back to the Stack's default `headerShown: false`. Fixed same day: added a `Stack.Screen` entry for `goal/index` (`headerShown: true, title: "Goals"`, not a modal — it's a browse/list screen reached via a Dashboard link, same treatment as `tag/index`). `tsc`/`jest` (45/45) clean. On-device re-verification pending.
 - **UAT round 1 (2026-08-20), 3 fixes.** From the first batch of Accounts-section checklist comments:
   1. **Credit card accounts could be saved with no credit limit at all.** `AccountForm.handleSubmit()`'s validation only rejected an *explicitly entered* 0/negative credit limit (`creditLimitNum !== null && !(creditLimitNum > 0)`) — leaving the field blank produced `creditLimitNum = null`, which skipped validation entirely and saved `creditLimitMinor: null`. Reported: "credit limit and monthly budget fields shows blank as default and if i dont change it and keep it as blank it allows to save the account." Fixed: credit limit is now required (not just positive-if-present) whenever `type === "credit_card"`. Monthly budget stays optional-if-blank by design (not every account needs a Budget Mode limit) — that field wasn't actually broken, just easy to conflate with credit limit in the same report.
   2. **Deleting an account left a stale, blank screen** showing the deleted account's name with only a manual back button, instead of returning somewhere valid. Root cause: `app/account/[id]/edit.tsx`'s delete handler called `router.back()`, which returns to whatever screen was directly underneath the Edit Account modal — usually the now-deleted account's own Detail screen (`app/(tabs)/accounts/[id].tsx`), which has no "this account no longer exists" handling and just sits on its loading guard forever. Fixed: `router.dismissTo("/accounts")` instead — dismisses every screen stacked on top of the modal and lands directly on the Accounts list, the only screen still valid after a delete, regardless of which of the two entry points (Account Detail's header pencil, or an opening-balance transaction row's edit icon) led there.
@@ -198,25 +199,26 @@ _You've likely already been through onboarding once — if you don't want to wip
 
 ### 8. Goals (§5.17)
 - [ ] Goals add page now opens as a proper pop-up/modal with a header (not flush against the top) — this was just fixed, worth a specific re-check
-  - Observations:
+  - Observations:the goal add page appear as pop-up with a header
+  but the goal list page is flush against the top, without a header "Goals" **Fixed 2026-08-20** — `goal/index` was never registered in the Stack (only `new`/`edit` were), so it had no header at all. Added one. Please re-check.
 - [ ] Create a goal (name, target net worth, optional target date)
-  - Observations:
+  - Observations:passed
 - [ ] Progress bar reflects current net worth ÷ target correctly, turns green + "🎉 Goal reached" once hit
-  - Observations:
+  - Observations:passed
 - [ ] Projected-date text is reasonable given your recent net worth trend; "Not currently trending toward this goal" shows when net worth isn't growing
-  - Observations:
+  - Observations:passed
 - [ ] "Behind pace for your target date" warning appears only when it should (projection lands after your target date)
-  - Observations:
+  - Observations:passed
 - [ ] Edit and delete a goal
-  - Observations:
+  - Observations:passed
 
 ### 9. Dashboard (§5.8)
 - [ ] Net worth capacity gauge (ring) center figure and ≈-equivalent (if applicable) look correct
-  - Observations:
+  - Observations:passed
 - [ ] Net worth trend chart shows a sensible history length (capped to your actual earliest transaction, not always 12 months)
-  - Observations:
+  - Observations:passed
 - [ ] Asset allocation donut buckets (Liquid/Deposits/Invested) look right; credit card debt is excluded from the donut and shown as its own figure
-  - Observations:
+  - Observations:passed
 - [ ] Over-budget banner appears when a category is over its monthly budget, and not otherwise
   - Observations:
 - [ ] Carry Forward / Income / Expense / Credit card debt stat row looks correct for the selected month
