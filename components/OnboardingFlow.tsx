@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import { AccountForm } from "./AccountForm";
 import { CurrencyPicker } from "./CurrencyPicker";
@@ -33,8 +34,8 @@ export function OnboardingFlow({ settings }: { settings: Settings }) {
   }
 
   return (
-    <View className="flex-1 bg-bg">
-      <View className="flex-row justify-center gap-1.5 pt-16 pb-4">
+    <SafeAreaView edges={["top"]} className="flex-1 bg-bg">
+      <View className="flex-row justify-center gap-1.5 pt-4 pb-4">
         {Array.from({ length: STEP_COUNT }).map((_, i) => (
           <View
             key={i}
@@ -132,6 +133,6 @@ export function OnboardingFlow({ settings }: { settings: Settings }) {
           </Pressable>
         </ScrollView>
       )}
-    </View>
+    </SafeAreaView>
   );
 }

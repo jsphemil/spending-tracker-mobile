@@ -21,6 +21,7 @@ import { resolveAccountSettings } from "../../../services/settings";
 import { useThemeColors } from "../../../theme/palette";
 
 type FilterMode = "month" | "custom" | "allTime";
+type TypeFilter = "all" | "recurring" | "openingBalance";
 
 export default function TransactionsListScreen() {
   const colors = useThemeColors();
@@ -34,6 +35,7 @@ export default function TransactionsListScreen() {
   const [showToPicker, setShowToPicker] = useState(false);
   const [accountId, setAccountId] = useState<number | undefined>(undefined);
   const [categoryId, setCategoryId] = useState<number | undefined>(undefined);
+  const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
 
   const { data: accounts } = useAccounts();
   const { data: categories } = useCategories();
@@ -52,6 +54,18 @@ export default function TransactionsListScreen() {
   }, [range?.end]);
   const { data: rows } = useFilteredTransactions({ accountId, categoryId, range });
 
+  // Requested 2026-08-21: filter down to just recurring-generated rows or
+  // just opening-balance rows, on top of the existing account/category
+  // filters — applied here (client-side, over the already-fetched rows)
+  // rather than in the query, matching how future-hiding is layered on
+  // below. Unlike future-hiding this is a real filter, not a declutter
+  // toggle, so it affects totals too, not just which rows are listed.
+  const typeFilteredRows = (rows ?? []).filter((t) => {
+    if (typeFilter === "recurring") return t.recurringRuleId != null;
+    if (typeFilter === "openingBalance") return t.isOpeningBalance;
+    return true;
+  });
+
   // Spec 5.6: same declutter-only semantics as Account Detail — hides
   // future-dated *rows*, never touches totals, and only while genuinely
   // viewing the current month (a future/custom/all-time view has no
@@ -69,9 +83,10 @@ export default function TransactionsListScreen() {
       ? resolveAccountSettings(selectedAccount, settings).showFutureTxEnabled
       : settings?.showFutureTxGlobal ?? true;
   const hidingFuture = isCurrentMonth && !showFutureTxEnabled;
-  const allRows = rows ?? [];
-  const visibleRows = hidingFuture ? allRows.filter((t) => t.date <= todayDateOnly) : allRows;
-  const hiddenFutureCount = allRows.length - visibleRows.length;
+  const visibleRows = hidingFuture
+    ? typeFilteredRows.filter((t) => t.date <= todayDateOnly)
+    : typeFilteredRows;
+  const hiddenFutureCount = typeFilteredRows.length - visibleRows.length;
 
   // When a single account is selected every row already shares that
   // account's currency, so the band shows it natively. Across "All
@@ -109,7 +124,7 @@ export default function TransactionsListScreen() {
     return majorToMinor(minorToMajor(amountMinor, txCurrency) * rate, baseCurrency);
   }
 
-  const totals = (rows ?? []).reduce(
+  const totals = typeFilteredRows.reduce(
     (acc, t) => {
       const txCurrency = accounts?.find((a) => a.id === t.accountId)?.currency ?? "INR";
       const amountMinor = accountId ? t.amountMinor : toBaseMinor(t.amountMinor, txCurrency);
@@ -279,6 +294,26 @@ export default function TransactionsListScreen() {
               <Text className={categoryId === c.id ? "text-accent" : "text-fg-muted"}>
                 {c.name}
               </Text>
+            </Pressable>
+          ))}
+        </ScrollView>
+
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row gap-2">
+          {(
+            [
+              ["all", "All Types"],
+              ["recurring", "Recurring"],
+              ["openingBalance", "Opening Balance"],
+            ] as const
+          ).map(([value, label]) => (
+            <Pressable
+              key={value}
+              onPress={() => setTypeFilter(value)}
+              className={`mr-2 rounded-full border px-3 py-1.5 ${
+                typeFilter === value ? "border-accent bg-accent-soft" : "border-border"
+              }`}
+            >
+              <Text className={typeFilter === value ? "text-accent" : "text-fg-muted"}>{label}</Text>
             </Pressable>
           ))}
         </ScrollView>
