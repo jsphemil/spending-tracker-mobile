@@ -56,16 +56,19 @@ export default function CategoriesScreen() {
     return majorToMinor(minorToMajor(amountMinor, currency) * rate, baseCurrency);
   }
 
+  // Sums whichever transaction type matches the active tab — previously
+  // hardcoded to "expense" only, which meant the Income tab always showed
+  // ₹0 for every category regardless of actual income transactions.
   const spentByCategoryMinor = useMemo(() => {
     const totals = new Map<number, number>();
     for (const t of monthTransactions ?? []) {
-      if (t.type !== "expense" || t.categoryId === null) continue;
+      if (t.type !== kind || t.categoryId === null) continue;
       const accountCurrency = accounts?.find((a) => a.id === t.accountId)?.currency ?? "INR";
       const prior = totals.get(t.categoryId) ?? 0;
       totals.set(t.categoryId, prior + toBaseMinor(t.amountMinor, accountCurrency));
     }
     return totals;
-  }, [monthTransactions, accounts, rates]);
+  }, [monthTransactions, accounts, rates, kind]);
 
   return (
     <View className="flex-1 bg-bg">
@@ -111,11 +114,11 @@ export default function CategoriesScreen() {
                     <MaterialCommunityIcons name={item.icon as never} size={16} color="#fff" />
                   </View>
                   <Text className="flex-1 text-base text-fg">{item.name}</Text>
-                  {hasBudget && (
-                    <Text className={`font-data text-xs tabular-nums ${overBudget ? "text-danger" : "text-fg-muted"}`}>
-                      {formatMoney(spentMinor, baseCurrency)} / {formatMoney(budgetMinor, baseCurrency)}
-                    </Text>
-                  )}
+                  <Text className={`font-data text-xs tabular-nums ${overBudget ? "text-danger" : "text-fg-muted"}`}>
+                    {hasBudget
+                      ? `${formatMoney(spentMinor, baseCurrency)} / ${formatMoney(budgetMinor, baseCurrency)}`
+                      : formatMoney(spentMinor, baseCurrency)}
+                  </Text>
                 </View>
                 {hasBudget && (
                   <View className="h-1.5 overflow-hidden rounded-full bg-surface-2">
