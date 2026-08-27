@@ -1,6 +1,6 @@
 // Mirrors global.css's CSS-variable tokens as literal hex values, for the
 // handful of consumers that can't take a Tailwind className (react-native-svg
-// stroke/fill props, @expo/vector-icons' color prop). Dark values are the
+// stroke/fill props, icon `color` props). Dark values are the
 // Erebor design system's tokens (Claude Design project
 // d5887e1e-2512-436b-9f64-e086c0c538de, tokens/colors.css) — keep both in
 // sync by hand if either changes, the token set is small and changes rarely.

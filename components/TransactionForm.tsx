@@ -3,7 +3,7 @@ import { Alert, Pressable, ScrollView, Switch, Text, TextInput, View } from "rea
 import DateTimePicker from "@react-native-community/datetimepicker";
 
 import { AmountOperatorRow } from "./AmountOperatorRow";
-import { CATEGORY_ICONS } from "../constants/categoryIcons";
+import { ALL_ICON_OPTIONS } from "../constants/iconLibrary";
 import { COLOR_PALETTE } from "../constants/colorPalette";
 import { createCategory } from "../db/actions/categories";
 import { useAccounts } from "../db/queries/accounts";
@@ -124,7 +124,7 @@ export function TransactionForm({
     const newId = createCategory({
       name: newCategoryName.trim(),
       kind: type === "income" ? "income" : "expense",
-      icon: CATEGORY_ICONS[0],
+      icon: ALL_ICON_OPTIONS[0].key,
       color: COLOR_PALETTE[0],
     });
     setCategoryId(newId);

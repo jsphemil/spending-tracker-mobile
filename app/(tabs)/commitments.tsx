@@ -1,5 +1,5 @@
 import { ScrollView, Text, View } from "react-native";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { Icon } from "../../components/ui/Icon";
 
 import { EmptyState } from "../../components/ui/EmptyState";
 import { useAccounts } from "../../db/queries/accounts";
@@ -81,8 +81,8 @@ export default function CommitmentsScreen() {
                   <View className="flex-1 flex-row items-center gap-1.5">
                     {rule.type !== "transfer" &&
                       (categoryInfo(rule.categoryId) ? (
-                        <MaterialCommunityIcons
-                          name={categoryInfo(rule.categoryId)!.icon as never}
+                        <Icon
+                          name={categoryInfo(rule.categoryId)!.icon}
                           size={14}
                           color={colors.fgMuted}
                         />

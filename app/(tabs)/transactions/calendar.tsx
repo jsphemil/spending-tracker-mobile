@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { Icon } from "../../../components/ui/Icon";
 
 import { CalendarMonthGrid } from "../../../components/CalendarMonthGrid";
 import { db } from "../../../db/client";
@@ -55,7 +55,7 @@ export default function TransactionsCalendarScreen() {
           className="p-3"
           hitSlop={8}
         >
-          <MaterialCommunityIcons name="chevron-left" size={28} color={colors.fg} />
+          <Icon name="chevron-left" size={28} color={colors.fg} />
         </Pressable>
         <Text className="text-base font-medium text-fg">{monthLabel(period)}</Text>
         <Pressable
@@ -63,7 +63,7 @@ export default function TransactionsCalendarScreen() {
           className="p-3"
           hitSlop={8}
         >
-          <MaterialCommunityIcons name="chevron-right" size={28} color={colors.fg} />
+          <Icon name="chevron-right" size={28} color={colors.fg} />
         </Pressable>
       </View>
       <CalendarMonthGrid period={period} currency={baseCurrency} expenseByDay={expenseByDay} />

@@ -10,6 +10,7 @@ import { ACCOUNT_TYPES, type AccountType } from "../db/schema";
 import { evaluateExpression } from "../services/calculator";
 import { majorToMinor, minorToMajor } from "../services/format";
 import { useThemeColors } from "../theme/palette";
+import { IconPicker } from "./ui/IconPicker";
 
 export interface AccountFormValues {
   name: string;
@@ -81,6 +82,12 @@ export function AccountForm({
 }: AccountFormProps) {
   const [name, setName] = useState(initialValues?.name ?? "");
   const [type, setType] = useState<AccountType>(initialValues?.type ?? "savings");
+  // Historically auto-derived from `type` with no user choice at all
+  // (ACCOUNT_TYPE_ICONS[type] on every submit). Now user-selectable via
+  // IconPicker: still defaults to the type's icon, but a manual pick is
+  // preserved when the user then changes account type (see the Type
+  // Pressable's onPress below).
+  const [icon, setIcon] = useState(initialValues?.icon ?? ACCOUNT_TYPE_ICONS[initialValues?.type ?? "savings"]);
   const [color, setColor] = useState(initialValues?.color ?? COLOR_PALETTE[0]);
   const [currency, setCurrency] = useState(initialValues?.currency ?? "INR");
   const [creditLimitText, setCreditLimitText] = useState(
@@ -142,7 +149,7 @@ export function AccountForm({
       name: name.trim(),
       type,
       color,
-      icon: ACCOUNT_TYPE_ICONS[type],
+      icon,
       currency: normalizedCurrency,
       creditLimitMinor:
         type === "credit_card" && creditLimitNum !== null
@@ -176,7 +183,13 @@ export function AccountForm({
           {ACCOUNT_TYPES.map((t) => (
             <Pressable
               key={t}
-              onPress={() => setType(t)}
+              onPress={() => {
+                // Only follow the type's default icon while the user hasn't
+                // picked their own — once icon !== the previous type's
+                // default, treat it as an intentional override.
+                setIcon((prev) => (prev === ACCOUNT_TYPE_ICONS[type] ? ACCOUNT_TYPE_ICONS[t] : prev));
+                setType(t);
+              }}
               className={`rounded-full border px-3 py-2 ${
                 type === t ? "border-accent bg-accent-soft" : "border-border bg-surface"
               }`}
@@ -188,6 +201,8 @@ export function AccountForm({
           ))}
         </View>
       </View>
+
+      <IconPicker value={icon} onChange={setIcon} />
 
       <View className="gap-2">
         <Text className="text-sm font-medium text-fg-muted">Color</Text>

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { Icon } from "../../components/ui/Icon";
 import { Link } from "expo-router";
 import { FlatList, Pressable, Text, View } from "react-native";
 
@@ -111,7 +111,7 @@ export default function CategoriesScreen() {
                     {/* Intentionally a literal white, not a theme token — this
                         renders against the category's own arbitrary user-picked
                         color swatch, not a themed surface. */}
-                    <MaterialCommunityIcons name={item.icon as never} size={16} color="#fff" />
+                    <Icon name={item.icon} size={16} color="#fff" />
                   </View>
                   <Text className="flex-1 text-base text-fg">{item.name}</Text>
                   <Text className={`font-data text-xs tabular-nums ${overBudget ? "text-danger" : "text-fg-muted"}`}>

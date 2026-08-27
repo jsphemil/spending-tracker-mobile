@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Link, Stack } from "expo-router";
 import { FlatList, Pressable, ScrollView, Text, View } from "react-native";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { Icon } from "../../../components/ui/Icon";
 
 import { confirmDeleteTransaction } from "../../../components/confirmDeleteTransaction";
 import { SummaryBand } from "../../../components/SummaryBand";
@@ -145,7 +145,7 @@ export default function TransactionsListScreen() {
           headerRight: () => (
             <Link href="/transactions/calendar" asChild>
               <Pressable hitSlop={8} className="px-2">
-                <MaterialCommunityIcons name="calendar-month-outline" size={22} color={colors.accent} />
+                <Icon name="calendar-month-outline" size={22} color={colors.accent} />
               </Pressable>
             </Link>
           ),
@@ -190,7 +190,7 @@ export default function TransactionsListScreen() {
               className="p-3"
               hitSlop={8}
             >
-              <MaterialCommunityIcons name="chevron-left" size={28} color={colors.fg} />
+              <Icon name="chevron-left" size={28} color={colors.fg} />
             </Pressable>
             <Text className="text-base font-medium text-fg">{monthLabel(period)}</Text>
             <Pressable
@@ -198,7 +198,7 @@ export default function TransactionsListScreen() {
               className="p-3"
               hitSlop={8}
             >
-              <MaterialCommunityIcons name="chevron-right" size={28} color={colors.fg} />
+              <Icon name="chevron-right" size={28} color={colors.fg} />
             </Pressable>
           </View>
         )}

@@ -65,7 +65,7 @@ export default function RootLayout() {
             screenOptions={{
               headerShown: false,
               headerStyle: { backgroundColor: colors.surface },
-              headerTitleStyle: { color: colors.fg },
+              headerTitleStyle: { color: colors.fg, fontFamily: "Manrope_700Bold" },
               headerTintColor: colors.fg,
             }}
           >

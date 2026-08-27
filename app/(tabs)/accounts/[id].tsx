@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { Icon } from "../../../components/ui/Icon";
 import { Link, Stack, useLocalSearchParams } from "expo-router";
 import { FlatList, Pressable, Text, View } from "react-native";
 
@@ -207,7 +207,7 @@ export default function AccountDetailScreen() {
           headerRight: () => (
             <Link href={`/account/${accountId}/edit`} asChild>
               <Pressable hitSlop={8} className="px-2">
-                <MaterialCommunityIcons name="pencil-outline" size={22} color={colors.accent} />
+                <Icon name="pencil-outline" size={22} color={colors.accent} />
               </Pressable>
             </Link>
           ),
@@ -225,7 +225,7 @@ export default function AccountDetailScreen() {
                 className="p-3"
                 hitSlop={8}
               >
-                <MaterialCommunityIcons name="chevron-left" size={28} color={colors.fg} />
+                <Icon name="chevron-left" size={28} color={colors.fg} />
               </Pressable>
               <Text className="text-base font-medium text-fg">{monthLabel(period)}</Text>
               <Pressable
@@ -233,7 +233,7 @@ export default function AccountDetailScreen() {
                 className="p-3"
                 hitSlop={8}
               >
-                <MaterialCommunityIcons name="chevron-right" size={28} color={colors.fg} />
+                <Icon name="chevron-right" size={28} color={colors.fg} />
               </Pressable>
             </View>
 
@@ -402,7 +402,7 @@ export default function AccountDetailScreen() {
                       <View key={b.key} className="mt-1 flex-row items-center gap-1.5 justify-between">
                         <View className="flex-1 flex-row items-center gap-1.5">
                           {b.iconType === "mdi" ? (
-                            <MaterialCommunityIcons name={b.icon as never} size={14} color={colors.fgMuted} />
+                            <Icon name={b.icon} size={14} color={colors.fgMuted} />
                           ) : (
                             <Text className="text-sm">{b.icon}</Text>
                           )}

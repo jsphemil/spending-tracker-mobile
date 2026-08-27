@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "expo-router";
 import { Pressable, ScrollView, Text, View } from "react-native";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { Icon } from "../../components/ui/Icon";
 
 import { AssetAllocationChart } from "../../components/charts/AssetAllocationChart";
 import { NetWorthTrendChart } from "../../components/charts/NetWorthTrendChart";
@@ -211,11 +211,11 @@ export default function DashboardScreen() {
     <ScrollView className="flex-1 bg-bg" contentContainerStyle={{ padding: 16, gap: 12 }}>
       <View className="flex-row items-center justify-between">
         <Pressable onPress={() => setPeriod((p) => shiftMonth(p, -1))} className="p-3" hitSlop={8}>
-          <MaterialCommunityIcons name="chevron-left" size={28} color={colors.fg} />
+          <Icon name="chevron-left" size={28} color={colors.fg} />
         </Pressable>
         <Text className="text-base font-medium text-fg">{monthLabel(period)}</Text>
         <Pressable onPress={() => setPeriod((p) => shiftMonth(p, 1))} className="p-3" hitSlop={8}>
-          <MaterialCommunityIcons name="chevron-right" size={28} color={colors.fg} />
+          <Icon name="chevron-right" size={28} color={colors.fg} />
         </Pressable>
       </View>
 

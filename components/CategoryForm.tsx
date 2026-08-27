@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
 
-import { CATEGORY_ICONS } from "../constants/categoryIcons";
+import { ALL_ICON_OPTIONS } from "../constants/iconLibrary";
 import { COLOR_PALETTE } from "../constants/colorPalette";
+import { IconPicker } from "./ui/IconPicker";
 import { CATEGORY_KINDS, type CategoryKind } from "../db/schema";
 import type { CategoryInput } from "../db/actions/categories";
 import { majorToMinor, minorToMajor } from "../services/format";
@@ -24,7 +24,7 @@ const BUDGET_CURRENCY = "INR";
 export function CategoryForm({ initialValues, onSubmit, submitLabel }: CategoryFormProps) {
   const [name, setName] = useState(initialValues?.name ?? "");
   const [kind, setKind] = useState<CategoryKind>(initialValues?.kind ?? "expense");
-  const [icon, setIcon] = useState(initialValues?.icon ?? CATEGORY_ICONS[0]);
+  const [icon, setIcon] = useState(initialValues?.icon ?? ALL_ICON_OPTIONS[0].key);
   const [color, setColor] = useState(initialValues?.color ?? COLOR_PALETTE[0]);
   const [budgetText, setBudgetText] = useState(
     initialValues?.monthlyBudgetMinor != null
@@ -86,26 +86,7 @@ export function CategoryForm({ initialValues, onSubmit, submitLabel }: CategoryF
         </View>
       </View>
 
-      <View className="gap-2">
-        <Text className="text-sm font-medium text-fg-muted">Icon</Text>
-        <View className="flex-row flex-wrap gap-2">
-          {CATEGORY_ICONS.map((i) => (
-            <Pressable
-              key={i}
-              onPress={() => setIcon(i)}
-              className={`h-11 w-11 items-center justify-center rounded-full border ${
-                icon === i ? "border-accent bg-accent-soft" : "border-border bg-surface"
-              }`}
-            >
-              <MaterialCommunityIcons
-                name={i}
-                size={18}
-                color={icon === i ? colors.accent : colors.fgMuted}
-              />
-            </Pressable>
-          ))}
-        </View>
-      </View>
+      <IconPicker value={icon} onChange={setIcon} />
 
       <View className="gap-2">
         <Text className="text-sm font-medium text-fg-muted">Color</Text>

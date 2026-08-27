@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "expo-router";
 import { FlatList, Pressable, Text, View } from "react-native";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { Icon } from "../../../components/ui/Icon";
 
 import { db } from "../../../db/client";
 import { useAccounts } from "../../../db/queries/accounts";
@@ -63,11 +63,11 @@ export default function AccountsListScreen() {
         ListHeaderComponent={
           <View className="mb-3 flex-row items-center justify-center gap-2">
             <Pressable onPress={() => setPeriod((p) => shiftMonth(p, -1))} className="p-3" hitSlop={8}>
-              <MaterialCommunityIcons name="chevron-left" size={28} color={colors.fg} />
+              <Icon name="chevron-left" size={28} color={colors.fg} />
             </Pressable>
             <Text className="text-base font-medium text-fg">{monthLabel(period)}</Text>
             <Pressable onPress={() => setPeriod((p) => shiftMonth(p, 1))} className="p-3" hitSlop={8}>
-              <MaterialCommunityIcons name="chevron-right" size={28} color={colors.fg} />
+              <Icon name="chevron-right" size={28} color={colors.fg} />
             </Pressable>
           </View>
         }
@@ -84,7 +84,12 @@ export default function AccountsListScreen() {
               <Pressable className="rounded-xl border border-border bg-surface p-4">
                 <View className="flex-row items-center justify-between">
                   <View className="flex-row items-center gap-3">
-                    <View style={{ backgroundColor: item.color }} className="h-10 w-10 rounded-full" />
+                    <View
+                      style={{ backgroundColor: item.color }}
+                      className="h-10 w-10 items-center justify-center rounded-full"
+                    >
+                      <Icon name={item.icon} size={18} color="#fff" />
+                    </View>
                     <View>
                       <Text className="text-base font-medium text-fg">{item.name}</Text>
                       <Text className="text-sm text-fg-muted">{ACCOUNT_TYPE_LABELS[item.type]}</Text>

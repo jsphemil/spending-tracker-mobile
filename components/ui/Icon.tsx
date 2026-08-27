@@ -1,9 +1,14 @@
+import type { ColorValue } from "react-native";
+
 import { resolveIcon } from "../../theme/icons";
 
 interface IconProps {
   name: string;
   size?: number;
-  color?: string;
+  // Widened to accept expo-router's tabBarIcon `color` render-prop type
+  // (ColorValue) — actual values passed through this app are always plain
+  // strings, Lucide's own color prop just wants `string`.
+  color?: ColorValue;
   strokeWidth?: number;
 }
 
@@ -13,5 +18,5 @@ interface IconProps {
 // renders <Icon name=... /> instead, same name/size/color props.
 export function Icon({ name, size = 20, color, strokeWidth = 2 }: IconProps) {
   const Cmp = resolveIcon(name);
-  return <Cmp size={size} color={color} strokeWidth={strokeWidth} />;
+  return <Cmp size={size} color={color as string | undefined} strokeWidth={strokeWidth} />;
 }
