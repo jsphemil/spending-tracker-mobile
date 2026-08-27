@@ -3,6 +3,7 @@ import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
 import { ALL_ICON_OPTIONS } from "../constants/iconLibrary";
 import { COLOR_PALETTE } from "../constants/colorPalette";
+import { Button } from "./ui/Button";
 import { IconPicker } from "./ui/IconPicker";
 import { CATEGORY_KINDS, type CategoryKind } from "../db/schema";
 import type { CategoryInput } from "../db/actions/categories";
@@ -63,7 +64,7 @@ export function CategoryForm({ initialValues, onSubmit, submitLabel }: CategoryF
           onChangeText={setName}
           placeholder="e.g. Groceries"
           placeholderTextColor={colors.fgSubtle}
-          className="rounded-lg border border-border bg-surface px-3 py-2 text-base text-fg"
+          className="rounded-lg border border-glass-border bg-glass px-3 py-2 text-base text-fg"
         />
       </View>
 
@@ -75,7 +76,7 @@ export function CategoryForm({ initialValues, onSubmit, submitLabel }: CategoryF
               key={k}
               onPress={() => setKind(k)}
               className={`flex-1 items-center rounded-lg border py-2 ${
-                kind === k ? "border-accent bg-accent-soft" : "border-border bg-surface"
+                kind === k ? "border-accent bg-accent-soft" : "border-glass-border bg-glass"
               }`}
             >
               <Text className={kind === k ? "text-accent" : "text-fg-muted"}>
@@ -113,16 +114,14 @@ export function CategoryForm({ initialValues, onSubmit, submitLabel }: CategoryF
             keyboardType="decimal-pad"
             placeholder="No budget set"
             placeholderTextColor={colors.fgSubtle}
-            className="rounded-lg border border-border bg-surface px-3 py-2 text-base text-fg"
+            className="rounded-lg border border-glass-border bg-glass px-3 py-2 text-base text-fg"
           />
         </View>
       )}
 
       {error && <Text className="text-sm text-danger">{error}</Text>}
 
-      <Pressable onPress={handleSubmit} className="items-center rounded-lg bg-accent py-3">
-        <Text className="text-base font-semibold text-white">{submitLabel}</Text>
-      </Pressable>
+      <Button onPress={handleSubmit}>{submitLabel}</Button>
     </ScrollView>
   );
 }

@@ -151,7 +151,7 @@ export default function TransactionsListScreen() {
           ),
         }}
       />
-      <View className="gap-3 border-b border-border p-4">
+      <View className="gap-3 border-b border-glass-border p-4">
         <View className="flex-row gap-1.5 rounded-lg bg-surface-2 p-1">
           {(
             [
@@ -163,7 +163,7 @@ export default function TransactionsListScreen() {
             <Pressable
               key={mode}
               onPress={() => setFilterMode(mode)}
-              className={`flex-1 items-center rounded py-1.5 ${filterMode === mode ? "bg-surface" : ""}`}
+              className={`flex-1 items-center rounded py-1.5 ${filterMode === mode ? "bg-glass" : ""}`}
               style={
                 filterMode === mode
                   ? {
@@ -207,14 +207,14 @@ export default function TransactionsListScreen() {
           <View className="flex-row items-center gap-2">
             <Pressable
               onPress={() => setShowFromPicker(true)}
-              className="flex-1 rounded-lg border border-border bg-surface px-3 py-2"
+              className="flex-1 rounded-lg border border-glass-border bg-glass px-3 py-2"
             >
               <Text className="text-xs text-fg-muted">From</Text>
               <Text className="text-sm text-fg">{customFrom.toDateString()}</Text>
             </Pressable>
             <Pressable
               onPress={() => setShowToPicker(true)}
-              className="flex-1 rounded-lg border border-border bg-surface px-3 py-2"
+              className="flex-1 rounded-lg border border-glass-border bg-glass px-3 py-2"
             >
               <Text className="text-xs text-fg-muted">To</Text>
               <Text className="text-sm text-fg">{customTo.toDateString()}</Text>
@@ -250,7 +250,7 @@ export default function TransactionsListScreen() {
           <Pressable
             onPress={() => setAccountId(undefined)}
             className={`mr-2 rounded-full border px-3 py-1.5 ${
-              accountId === undefined ? "border-accent bg-accent-soft" : "border-border"
+              accountId === undefined ? "border-accent bg-accent-soft" : "border-glass-border"
             }`}
           >
             <Text className={accountId === undefined ? "text-accent" : "text-fg-muted"}>
@@ -262,7 +262,7 @@ export default function TransactionsListScreen() {
               key={a.id}
               onPress={() => setAccountId(a.id)}
               className={`mr-2 rounded-full border px-3 py-1.5 ${
-                accountId === a.id ? "border-accent bg-accent-soft" : "border-border"
+                accountId === a.id ? "border-accent bg-accent-soft" : "border-glass-border"
               }`}
             >
               <Text className={accountId === a.id ? "text-accent" : "text-fg-muted"}>
@@ -276,7 +276,7 @@ export default function TransactionsListScreen() {
           <Pressable
             onPress={() => setCategoryId(undefined)}
             className={`mr-2 rounded-full border px-3 py-1.5 ${
-              categoryId === undefined ? "border-accent bg-accent-soft" : "border-border"
+              categoryId === undefined ? "border-accent bg-accent-soft" : "border-glass-border"
             }`}
           >
             <Text className={categoryId === undefined ? "text-accent" : "text-fg-muted"}>
@@ -288,7 +288,7 @@ export default function TransactionsListScreen() {
               key={c.id}
               onPress={() => setCategoryId(c.id)}
               className={`mr-2 rounded-full border px-3 py-1.5 ${
-                categoryId === c.id ? "border-accent bg-accent-soft" : "border-border"
+                categoryId === c.id ? "border-accent bg-accent-soft" : "border-glass-border"
               }`}
             >
               <Text className={categoryId === c.id ? "text-accent" : "text-fg-muted"}>
@@ -310,7 +310,7 @@ export default function TransactionsListScreen() {
               key={value}
               onPress={() => setTypeFilter(value)}
               className={`mr-2 rounded-full border px-3 py-1.5 ${
-                typeFilter === value ? "border-accent bg-accent-soft" : "border-border"
+                typeFilter === value ? "border-accent bg-accent-soft" : "border-glass-border"
               }`}
             >
               <Text className={typeFilter === value ? "text-accent" : "text-fg-muted"}>{label}</Text>

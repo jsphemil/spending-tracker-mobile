@@ -81,7 +81,7 @@ export default function AccountsListScreen() {
 
           return (
             <Link href={`/accounts/${item.id}`} asChild>
-              <Pressable className="rounded-xl border border-border bg-surface p-4">
+              <Pressable className="rounded-card border border-glass-border bg-glass p-4">
                 <View className="flex-row items-center justify-between">
                   <View className="flex-row items-center gap-3">
                     <View
@@ -102,7 +102,7 @@ export default function AccountsListScreen() {
                   />
                 </View>
 
-                <View className="mt-3 flex-row gap-4 border-t border-border pt-3">
+                <View className="mt-3 flex-row gap-4 border-t border-glass-border pt-3">
                   <View className="flex-1">
                     <Text className="text-xs text-fg-muted">Income</Text>
                     <Text className="font-data text-xs font-medium tabular-nums text-success">

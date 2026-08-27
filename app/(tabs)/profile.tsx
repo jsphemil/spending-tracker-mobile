@@ -5,14 +5,7 @@ import { CurrencyPicker } from "../../components/CurrencyPicker";
 import { ExportTransactionsForm } from "../../components/ExportTransactionsForm";
 import { updateSettings } from "../../db/actions/settings";
 import { useSettings } from "../../db/queries/settings";
-import { THEME_PREFERENCES, type ThemePreference } from "../../db/schema";
 import { useThemeColors } from "../../theme/palette";
-
-const THEME_LABELS: Record<ThemePreference, string> = {
-  light: "Light",
-  dark: "Dark",
-  system: "System",
-};
 
 export default function ProfileScreen() {
   const { settings } = useSettings();
@@ -37,31 +30,8 @@ export default function ProfileScreen() {
           onBlur={() => updateSettings(settings.id, { displayName: nameValue.trim() || null })}
           placeholder="Your name"
           placeholderTextColor={colors.fgSubtle}
-          className="rounded-lg border border-border bg-surface px-3 py-2 text-base text-fg"
+          className="rounded-lg border border-glass-border bg-glass px-3 py-2 text-base text-fg"
         />
-      </View>
-
-      <View className="gap-2">
-        <Text className="text-sm font-medium text-fg-muted">Theme</Text>
-        <View className="flex-row gap-2">
-          {THEME_PREFERENCES.map((pref) => (
-            <Pressable
-              key={pref}
-              onPress={() => updateSettings(settings.id, { themePreference: pref })}
-              className={`flex-1 items-center rounded-lg border py-2 ${
-                settings.themePreference === pref
-                  ? "border-accent bg-accent-soft"
-                  : "border-border bg-surface"
-              }`}
-            >
-              <Text
-                className={settings.themePreference === pref ? "text-accent" : "text-fg-muted"}
-              >
-                {THEME_LABELS[pref]}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
       </View>
 
       <View className="flex-row items-center justify-between">
@@ -74,6 +44,9 @@ export default function ProfileScreen() {
         <Switch
           value={settings.budgetModeGlobal}
           onValueChange={(value) => updateSettings(settings.id, { budgetModeGlobal: value })}
+          trackColor={{ false: colors.glassFill, true: colors.accent }}
+          thumbColor="#ffffff"
+          ios_backgroundColor={colors.glassFill}
         />
       </View>
 
@@ -87,6 +60,9 @@ export default function ProfileScreen() {
         <Switch
           value={settings.showFutureTxGlobal}
           onValueChange={(value) => updateSettings(settings.id, { showFutureTxGlobal: value })}
+          trackColor={{ false: colors.glassFill, true: colors.accent }}
+          thumbColor="#ffffff"
+          ios_backgroundColor={colors.glassFill}
         />
       </View>
 
@@ -104,7 +80,7 @@ export default function ProfileScreen() {
 
       <ExportTransactionsForm />
 
-      <View className="gap-2 rounded-lg border border-border bg-surface p-4">
+      <View className="gap-2 rounded-lg border border-glass-border bg-glass p-4">
         <Text className="text-base text-fg">Dropbox Backup</Text>
         <Text className="text-sm text-fg-muted">
           Not connected. Automatic and manual backups are coming in a future update.

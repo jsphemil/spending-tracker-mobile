@@ -91,7 +91,7 @@ export default function TagSummaryScreen() {
         }
         ListEmptyComponent={<EmptyState message="No transactions carry this tag yet." />}
         renderItem={({ item }) => (
-          <View className="flex-row items-center justify-between border-b border-border py-3">
+          <View className="flex-row items-center justify-between border-b border-glass-border py-3">
             <View className="flex-1 pr-3">
               <Text className="text-base text-fg">
                 {item.transaction.description || item.accountName}

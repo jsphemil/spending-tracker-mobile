@@ -268,7 +268,7 @@ export default function AccountDetailScreen() {
             </View>
 
             {account.type === "credit_card" && account.creditLimitMinor != null && (
-              <View className="gap-1 border-t border-border pt-3">
+              <View className="gap-1 border-t border-glass-border pt-3">
                 <Text className="text-sm text-fg-muted">
                   Credit limit: {formatMoney(account.creditLimitMinor, account.currency)}
                 </Text>
@@ -310,7 +310,7 @@ export default function AccountDetailScreen() {
             </View>
 
             {budgetActive && (
-              <View className="gap-1.5 rounded-xl bg-surface-2 p-3.5">
+              <View className="gap-1.5 rounded-card bg-surface-2 p-3.5">
                 <View className="flex-row items-center justify-between">
                   <Text className="text-sm font-medium text-fg">Budget Mode</Text>
                   <Text className={`text-sm ${overBudget ? "font-medium text-danger" : "text-fg-muted"}`}>
@@ -334,7 +334,7 @@ export default function AccountDetailScreen() {
             )}
 
             <View className="flex-row flex-wrap gap-3">
-              <View className="min-w-[45%] flex-1 rounded-xl bg-surface-2 p-3.5">
+              <View className="min-w-[45%] flex-1 rounded-card bg-surface-2 p-3.5">
                 <Text className="text-xs text-fg-muted">Carry forward</Text>
                 <CurrencyAmount
                   amountMinor={carryForwardMinor}
@@ -342,7 +342,7 @@ export default function AccountDetailScreen() {
                   className="font-data mt-1.5 text-base font-semibold tabular-nums text-fg"
                 />
               </View>
-              <View className="min-w-[45%] flex-1 rounded-xl bg-surface-2 p-3.5">
+              <View className="min-w-[45%] flex-1 rounded-card bg-surface-2 p-3.5">
                 <Text className="text-xs text-fg-muted">Total in</Text>
                 <CurrencyAmount
                   amountMinor={totalInMinor}
@@ -351,7 +351,7 @@ export default function AccountDetailScreen() {
                   className="font-data mt-1.5 text-base font-semibold tabular-nums text-success"
                 />
               </View>
-              <View className="min-w-[45%] flex-1 rounded-xl bg-surface-2 p-3.5">
+              <View className="min-w-[45%] flex-1 rounded-card bg-surface-2 p-3.5">
                 <Text className="text-xs text-fg-muted">Total out</Text>
                 <CurrencyAmount
                   amountMinor={totalOutMinor}
@@ -360,7 +360,7 @@ export default function AccountDetailScreen() {
                   className="font-data mt-1.5 text-base font-semibold tabular-nums text-danger"
                 />
               </View>
-              <View className="min-w-[45%] flex-1 rounded-xl bg-surface-2 p-3.5">
+              <View className="min-w-[45%] flex-1 rounded-card bg-surface-2 p-3.5">
                 <Text className="text-xs text-fg-muted">Left to spend</Text>
                 <CurrencyAmount
                   amountMinor={leftToSpendMinor}
@@ -381,7 +381,7 @@ export default function AccountDetailScreen() {
             )}
 
             {breakdownSections.length > 0 && (
-              <View className="gap-3 rounded-xl border border-border bg-surface p-4">
+              <View className="gap-3 rounded-card border border-glass-border bg-glass p-4">
                 <View className="flex-row items-center justify-between">
                   <Text className="text-sm font-semibold text-fg">Breakdown</Text>
                   <Link href={`/transactions?accountId=${accountId}`} asChild>

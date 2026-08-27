@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { ScrollView, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { AccountForm } from "./AccountForm";
@@ -8,6 +8,7 @@ import { createAccount } from "../db/actions/accounts";
 import { updateSettings } from "../db/actions/settings";
 import type { settings as settingsTable } from "../db/schema";
 import { useThemeColors } from "../theme/palette";
+import { Button } from "./ui/Button";
 
 type Settings = typeof settingsTable.$inferSelect;
 
@@ -58,9 +59,7 @@ export function OnboardingFlow({ settings }: { settings: Settings }) {
             onChange={(code) => updateSettings(settings.id, { baseCurrency: code })}
           />
           <View className="flex-1" />
-          <Pressable onPress={() => setStep(1)} className="items-center rounded-lg bg-accent py-3">
-            <Text className="font-semibold text-white">Continue</Text>
-          </Pressable>
+          <Button onPress={() => setStep(1)}>Continue</Button>
         </ScrollView>
       )}
 
@@ -77,19 +76,18 @@ export function OnboardingFlow({ settings }: { settings: Settings }) {
               onChangeText={setName}
               placeholder="Your name"
               placeholderTextColor={colors.fgSubtle}
-              className="rounded-lg border border-border bg-surface px-3 py-2 text-base text-fg"
+              className="rounded-lg border border-glass-border bg-glass px-3 py-2 text-base text-fg"
             />
           </View>
           <View className="flex-1" />
-          <Pressable
+          <Button
             onPress={() => {
               updateSettings(settings.id, { displayName: name.trim() || null });
               setStep(2);
             }}
-            className="items-center rounded-lg bg-accent py-3"
           >
-            <Text className="font-semibold text-white">Continue</Text>
-          </Pressable>
+            Continue
+          </Button>
         </ScrollView>
       )}
 
@@ -128,9 +126,7 @@ export function OnboardingFlow({ settings }: { settings: Settings }) {
             ))}
           </View>
           <View className="flex-1" />
-          <Pressable onPress={finish} className="items-center rounded-lg bg-accent py-3">
-            <Text className="font-semibold text-white">Get Started</Text>
-          </Pressable>
+          <Button onPress={finish}>Get Started</Button>
         </ScrollView>
       )}
     </SafeAreaView>

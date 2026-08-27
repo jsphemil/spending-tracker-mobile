@@ -117,7 +117,7 @@ export function TransactionListItem({
   );
 
   return (
-    <View className="border-b border-border py-3">
+    <View className="border-b border-glass-border py-3">
       {showActionIcons ? (
         <View className="flex-row items-center justify-between">
           {rowContent}

@@ -56,7 +56,7 @@ export default function CommitmentsScreen() {
         cadence — a yearly charge and a weekly one both roll into one monthly figure here.
       </Text>
 
-      <View className="rounded-xl border border-border bg-surface p-4">
+      <View className="rounded-card border border-glass-border bg-glass p-4">
         <Text className="text-xs text-fg-muted">Total committed</Text>
         <Text className="font-data mt-1 text-2xl font-semibold tabular-nums text-danger">
           {formatMoney(totalCommitmentMonthly, baseCurrency)}/mo
@@ -73,10 +73,10 @@ export default function CommitmentsScreen() {
         <EmptyState message='No active recurring rules yet — mark a transaction "recurring" when you add it to start tracking commitments here.' />
       ) : (
         sections.map((section) => (
-          <View key={section.title} className="rounded-xl border border-border bg-surface p-4">
+          <View key={section.title} className="rounded-card border border-glass-border bg-glass p-4">
             <Text className="mb-3 text-sm font-semibold text-fg">{section.title}</Text>
             {section.rows.map(({ rule, monthly }, i) => (
-              <View key={rule.id} className={`py-2.5 ${i > 0 ? "border-t border-border" : ""}`}>
+              <View key={rule.id} className={`py-2.5 ${i > 0 ? "border-t border-glass-border" : ""}`}>
                 <View className="flex-row items-center justify-between gap-2">
                   <View className="flex-1 flex-row items-center gap-1.5">
                     {rule.type !== "transfer" &&

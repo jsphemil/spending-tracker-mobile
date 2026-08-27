@@ -13,7 +13,7 @@ export function SummaryBand({ incomeMinor, expenseMinor, currency }: SummaryBand
   const incomePercent = total > 0 ? (incomeMinor / total) * 100 : 50;
 
   return (
-    <View className="overflow-hidden rounded-lg border border-border">
+    <View className="overflow-hidden rounded-lg border border-glass-border">
       <View className="h-1.5 flex-row">
         <View className="bg-success" style={{ width: `${incomePercent}%` }} />
         <View className="bg-danger" style={{ width: `${100 - incomePercent}%` }} />

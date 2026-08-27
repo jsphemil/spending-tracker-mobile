@@ -10,6 +10,7 @@ import { ACCOUNT_TYPES, type AccountType } from "../db/schema";
 import { evaluateExpression } from "../services/calculator";
 import { majorToMinor, minorToMajor } from "../services/format";
 import { useThemeColors } from "../theme/palette";
+import { Button } from "./ui/Button";
 import { IconPicker } from "./ui/IconPicker";
 
 export interface AccountFormValues {
@@ -59,7 +60,7 @@ function TriStateRow({
             className={`flex-1 items-center rounded-lg border py-2 ${
               value === optValue
                 ? "border-accent bg-accent-soft"
-                : "border-border bg-surface"
+                : "border-glass-border bg-glass"
             }`}
           >
             <Text
@@ -173,7 +174,7 @@ export function AccountForm({
           onChangeText={setName}
           placeholder="e.g. HDFC Salary"
           placeholderTextColor={colors.fgSubtle}
-          className="rounded-lg border border-border bg-surface px-3 py-2 text-base text-fg"
+          className="rounded-lg border border-glass-border bg-glass px-3 py-2 text-base text-fg"
         />
       </View>
 
@@ -191,7 +192,7 @@ export function AccountForm({
                 setType(t);
               }}
               className={`rounded-full border px-3 py-2 ${
-                type === t ? "border-accent bg-accent-soft" : "border-border bg-surface"
+                type === t ? "border-accent bg-accent-soft" : "border-glass-border bg-glass"
               }`}
             >
               <Text className={type === t ? "text-accent" : "text-fg-muted"}>
@@ -230,7 +231,7 @@ export function AccountForm({
               className={`rounded-full border px-3 py-1.5 ${
                 currency.toUpperCase() === opt.code
                   ? "border-accent bg-accent-soft"
-                  : "border-border bg-surface"
+                  : "border-glass-border bg-glass"
               }`}
             >
               <Text className={currency.toUpperCase() === opt.code ? "text-accent" : "text-fg-muted"}>
@@ -246,7 +247,7 @@ export function AccountForm({
           maxLength={3}
           placeholder="Or type any 3-letter code"
           placeholderTextColor={colors.fgSubtle}
-          className="rounded-lg border border-border bg-surface px-3 py-2 text-base text-fg"
+          className="rounded-lg border border-glass-border bg-glass px-3 py-2 text-base text-fg"
         />
       </View>
 
@@ -259,7 +260,7 @@ export function AccountForm({
             keyboardType="decimal-pad"
             placeholder="0"
             placeholderTextColor={colors.fgSubtle}
-            className="rounded-lg border border-border bg-surface px-3 py-2 text-base text-fg"
+            className="rounded-lg border border-glass-border bg-glass px-3 py-2 text-base text-fg"
           />
         </View>
       )}
@@ -272,7 +273,7 @@ export function AccountForm({
           keyboardType="numeric"
           placeholder="0"
           placeholderTextColor={colors.fgSubtle}
-          className="rounded-lg border border-border bg-surface px-3 py-2 text-base text-fg"
+          className="rounded-lg border border-glass-border bg-glass px-3 py-2 text-base text-fg"
         />
         <AmountOperatorRow value={openingBalanceText} onChange={setOpeningBalanceText} />
       </View>
@@ -281,7 +282,7 @@ export function AccountForm({
         <Text className="text-sm font-medium text-fg-muted">Opening Date</Text>
         <Pressable
           onPress={() => setShowDatePicker(true)}
-          className="rounded-lg border border-border bg-surface px-3 py-2"
+          className="rounded-lg border border-glass-border bg-glass px-3 py-2"
         >
           <Text className="text-fg">{openingDate.toDateString()}</Text>
         </Pressable>
@@ -315,7 +316,7 @@ export function AccountForm({
                 keyboardType="decimal-pad"
                 placeholder="0"
                 placeholderTextColor={colors.fgSubtle}
-                className="rounded-lg border border-border bg-surface px-3 py-2 text-base text-fg"
+                className="rounded-lg border border-glass-border bg-glass px-3 py-2 text-base text-fg"
               />
             </View>
           )}
@@ -329,12 +330,7 @@ export function AccountForm({
 
       {error && <Text className="text-sm text-danger">{error}</Text>}
 
-      <Pressable
-        onPress={handleSubmit}
-        className="items-center rounded-lg bg-accent py-3"
-      >
-        <Text className="text-base font-semibold text-white">{submitLabel}</Text>
-      </Pressable>
+      <Button onPress={handleSubmit}>{submitLabel}</Button>
     </ScrollView>
   );
 }

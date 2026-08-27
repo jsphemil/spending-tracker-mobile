@@ -78,7 +78,7 @@ export default function CategoriesScreen() {
             key={k}
             onPress={() => setKind(k)}
             className={`flex-1 items-center rounded-lg border py-2 ${
-              kind === k ? "border-accent bg-accent-soft" : "border-border bg-surface"
+              kind === k ? "border-accent bg-accent-soft" : "border-glass-border bg-glass"
             }`}
           >
             <Text className={kind === k ? "text-accent" : "text-fg-muted"}>
@@ -102,7 +102,7 @@ export default function CategoriesScreen() {
 
           return (
             <Link href={`/category/${item.id}/edit`} asChild>
-              <Pressable className="gap-2 rounded-xl border border-border bg-surface p-3">
+              <Pressable className="gap-2 rounded-card border border-glass-border bg-glass p-3">
                 <View className="flex-row items-center gap-3">
                   <View
                     style={{ backgroundColor: item.color }}

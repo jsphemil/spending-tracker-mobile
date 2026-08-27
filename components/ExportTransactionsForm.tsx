@@ -9,6 +9,7 @@ import { useAccounts } from "../db/queries/accounts";
 import { buildTransactionsCsv } from "../services/export";
 import { toLocalDateString } from "../services/period";
 import { useThemeColors } from "../theme/palette";
+import { Button } from "./ui/Button";
 
 function defaultFrom(): Date {
   return new Date(new Date().getFullYear(), 0, 1);
@@ -65,7 +66,7 @@ export function ExportTransactionsForm() {
   }
 
   return (
-    <View className="gap-3 rounded-lg border border-border bg-surface p-4">
+    <View className="gap-3 rounded-lg border border-glass-border bg-glass p-4">
       <Text className="text-base text-fg">Export Transactions</Text>
 
       <View className="gap-2">
@@ -82,7 +83,7 @@ export function ExportTransactionsForm() {
                 key={a.id}
                 onPress={() => toggleAccount(a.id)}
                 className={`rounded-full border px-3 py-1.5 ${
-                  selected ? "border-accent bg-accent-soft" : "border-border"
+                  selected ? "border-accent bg-accent-soft" : "border-glass-border"
                 }`}
               >
                 <Text className={selected ? "text-accent" : "text-fg-muted"}>{a.name}</Text>
@@ -95,14 +96,14 @@ export function ExportTransactionsForm() {
       <View className="flex-row items-center gap-2">
         <Pressable
           onPress={() => setShowFromPicker(true)}
-          className="flex-1 rounded-lg border border-border bg-surface-2 px-3 py-2"
+          className="flex-1 rounded-lg border border-glass-border bg-surface-2 px-3 py-2"
         >
           <Text className="text-xs text-fg-muted">From</Text>
           <Text className="text-sm text-fg">{from.toDateString()}</Text>
         </Pressable>
         <Pressable
           onPress={() => setShowToPicker(true)}
-          className="flex-1 rounded-lg border border-border bg-surface-2 px-3 py-2"
+          className="flex-1 rounded-lg border border-glass-border bg-surface-2 px-3 py-2"
         >
           <Text className="text-xs text-fg-muted">To</Text>
           <Text className="text-sm text-fg">{to.toDateString()}</Text>
@@ -129,15 +130,9 @@ export function ExportTransactionsForm() {
         )}
       </View>
 
-      <Pressable
-        onPress={handleExport}
-        disabled={exporting}
-        className="items-center rounded-lg bg-accent py-3 disabled:opacity-50"
-      >
-        <Text className="font-semibold text-white">
-          {exporting ? "Preparing…" : "Export as CSV"}
-        </Text>
-      </Pressable>
+      <Button onPress={handleExport} disabled={exporting}>
+        {exporting ? "Preparing…" : "Export as CSV"}
+      </Button>
       <Text className="text-xs text-fg-subtle">
         Opens directly in Excel, Sheets, or Numbers — no separate .xlsx format needed.
       </Text>
