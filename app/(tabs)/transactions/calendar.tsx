@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { Icon } from "../../../components/ui/Icon";
 
 import { CalendarMonthGrid } from "../../../components/CalendarMonthGrid";
 import { db } from "../../../db/client";
@@ -9,6 +9,7 @@ import { useSettings } from "../../../db/queries/settings";
 import { useFilteredTransactions } from "../../../db/queries/transactions";
 import { currentMonthPeriod, monthLabel, monthRange, shiftMonth } from "../../../services/period";
 import { ensureMaterialized } from "../../../services/recurrence";
+import { TAB_BAR_CLEARANCE } from "../../../theme/tabBar";
 import { useThemeColors } from "../../../theme/palette";
 
 export default function TransactionsCalendarScreen() {
@@ -48,14 +49,14 @@ export default function TransactionsCalendarScreen() {
   }, [rows, accounts, hidingFuture]);
 
   return (
-    <ScrollView className="flex-1 bg-bg" contentContainerStyle={{ padding: 16 }}>
+    <ScrollView className="flex-1 bg-bg" contentContainerStyle={{ padding: 16, paddingBottom: TAB_BAR_CLEARANCE }}>
       <View className="mb-4 flex-row items-center justify-between">
         <Pressable
           onPress={() => setPeriod((p) => shiftMonth(p, -1))}
           className="p-3"
           hitSlop={8}
         >
-          <MaterialCommunityIcons name="chevron-left" size={28} color={colors.fg} />
+          <Icon name="chevron-left" size={28} color={colors.fg} />
         </Pressable>
         <Text className="text-base font-medium text-fg">{monthLabel(period)}</Text>
         <Pressable
@@ -63,7 +64,7 @@ export default function TransactionsCalendarScreen() {
           className="p-3"
           hitSlop={8}
         >
-          <MaterialCommunityIcons name="chevron-right" size={28} color={colors.fg} />
+          <Icon name="chevron-right" size={28} color={colors.fg} />
         </Pressable>
       </View>
       <CalendarMonthGrid period={period} currency={baseCurrency} expenseByDay={expenseByDay} />

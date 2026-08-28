@@ -8,6 +8,9 @@ import { StatusBar } from "expo-status-bar";
 import { Stack } from "expo-router";
 import { vars } from "nativewind";
 import { useMigrations } from "drizzle-orm/expo-sqlite/migrator";
+import { useFonts } from "expo-font";
+import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold } from "@expo-google-fonts/inter";
+import { Manrope_600SemiBold, Manrope_700Bold, Manrope_800ExtraBold } from "@expo-google-fonts/manrope";
 
 import { OnboardingFlow } from "../components/OnboardingFlow";
 import { db } from "../db/client";
@@ -21,6 +24,15 @@ export default function RootLayout() {
   const scheme = useResolvedTheme();
   const colors = useThemeColors();
   const { settings } = useSettings();
+  const [fontsLoaded] = useFonts({
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
+    Inter_700Bold,
+    Manrope_600SemiBold,
+    Manrope_700Bold,
+    Manrope_800ExtraBold,
+  });
 
   useEffect(() => {
     if (success) ensureSeeded(db);
@@ -42,7 +54,7 @@ export default function RootLayout() {
               Database migration failed: {error.message}
             </Text>
           </View>
-        ) : !success || !settings ? (
+        ) : !success || !settings || !fontsLoaded ? (
           <View className="flex-1 items-center justify-center bg-bg">
             <Text className="text-fg">Setting up database…</Text>
           </View>
@@ -53,7 +65,7 @@ export default function RootLayout() {
             screenOptions={{
               headerShown: false,
               headerStyle: { backgroundColor: colors.surface },
-              headerTitleStyle: { color: colors.fg },
+              headerTitleStyle: { color: colors.fg, fontFamily: "Manrope_700Bold" },
               headerTintColor: colors.fg,
             }}
           >

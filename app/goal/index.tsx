@@ -99,7 +99,7 @@ export default function GoalsListScreen() {
           <EmptyState message="No goals yet. Set a net worth target to start tracking progress." />
         }
         renderItem={({ item: { goal, remaining, percent, reached, projectedDate, isBehindTarget } }) => (
-          <View className="rounded-xl border border-border bg-surface p-4">
+          <View className="rounded-card border border-glass-border bg-glass p-4">
             <View className="flex-row items-center justify-between">
               <Text className="text-sm font-medium text-fg">{goal.name}</Text>
               <Text className="font-data text-sm font-medium tabular-nums text-fg">

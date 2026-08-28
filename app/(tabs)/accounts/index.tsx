@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "expo-router";
 import { FlatList, Pressable, Text, View } from "react-native";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { Icon } from "../../../components/ui/Icon";
 
 import { db } from "../../../db/client";
 import { useAccounts } from "../../../db/queries/accounts";
@@ -13,6 +13,7 @@ import { currentMonthPeriod, monthLabel, monthRange, shiftMonth } from "../../..
 import { ensureMaterialized } from "../../../services/recurrence";
 import { CurrencyAmount } from "../../../components/CurrencyAmount";
 import { EmptyState } from "../../../components/ui/EmptyState";
+import { TAB_BAR_CLEARANCE, FAB_BOTTOM_OFFSET } from "../../../theme/tabBar";
 import { useThemeColors } from "../../../theme/palette";
 
 interface AccountFlow {
@@ -59,15 +60,15 @@ export default function AccountsListScreen() {
       <FlatList
         data={accounts ?? []}
         keyExtractor={(item) => String(item.id)}
-        contentContainerStyle={{ padding: 16, gap: 12 }}
+        contentContainerStyle={{ padding: 16, paddingBottom: TAB_BAR_CLEARANCE, gap: 12 }}
         ListHeaderComponent={
           <View className="mb-3 flex-row items-center justify-center gap-2">
             <Pressable onPress={() => setPeriod((p) => shiftMonth(p, -1))} className="p-3" hitSlop={8}>
-              <MaterialCommunityIcons name="chevron-left" size={28} color={colors.fg} />
+              <Icon name="chevron-left" size={28} color={colors.fg} />
             </Pressable>
             <Text className="text-base font-medium text-fg">{monthLabel(period)}</Text>
             <Pressable onPress={() => setPeriod((p) => shiftMonth(p, 1))} className="p-3" hitSlop={8}>
-              <MaterialCommunityIcons name="chevron-right" size={28} color={colors.fg} />
+              <Icon name="chevron-right" size={28} color={colors.fg} />
             </Pressable>
           </View>
         }
@@ -81,10 +82,15 @@ export default function AccountsListScreen() {
 
           return (
             <Link href={`/accounts/${item.id}`} asChild>
-              <Pressable className="rounded-xl border border-border bg-surface p-4">
+              <Pressable className="rounded-card border border-glass-border bg-glass p-4">
                 <View className="flex-row items-center justify-between">
                   <View className="flex-row items-center gap-3">
-                    <View style={{ backgroundColor: item.color }} className="h-10 w-10 rounded-full" />
+                    <View
+                      style={{ backgroundColor: item.color }}
+                      className="h-10 w-10 items-center justify-center rounded-full"
+                    >
+                      <Icon name={item.icon} size={18} color="#fff" />
+                    </View>
                     <View>
                       <Text className="text-base font-medium text-fg">{item.name}</Text>
                       <Text className="text-sm text-fg-muted">{ACCOUNT_TYPE_LABELS[item.type]}</Text>
@@ -97,7 +103,7 @@ export default function AccountsListScreen() {
                   />
                 </View>
 
-                <View className="mt-3 flex-row gap-4 border-t border-border pt-3">
+                <View className="mt-3 flex-row gap-4 border-t border-glass-border pt-3">
                   <View className="flex-1">
                     <Text className="text-xs text-fg-muted">Income</Text>
                     <Text className="font-data text-xs font-medium tabular-nums text-success">
@@ -126,7 +132,10 @@ export default function AccountsListScreen() {
         }}
       />
       <Link href="/account/new" asChild>
-        <Pressable className="absolute bottom-6 right-6 h-14 w-14 items-center justify-center rounded-full bg-accent">
+        <Pressable
+          className="absolute right-6 h-14 w-14 items-center justify-center rounded-full bg-accent"
+          style={{ bottom: FAB_BOTTOM_OFFSET }}
+        >
           <Text className="text-2xl text-white">+</Text>
         </Pressable>
       </Link>

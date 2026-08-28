@@ -31,12 +31,42 @@ module.exports = {
         "success-soft": "var(--success-soft)",
         "danger-soft": "var(--danger-soft)",
         "transfer-soft": "var(--transfer-soft)",
+        // Erebor "glass" panel tiers — already carry their own alpha as
+        // rgba(), same rule as the "-soft" tokens above.
+        glass: "var(--glass-fill)",
+        "glass-strong": "var(--glass-fill-strong)",
+        "glass-press": "var(--glass-fill-press)",
+        "glass-border": "var(--glass-border)",
+        "glass-border-strong": "var(--glass-border-strong)",
+      },
+      // New keys alongside Tailwind's existing scale (xs/sm/md/lg/xl/2xl) —
+      // deliberately not overriding those, so no existing `rounded-*` usage
+      // silently changes meaning.
+      borderRadius: {
+        card: "20px",
+        "icon-badge": "16px",
+        pill: "9999px",
       },
       fontFamily: {
-        // Matches the source app's --font-data stack exactly (system
-        // monospace, no custom font package) — see knowledge-transfer.md §4.2
-        // and spec.md §5.12.
-        data: ["ui-monospace", "SF Mono", "Cascadia Mono", "Roboto Mono", "monospace"],
+        // Was a monospace stack (system-only, no custom font package) used
+        // purely as a stand-in for tabular alignment — see knowledge-transfer
+        // .md §4.2 / spec.md §5.12. Erebor's spec calls for Inter (semibold)
+        // on financial figures with `.tabular-figures`, which the app's
+        // existing `tabular-nums` Tailwind class already provides regardless
+        // of font family — so retargeting this one config key to Inter
+        // cascades to every existing `font-data` money display app-wide,
+        // no per-file changes needed.
+        data: ["Inter_600SemiBold"],
+        // Erebor design system: Manrope (display/headline numbers) + Inter
+        // (body/UI). RN loads each weight as its own font family via
+        // expo-font (see app/_layout.tsx), so weights need distinct classes
+        // rather than combining with Tailwind's font-bold utility.
+        display: ["Manrope_700Bold"],
+        "display-xbold": ["Manrope_800ExtraBold"],
+        body: ["Inter_400Regular"],
+        "body-medium": ["Inter_500Medium"],
+        "body-semibold": ["Inter_600SemiBold"],
+        "body-bold": ["Inter_700Bold"],
       },
     },
   },

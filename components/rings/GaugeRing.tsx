@@ -46,7 +46,7 @@ export function GaugeRing({
         overflowColor={colors.danger}
       >
         <Text className="text-xs text-fg-muted">{centerLabel}</Text>
-        <Text className="font-data text-lg font-semibold tabular-nums text-fg">{centerValue}</Text>
+        <Text className="font-display-xbold text-xl tabular-nums text-fg">{centerValue}</Text>
         {centerEquivalent ? (
           <Text className="font-data text-xs tabular-nums text-fg-subtle">≈ {centerEquivalent}</Text>
         ) : null}

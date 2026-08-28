@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
 import { View, type ViewProps } from "react-native";
 
+import { CARD_SHADOW } from "../../theme/gradients";
+
 interface CardProps extends ViewProps {
   children: ReactNode;
 }
@@ -8,14 +10,14 @@ interface CardProps extends ViewProps {
 // The one repeated container shape used across every screen — rounded
 // corners, border, surface-color background, consistent padding (spec.md
 // §5.12 / knowledge-transfer.md §4.4's "one repeated card primitive").
-// Not present as a literal shared component in the source web app either
-// (it only repeats the same Tailwind classes inline) — this exists here
-// because RN benefits more from a shared component than web/Tailwind's
-// class repetition does; the rendered values match the source exactly.
-export function Card({ children, className, ...props }: CardProps) {
+// Erebor design refresh: glass panel — translucent fill + hairline border +
+// drop shadow, approximating frosted glass without a real blur dependency
+// (see the design-refresh plan's "glass = translucent fills only" call).
+export function Card({ children, className, style, ...props }: CardProps) {
   return (
     <View
-      className={`rounded-2xl border border-border bg-surface p-4 ${className ?? ""}`}
+      className={`rounded-card border border-glass-border bg-glass p-4 ${className ?? ""}`}
+      style={[CARD_SHADOW, style]}
       {...props}
     >
       {children}

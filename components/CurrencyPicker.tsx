@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { FlatList, Modal, Pressable, Text, TextInput, View } from "react-native";
+import { FlatList, Modal, Pressable, Text, View } from "react-native";
+import { Input } from "./ui/Input";
 
 import { getSupportedCurrencies, type CurrencyInfo } from "../services/currency";
 import { useThemeColors } from "../theme/palette";
@@ -42,7 +43,7 @@ export function CurrencyPicker({ value, onChange, label = "Currency" }: Currency
       <Text className="text-sm font-medium text-fg-muted">{label}</Text>
       <Pressable
         onPress={() => setVisible(true)}
-        className="rounded-lg border border-border bg-surface px-3 py-2"
+        className="rounded-lg border border-glass-border bg-glass px-3 py-2"
       >
         <Text className="text-base text-fg">
           {value.toUpperCase()}
@@ -53,18 +54,18 @@ export function CurrencyPicker({ value, onChange, label = "Currency" }: Currency
       <Modal visible={visible} animationType="slide" onRequestClose={() => setVisible(false)}>
         <View className="flex-1 bg-bg pt-16">
           <View className="flex-row items-center justify-between px-4 pb-3">
-            <Text className="text-lg font-semibold text-fg">Select Currency</Text>
+            <Text className="text-lg font-display text-fg">Select Currency</Text>
             <Pressable onPress={() => setVisible(false)}>
               <Text className="text-accent">Done</Text>
             </Pressable>
           </View>
-          <TextInput
+          <Input
             value={query}
             onChangeText={setQuery}
             placeholder="Search by code or name"
             placeholderTextColor={colors.fgSubtle}
             autoCapitalize="none"
-            className="mx-4 mb-3 rounded-lg border border-border bg-surface px-3 py-2 text-base text-fg"
+            className="mx-4 mb-3 rounded-lg border border-glass-border bg-glass px-3 py-2 text-base text-fg"
           />
           <FlatList
             data={filtered}
@@ -82,7 +83,7 @@ export function CurrencyPicker({ value, onChange, label = "Currency" }: Currency
                   setVisible(false);
                   setQuery("");
                 }}
-                className={`flex-row items-center justify-between border-b border-border py-3 ${
+                className={`flex-row items-center justify-between border-b border-glass-border py-3 ${
                   item.code === value.toUpperCase() ? "bg-accent-soft" : ""
                 }`}
               >

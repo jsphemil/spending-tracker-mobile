@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { Alert, Pressable, ScrollView, Switch, Text, TextInput, View } from "react-native";
+import { Alert, Pressable, ScrollView, Switch, Text, View } from "react-native";
+import { Input } from "./ui/Input";
 import DateTimePicker from "@react-native-community/datetimepicker";
 
 import { AmountOperatorRow } from "./AmountOperatorRow";
-import { CATEGORY_ICONS } from "../constants/categoryIcons";
+import { ALL_ICON_OPTIONS } from "../constants/iconLibrary";
+import { Button } from "./ui/Button";
 import { COLOR_PALETTE } from "../constants/colorPalette";
 import { createCategory } from "../db/actions/categories";
 import { useAccounts } from "../db/queries/accounts";
@@ -124,7 +126,7 @@ export function TransactionForm({
     const newId = createCategory({
       name: newCategoryName.trim(),
       kind: type === "income" ? "income" : "expense",
-      icon: CATEGORY_ICONS[0],
+      icon: ALL_ICON_OPTIONS[0].key,
       color: COLOR_PALETTE[0],
     });
     setCategoryId(newId);
@@ -210,7 +212,7 @@ export function TransactionForm({
             key={t}
             onPress={() => setType(t)}
             className={`flex-1 items-center rounded-lg border py-2 ${
-              type === t ? "border-accent bg-accent-soft" : "border-border bg-surface"
+              type === t ? "border-accent bg-accent-soft" : "border-glass-border bg-glass"
             }`}
           >
             <Text className={type === t ? "text-accent" : "text-fg-muted"}>
@@ -222,13 +224,13 @@ export function TransactionForm({
 
       <View className="gap-2">
         <Text className="text-sm font-medium text-fg-muted">Amount</Text>
-        <TextInput
+        <Input
           value={amountText}
           onChangeText={setAmountText}
           keyboardType="decimal-pad"
           placeholder="0"
           placeholderTextColor={colors.fgSubtle}
-          className="font-data rounded-lg border border-border bg-surface px-3 py-2 text-lg text-fg"
+          className="font-data rounded-lg border border-glass-border bg-glass px-3 py-2 text-lg text-fg"
         />
         <AmountOperatorRow value={amountText} onChange={setAmountText} />
       </View>
@@ -243,7 +245,7 @@ export function TransactionForm({
               key={a.id}
               onPress={() => setAccountId(a.id)}
               className={`rounded-full border px-3 py-2 ${
-                accountId === a.id ? "border-accent bg-accent-soft" : "border-border bg-surface"
+                accountId === a.id ? "border-accent bg-accent-soft" : "border-glass-border bg-glass"
               }`}
             >
               <Text className={accountId === a.id ? "text-accent" : "text-fg-muted"}>
@@ -265,7 +267,7 @@ export function TransactionForm({
                   key={a.id}
                   onPress={() => setToAccountId(a.id)}
                   className={`rounded-full border px-3 py-2 ${
-                    toAccountId === a.id ? "border-transfer bg-transfer-soft" : "border-border bg-surface"
+                    toAccountId === a.id ? "border-transfer bg-transfer-soft" : "border-glass-border bg-glass"
                   }`}
                 >
                   <Text className={toAccountId === a.id ? "text-transfer" : "text-fg-muted"}>
@@ -293,7 +295,7 @@ export function TransactionForm({
                 key={c.id}
                 onPress={() => setCategoryId(c.id)}
                 className={`rounded-full border px-3 py-2 ${
-                  categoryId === c.id ? "border-accent bg-accent-soft" : "border-border bg-surface"
+                  categoryId === c.id ? "border-accent bg-accent-soft" : "border-glass-border bg-glass"
                 }`}
               >
                 <Text className={categoryId === c.id ? "text-accent" : "text-fg-muted"}>
@@ -304,16 +306,16 @@ export function TransactionForm({
           </View>
           {addingCategory && (
             <View className="flex-row gap-2">
-              <TextInput
+              <Input
                 value={newCategoryName}
                 onChangeText={setNewCategoryName}
                 placeholder="Category name"
                 placeholderTextColor={colors.fgSubtle}
-                className="flex-1 rounded-lg border border-border bg-surface px-3 py-2 text-base text-fg"
+                className="flex-1 rounded-lg border border-glass-border bg-glass px-3 py-2 text-base text-fg"
               />
               <Pressable
                 onPress={handleCreateCategory}
-                className="items-center justify-center rounded-lg border border-border bg-surface px-4"
+                className="items-center justify-center rounded-lg border border-glass-border bg-glass px-4"
               >
                 <Text className="text-fg">Add</Text>
               </Pressable>
@@ -326,7 +328,7 @@ export function TransactionForm({
         <Text className="text-sm font-medium text-fg-muted">Date</Text>
         <Pressable
           onPress={() => setShowDatePicker(true)}
-          className="rounded-lg border border-border bg-surface px-3 py-2"
+          className="rounded-lg border border-glass-border bg-glass px-3 py-2"
         >
           <Text className="text-fg">{date.toDateString()}</Text>
         </Pressable>
@@ -344,12 +346,12 @@ export function TransactionForm({
 
       <View className="gap-2">
         <Text className="text-sm font-medium text-fg-muted">Description (optional)</Text>
-        <TextInput
+        <Input
           value={description}
           onChangeText={setDescription}
           placeholder="Add a note"
           placeholderTextColor={colors.fgSubtle}
-          className="rounded-lg border border-border bg-surface px-3 py-2 text-base text-fg"
+          className="rounded-lg border border-glass-border bg-glass px-3 py-2 text-base text-fg"
         />
       </View>
 
@@ -365,7 +367,7 @@ export function TransactionForm({
           </Text>
           <Pressable
             onPress={() => setShowEndDatePicker(true)}
-            className="rounded-lg border border-border bg-surface px-3 py-2"
+            className="rounded-lg border border-glass-border bg-glass px-3 py-2"
           >
             <Text className="text-fg">
               {scheduleEndDate ? scheduleEndDate.toDateString() : "No end date"}
@@ -388,10 +390,16 @@ export function TransactionForm({
       )}
 
       {allowRecurring && !isRecurringEdit && (
-        <View className="gap-3 rounded-lg border border-border p-3">
+        <View className="gap-3 rounded-lg border border-glass-border p-3">
           <View className="flex-row items-center justify-between">
             <Text className="text-base text-fg">Make recurring</Text>
-            <Switch value={recurring} onValueChange={setRecurring} />
+            <Switch
+              value={recurring}
+              onValueChange={setRecurring}
+              trackColor={{ false: colors.glassFill, true: colors.accent }}
+              thumbColor="#ffffff"
+              ios_backgroundColor={colors.glassFill}
+            />
           </View>
 
           {recurring && (
@@ -399,11 +407,11 @@ export function TransactionForm({
               <View className="gap-2">
                 <View className="flex-row items-center gap-2">
                   <Text className="text-sm text-fg-muted">Repeat every</Text>
-                  <TextInput
+                  <Input
                     value={intervalCountText}
                     onChangeText={setIntervalCountText}
                     keyboardType="number-pad"
-                    className="w-16 rounded-lg border border-border bg-surface px-2 py-1.5 text-center text-fg"
+                    className="w-16 rounded-lg border border-glass-border bg-glass px-2 py-1.5 text-center text-fg"
                   />
                 </View>
                 <View className="flex-row flex-wrap gap-1.5">
@@ -412,7 +420,7 @@ export function TransactionForm({
                       key={unit}
                       onPress={() => setIntervalUnit(unit)}
                       className={`rounded-full border px-2.5 py-1.5 ${
-                        intervalUnit === unit ? "border-accent bg-accent-soft" : "border-border bg-surface"
+                        intervalUnit === unit ? "border-accent bg-accent-soft" : "border-glass-border bg-glass"
                       }`}
                     >
                       <Text className={intervalUnit === unit ? "text-accent" : "text-fg-muted"}>
@@ -429,7 +437,7 @@ export function TransactionForm({
                 </Text>
                 <Pressable
                   onPress={() => setShowEndDatePicker(true)}
-                  className="rounded-lg border border-border bg-surface px-3 py-2"
+                  className="rounded-lg border border-glass-border bg-glass px-3 py-2"
                 >
                   <Text className="text-fg">
                     {scheduleEndDate ? scheduleEndDate.toDateString() : "No end date"}
@@ -453,12 +461,7 @@ export function TransactionForm({
 
       {error && <Text className="text-sm text-danger">{error}</Text>}
 
-      <Pressable
-        onPress={handleSubmit}
-        className="items-center rounded-lg bg-accent py-3"
-      >
-        <Text className="text-base font-semibold text-white">{submitLabel}</Text>
-      </Pressable>
+      <Button onPress={handleSubmit}>{submitLabel}</Button>
     </ScrollView>
   );
 }

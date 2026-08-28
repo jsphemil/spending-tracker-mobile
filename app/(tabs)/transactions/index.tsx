@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Link, Stack } from "expo-router";
 import { FlatList, Pressable, ScrollView, Text, View } from "react-native";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { Icon } from "../../../components/ui/Icon";
 
 import { confirmDeleteTransaction } from "../../../components/confirmDeleteTransaction";
 import { SummaryBand } from "../../../components/SummaryBand";
@@ -18,6 +18,7 @@ import { majorToMinor, minorToMajor } from "../../../services/format";
 import { currentMonthPeriod, monthLabel, monthRange, shiftMonth } from "../../../services/period";
 import { ensureMaterialized } from "../../../services/recurrence";
 import { resolveAccountSettings } from "../../../services/settings";
+import { TAB_BAR_CLEARANCE, FAB_BOTTOM_OFFSET } from "../../../theme/tabBar";
 import { useThemeColors } from "../../../theme/palette";
 
 type FilterMode = "month" | "custom" | "allTime";
@@ -145,13 +146,13 @@ export default function TransactionsListScreen() {
           headerRight: () => (
             <Link href="/transactions/calendar" asChild>
               <Pressable hitSlop={8} className="px-2">
-                <MaterialCommunityIcons name="calendar-month-outline" size={22} color={colors.accent} />
+                <Icon name="calendar-month-outline" size={22} color={colors.accent} />
               </Pressable>
             </Link>
           ),
         }}
       />
-      <View className="gap-3 border-b border-border p-4">
+      <View className="gap-3 border-b border-glass-border p-4">
         <View className="flex-row gap-1.5 rounded-lg bg-surface-2 p-1">
           {(
             [
@@ -163,7 +164,7 @@ export default function TransactionsListScreen() {
             <Pressable
               key={mode}
               onPress={() => setFilterMode(mode)}
-              className={`flex-1 items-center rounded py-1.5 ${filterMode === mode ? "bg-surface" : ""}`}
+              className={`flex-1 items-center rounded py-1.5 ${filterMode === mode ? "bg-glass" : ""}`}
               style={
                 filterMode === mode
                   ? {
@@ -190,7 +191,7 @@ export default function TransactionsListScreen() {
               className="p-3"
               hitSlop={8}
             >
-              <MaterialCommunityIcons name="chevron-left" size={28} color={colors.fg} />
+              <Icon name="chevron-left" size={28} color={colors.fg} />
             </Pressable>
             <Text className="text-base font-medium text-fg">{monthLabel(period)}</Text>
             <Pressable
@@ -198,7 +199,7 @@ export default function TransactionsListScreen() {
               className="p-3"
               hitSlop={8}
             >
-              <MaterialCommunityIcons name="chevron-right" size={28} color={colors.fg} />
+              <Icon name="chevron-right" size={28} color={colors.fg} />
             </Pressable>
           </View>
         )}
@@ -207,14 +208,14 @@ export default function TransactionsListScreen() {
           <View className="flex-row items-center gap-2">
             <Pressable
               onPress={() => setShowFromPicker(true)}
-              className="flex-1 rounded-lg border border-border bg-surface px-3 py-2"
+              className="flex-1 rounded-lg border border-glass-border bg-glass px-3 py-2"
             >
               <Text className="text-xs text-fg-muted">From</Text>
               <Text className="text-sm text-fg">{customFrom.toDateString()}</Text>
             </Pressable>
             <Pressable
               onPress={() => setShowToPicker(true)}
-              className="flex-1 rounded-lg border border-border bg-surface px-3 py-2"
+              className="flex-1 rounded-lg border border-glass-border bg-glass px-3 py-2"
             >
               <Text className="text-xs text-fg-muted">To</Text>
               <Text className="text-sm text-fg">{customTo.toDateString()}</Text>
@@ -250,7 +251,7 @@ export default function TransactionsListScreen() {
           <Pressable
             onPress={() => setAccountId(undefined)}
             className={`mr-2 rounded-full border px-3 py-1.5 ${
-              accountId === undefined ? "border-accent bg-accent-soft" : "border-border"
+              accountId === undefined ? "border-accent bg-accent-soft" : "border-glass-border"
             }`}
           >
             <Text className={accountId === undefined ? "text-accent" : "text-fg-muted"}>
@@ -262,7 +263,7 @@ export default function TransactionsListScreen() {
               key={a.id}
               onPress={() => setAccountId(a.id)}
               className={`mr-2 rounded-full border px-3 py-1.5 ${
-                accountId === a.id ? "border-accent bg-accent-soft" : "border-border"
+                accountId === a.id ? "border-accent bg-accent-soft" : "border-glass-border"
               }`}
             >
               <Text className={accountId === a.id ? "text-accent" : "text-fg-muted"}>
@@ -276,7 +277,7 @@ export default function TransactionsListScreen() {
           <Pressable
             onPress={() => setCategoryId(undefined)}
             className={`mr-2 rounded-full border px-3 py-1.5 ${
-              categoryId === undefined ? "border-accent bg-accent-soft" : "border-border"
+              categoryId === undefined ? "border-accent bg-accent-soft" : "border-glass-border"
             }`}
           >
             <Text className={categoryId === undefined ? "text-accent" : "text-fg-muted"}>
@@ -288,7 +289,7 @@ export default function TransactionsListScreen() {
               key={c.id}
               onPress={() => setCategoryId(c.id)}
               className={`mr-2 rounded-full border px-3 py-1.5 ${
-                categoryId === c.id ? "border-accent bg-accent-soft" : "border-border"
+                categoryId === c.id ? "border-accent bg-accent-soft" : "border-glass-border"
               }`}
             >
               <Text className={categoryId === c.id ? "text-accent" : "text-fg-muted"}>
@@ -310,7 +311,7 @@ export default function TransactionsListScreen() {
               key={value}
               onPress={() => setTypeFilter(value)}
               className={`mr-2 rounded-full border px-3 py-1.5 ${
-                typeFilter === value ? "border-accent bg-accent-soft" : "border-border"
+                typeFilter === value ? "border-accent bg-accent-soft" : "border-glass-border"
               }`}
             >
               <Text className={typeFilter === value ? "text-accent" : "text-fg-muted"}>{label}</Text>
@@ -334,7 +335,7 @@ export default function TransactionsListScreen() {
       <FlatList
         data={visibleRows}
         keyExtractor={(item) => String(item.id)}
-        contentContainerStyle={{ padding: 16 }}
+        contentContainerStyle={{ padding: 16, paddingBottom: TAB_BAR_CLEARANCE }}
         ListEmptyComponent={<EmptyState message="No transactions for this filter." />}
         renderItem={({ item }) => (
           <TransactionListItem
@@ -352,7 +353,10 @@ export default function TransactionsListScreen() {
       />
 
       <Link href="/transaction/new" asChild>
-        <Pressable className="absolute bottom-6 right-6 h-14 w-14 items-center justify-center rounded-full bg-accent">
+        <Pressable
+          className="absolute right-6 h-14 w-14 items-center justify-center rounded-full bg-accent"
+          style={{ bottom: FAB_BOTTOM_OFFSET }}
+        >
           <Text className="text-2xl text-white">+</Text>
         </Pressable>
       </Link>

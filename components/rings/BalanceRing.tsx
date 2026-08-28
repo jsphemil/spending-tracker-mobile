@@ -46,7 +46,7 @@ export function BalanceRing({
     >
       <Text className="text-xs text-fg-muted">Net</Text>
       <Text
-        className={`font-data text-lg font-semibold tabular-nums ${netMinor < 0 ? "text-danger" : "text-fg"}`}
+        className={`font-display-xbold text-xl tabular-nums ${netMinor < 0 ? "text-danger" : "text-fg"}`}
       >
         {formatMoney(netMinor, currency)}
       </Text>

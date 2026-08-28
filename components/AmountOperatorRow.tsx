@@ -24,7 +24,7 @@ export function AmountOperatorRow({ value, onChange }: AmountOperatorRowProps) {
         <Pressable
           key={op.char}
           onPress={() => onChange(value + op.char)}
-          className="flex-1 items-center rounded-lg border border-border bg-surface py-2"
+          className="flex-1 items-center rounded-lg border border-glass-border bg-glass py-2"
         >
           <Text className="font-data text-base text-fg">{op.symbol}</Text>
         </Pressable>

@@ -1,5 +1,5 @@
 import { ScrollView, Text, View } from "react-native";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { Icon } from "../../components/ui/Icon";
 
 import { EmptyState } from "../../components/ui/EmptyState";
 import { useAccounts } from "../../db/queries/accounts";
@@ -8,6 +8,7 @@ import { useActiveRecurringRules } from "../../db/queries/recurringRules";
 import { useSettings } from "../../db/queries/settings";
 import { formatMoney } from "../../services/format";
 import { describeSchedule, monthlyEquivalent } from "../../services/recurrence";
+import { TAB_BAR_CLEARANCE } from "../../theme/tabBar";
 import { useThemeColors } from "../../theme/palette";
 
 const SECTION_DEFS = [
@@ -50,13 +51,13 @@ export default function CommitmentsScreen() {
   const percentOfIncome = totalIncomeMonthly > 0 ? (totalCommitmentMonthly / totalIncomeMonthly) * 100 : null;
 
   return (
-    <ScrollView className="flex-1 bg-bg" contentContainerStyle={{ padding: 16, gap: 16 }}>
+    <ScrollView className="flex-1 bg-bg" contentContainerStyle={{ padding: 16, paddingBottom: TAB_BAR_CLEARANCE, gap: 16 }}>
       <Text className="text-sm text-fg-muted">
         Everything you&rsquo;re locked into every month, normalized from each rule&rsquo;s own
         cadence — a yearly charge and a weekly one both roll into one monthly figure here.
       </Text>
 
-      <View className="rounded-xl border border-border bg-surface p-4">
+      <View className="rounded-card border border-glass-border bg-glass p-4">
         <Text className="text-xs text-fg-muted">Total committed</Text>
         <Text className="font-data mt-1 text-2xl font-semibold tabular-nums text-danger">
           {formatMoney(totalCommitmentMonthly, baseCurrency)}/mo
@@ -73,16 +74,16 @@ export default function CommitmentsScreen() {
         <EmptyState message='No active recurring rules yet — mark a transaction "recurring" when you add it to start tracking commitments here.' />
       ) : (
         sections.map((section) => (
-          <View key={section.title} className="rounded-xl border border-border bg-surface p-4">
-            <Text className="mb-3 text-sm font-semibold text-fg">{section.title}</Text>
+          <View key={section.title} className="rounded-card border border-glass-border bg-glass p-4">
+            <Text className="mb-3 text-sm font-display text-fg">{section.title}</Text>
             {section.rows.map(({ rule, monthly }, i) => (
-              <View key={rule.id} className={`py-2.5 ${i > 0 ? "border-t border-border" : ""}`}>
+              <View key={rule.id} className={`py-2.5 ${i > 0 ? "border-t border-glass-border" : ""}`}>
                 <View className="flex-row items-center justify-between gap-2">
                   <View className="flex-1 flex-row items-center gap-1.5">
                     {rule.type !== "transfer" &&
                       (categoryInfo(rule.categoryId) ? (
-                        <MaterialCommunityIcons
-                          name={categoryInfo(rule.categoryId)!.icon as never}
+                        <Icon
+                          name={categoryInfo(rule.categoryId)!.icon}
                           size={14}
                           color={colors.fgMuted}
                         />

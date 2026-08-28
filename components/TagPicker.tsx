@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Pressable, Text, TextInput, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
+import { Input } from "./ui/Input";
 
 import { findOrCreateTag } from "../db/actions/tags";
 import { useTags } from "../db/queries/tags";
@@ -41,7 +42,7 @@ export function TagPicker({ selectedTagIds, onChange }: TagPickerProps) {
               key={tag.id}
               onPress={() => toggle(tag.id)}
               className={`rounded-full border px-3 py-1.5 ${
-                selected ? "border-accent bg-accent-soft" : "border-border"
+                selected ? "border-accent bg-accent-soft" : "border-glass-border"
               }`}
             >
               <Text className={selected ? "text-accent" : "text-fg-muted"}>
@@ -52,16 +53,16 @@ export function TagPicker({ selectedTagIds, onChange }: TagPickerProps) {
         })}
       </View>
       <View className="flex-row gap-2">
-        <TextInput
+        <Input
           value={newTagName}
           onChangeText={setNewTagName}
           placeholder="New tag"
           placeholderTextColor={colors.fgSubtle}
-          className="flex-1 rounded-lg border border-border bg-surface px-3 py-2 text-base text-fg"
+          className="flex-1 rounded-lg border border-glass-border bg-glass px-3 py-2 text-base text-fg"
         />
         <Pressable
           onPress={addNewTag}
-          className="items-center justify-center rounded-lg border border-border bg-surface px-4"
+          className="items-center justify-center rounded-lg border border-glass-border bg-glass px-4"
         >
           <Text className="text-fg">Add</Text>
         </Pressable>

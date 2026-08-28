@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { ScrollView, Text, View } from "react-native";
+import { Input } from "./ui/Input";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { AccountForm } from "./AccountForm";
@@ -8,6 +9,7 @@ import { createAccount } from "../db/actions/accounts";
 import { updateSettings } from "../db/actions/settings";
 import type { settings as settingsTable } from "../db/schema";
 import { useThemeColors } from "../theme/palette";
+import { Button } from "./ui/Button";
 
 type Settings = typeof settingsTable.$inferSelect;
 
@@ -46,7 +48,7 @@ export function OnboardingFlow({ settings }: { settings: Settings }) {
 
       {step === 0 && (
         <ScrollView contentContainerStyle={{ padding: 24, gap: 20, flexGrow: 1 }}>
-          <Text className="text-2xl font-bold text-fg">Welcome</Text>
+          <Text className="text-2xl font-display-xbold text-fg">Welcome</Text>
           <Text className="text-base text-fg-muted">
             Let's get your ledger set up. First, pick the currency your figures should be
             summarized in — net worth, budgets, and any foreign-currency accounts will all
@@ -58,45 +60,42 @@ export function OnboardingFlow({ settings }: { settings: Settings }) {
             onChange={(code) => updateSettings(settings.id, { baseCurrency: code })}
           />
           <View className="flex-1" />
-          <Pressable onPress={() => setStep(1)} className="items-center rounded-lg bg-accent py-3">
-            <Text className="font-semibold text-white">Continue</Text>
-          </Pressable>
+          <Button onPress={() => setStep(1)}>Continue</Button>
         </ScrollView>
       )}
 
       {step === 1 && (
         <ScrollView contentContainerStyle={{ padding: 24, gap: 20, flexGrow: 1 }}>
-          <Text className="text-2xl font-bold text-fg">What should we call you?</Text>
+          <Text className="text-2xl font-display-xbold text-fg">What should we call you?</Text>
           <Text className="text-base text-fg-muted">
             Optional — used only to personalize the app, never sent anywhere.
           </Text>
           <View className="gap-2">
             <Text className="text-sm font-medium text-fg-muted">Name (optional)</Text>
-            <TextInput
+            <Input
               value={name}
               onChangeText={setName}
               placeholder="Your name"
               placeholderTextColor={colors.fgSubtle}
-              className="rounded-lg border border-border bg-surface px-3 py-2 text-base text-fg"
+              className="rounded-lg border border-glass-border bg-glass px-3 py-2 text-base text-fg"
             />
           </View>
           <View className="flex-1" />
-          <Pressable
+          <Button
             onPress={() => {
               updateSettings(settings.id, { displayName: name.trim() || null });
               setStep(2);
             }}
-            className="items-center rounded-lg bg-accent py-3"
           >
-            <Text className="font-semibold text-white">Continue</Text>
-          </Pressable>
+            Continue
+          </Button>
         </ScrollView>
       )}
 
       {step === 2 && (
         <View className="flex-1">
           <View className="px-6 pb-2">
-            <Text className="text-2xl font-bold text-fg">Add your first account</Text>
+            <Text className="text-2xl font-display-xbold text-fg">Add your first account</Text>
             <Text className="mt-2 text-base text-fg-muted">
               A bank account, credit card, cash wallet — whatever you want to start tracking.
               You can add more later.
@@ -115,7 +114,7 @@ export function OnboardingFlow({ settings }: { settings: Settings }) {
 
       {step === 3 && (
         <ScrollView contentContainerStyle={{ padding: 24, gap: 20, flexGrow: 1 }}>
-          <Text className="text-2xl font-bold text-fg">You're all set</Text>
+          <Text className="text-2xl font-display-xbold text-fg">You're all set</Text>
           <View className="gap-4">
             {FEATURES.map((f) => (
               <View key={f.title} className="flex-row gap-3">
@@ -128,9 +127,7 @@ export function OnboardingFlow({ settings }: { settings: Settings }) {
             ))}
           </View>
           <View className="flex-1" />
-          <Pressable onPress={finish} className="items-center rounded-lg bg-accent py-3">
-            <Text className="font-semibold text-white">Get Started</Text>
-          </Pressable>
+          <Button onPress={finish}>Get Started</Button>
         </ScrollView>
       )}
     </SafeAreaView>

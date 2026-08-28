@@ -41,7 +41,7 @@ export function CalendarMonthGrid({ period, currency, expenseByDay }: CalendarMo
           return (
             <View key={i} style={{ width: `${100 / 7}%` }} className="p-1">
               <Link href={`/transaction/new?date=${dateStr}`} asChild>
-                <Pressable className="aspect-square items-center justify-center rounded-lg border border-border">
+                <Pressable className="aspect-square items-center justify-center rounded-lg border border-glass-border">
                   <Text className="text-sm text-fg">{day}</Text>
                   {expense ? (
                     <Text className="font-data text-[10px] tabular-nums text-danger" numberOfLines={1}>

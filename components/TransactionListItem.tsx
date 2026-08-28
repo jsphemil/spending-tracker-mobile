@@ -1,4 +1,4 @@
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { Icon } from "./ui/Icon";
 import { Link } from "expo-router";
 import { Pressable, Text, View } from "react-native";
 
@@ -117,7 +117,7 @@ export function TransactionListItem({
   );
 
   return (
-    <View className="border-b border-border py-3">
+    <View className="border-b border-glass-border py-3">
       {showActionIcons ? (
         <View className="flex-row items-center justify-between">
           {rowContent}
@@ -125,18 +125,18 @@ export function TransactionListItem({
             {showDuplicateIcon && !transaction.isOpeningBalance && (
               <Link href={`/transaction/new?duplicateId=${transaction.id}`} asChild>
                 <Pressable className="p-2" hitSlop={4}>
-                  <MaterialCommunityIcons name="content-copy" size={15} color={colors.fgMuted} />
+                  <Icon name="content-copy" size={15} color={colors.fgMuted} />
                 </Pressable>
               </Link>
             )}
             <Link href={editHref} asChild>
               <Pressable className="p-2" hitSlop={4}>
-                <MaterialCommunityIcons name="pencil-outline" size={16} color={colors.fgMuted} />
+                <Icon name="pencil-outline" size={16} color={colors.fgMuted} />
               </Pressable>
             </Link>
             {!transaction.isOpeningBalance && (
               <Pressable className="p-2" hitSlop={4} onPress={onDelete}>
-                <MaterialCommunityIcons name="trash-can-outline" size={16} color={colors.fgMuted} />
+                <Icon name="trash-can-outline" size={16} color={colors.fgMuted} />
               </Pressable>
             )}
           </View>

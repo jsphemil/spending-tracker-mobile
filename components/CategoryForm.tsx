@@ -1,9 +1,11 @@
 import { useState } from "react";
-import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { Pressable, ScrollView, Text, View } from "react-native";
+import { Input } from "./ui/Input";
 
-import { CATEGORY_ICONS } from "../constants/categoryIcons";
+import { ALL_ICON_OPTIONS } from "../constants/iconLibrary";
 import { COLOR_PALETTE } from "../constants/colorPalette";
+import { Button } from "./ui/Button";
+import { IconPicker } from "./ui/IconPicker";
 import { CATEGORY_KINDS, type CategoryKind } from "../db/schema";
 import type { CategoryInput } from "../db/actions/categories";
 import { majorToMinor, minorToMajor } from "../services/format";
@@ -24,7 +26,7 @@ const BUDGET_CURRENCY = "INR";
 export function CategoryForm({ initialValues, onSubmit, submitLabel }: CategoryFormProps) {
   const [name, setName] = useState(initialValues?.name ?? "");
   const [kind, setKind] = useState<CategoryKind>(initialValues?.kind ?? "expense");
-  const [icon, setIcon] = useState(initialValues?.icon ?? CATEGORY_ICONS[0]);
+  const [icon, setIcon] = useState(initialValues?.icon ?? ALL_ICON_OPTIONS[0].key);
   const [color, setColor] = useState(initialValues?.color ?? COLOR_PALETTE[0]);
   const [budgetText, setBudgetText] = useState(
     initialValues?.monthlyBudgetMinor != null
@@ -58,12 +60,12 @@ export function CategoryForm({ initialValues, onSubmit, submitLabel }: CategoryF
     <ScrollView className="flex-1 bg-bg" contentContainerStyle={{ padding: 16, gap: 20 }}>
       <View className="gap-2">
         <Text className="text-sm font-medium text-fg-muted">Name</Text>
-        <TextInput
+        <Input
           value={name}
           onChangeText={setName}
           placeholder="e.g. Groceries"
           placeholderTextColor={colors.fgSubtle}
-          className="rounded-lg border border-border bg-surface px-3 py-2 text-base text-fg"
+          className="rounded-lg border border-glass-border bg-glass px-3 py-2 text-base text-fg"
         />
       </View>
 
@@ -75,7 +77,7 @@ export function CategoryForm({ initialValues, onSubmit, submitLabel }: CategoryF
               key={k}
               onPress={() => setKind(k)}
               className={`flex-1 items-center rounded-lg border py-2 ${
-                kind === k ? "border-accent bg-accent-soft" : "border-border bg-surface"
+                kind === k ? "border-accent bg-accent-soft" : "border-glass-border bg-glass"
               }`}
             >
               <Text className={kind === k ? "text-accent" : "text-fg-muted"}>
@@ -86,26 +88,7 @@ export function CategoryForm({ initialValues, onSubmit, submitLabel }: CategoryF
         </View>
       </View>
 
-      <View className="gap-2">
-        <Text className="text-sm font-medium text-fg-muted">Icon</Text>
-        <View className="flex-row flex-wrap gap-2">
-          {CATEGORY_ICONS.map((i) => (
-            <Pressable
-              key={i}
-              onPress={() => setIcon(i)}
-              className={`h-11 w-11 items-center justify-center rounded-full border ${
-                icon === i ? "border-accent bg-accent-soft" : "border-border bg-surface"
-              }`}
-            >
-              <MaterialCommunityIcons
-                name={i}
-                size={18}
-                color={icon === i ? colors.accent : colors.fgMuted}
-              />
-            </Pressable>
-          ))}
-        </View>
-      </View>
+      <IconPicker value={icon} onChange={setIcon} />
 
       <View className="gap-2">
         <Text className="text-sm font-medium text-fg-muted">Color</Text>
@@ -126,22 +109,20 @@ export function CategoryForm({ initialValues, onSubmit, submitLabel }: CategoryF
           <Text className="text-sm font-medium text-fg-muted">
             Monthly Budget (₹, optional)
           </Text>
-          <TextInput
+          <Input
             value={budgetText}
             onChangeText={setBudgetText}
             keyboardType="decimal-pad"
             placeholder="No budget set"
             placeholderTextColor={colors.fgSubtle}
-            className="rounded-lg border border-border bg-surface px-3 py-2 text-base text-fg"
+            className="rounded-lg border border-glass-border bg-glass px-3 py-2 text-base text-fg"
           />
         </View>
       )}
 
       {error && <Text className="text-sm text-danger">{error}</Text>}
 
-      <Pressable onPress={handleSubmit} className="items-center rounded-lg bg-accent py-3">
-        <Text className="text-base font-semibold text-white">{submitLabel}</Text>
-      </Pressable>
+      <Button onPress={handleSubmit}>{submitLabel}</Button>
     </ScrollView>
   );
 }

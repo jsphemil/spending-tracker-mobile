@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "expo-router";
 import { Pressable, ScrollView, Text, View } from "react-native";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { Icon } from "../../components/ui/Icon";
 
 import { AssetAllocationChart } from "../../components/charts/AssetAllocationChart";
 import { NetWorthTrendChart } from "../../components/charts/NetWorthTrendChart";
@@ -32,6 +32,7 @@ import {
   type MonthPeriod,
 } from "../../services/period";
 import { ensureMaterialized } from "../../services/recurrence";
+import { TAB_BAR_CLEARANCE } from "../../theme/tabBar";
 import { useThemeColors } from "../../theme/palette";
 
 const ASSET_ALLOCATION_BUCKETS = [
@@ -204,23 +205,23 @@ export default function DashboardScreen() {
   const categoryName = (id: number | null) => categories?.find((c) => c.id === id)?.name;
   const accountName = (id: number | null) => accounts?.find((a) => a.id === id)?.name;
 
-  const card = "rounded-xl border border-border bg-surface p-4";
-  const cardTitle = "mb-3 text-sm font-semibold text-fg";
+  const card = "rounded-card border border-glass-border bg-glass p-4";
+  const cardTitle = "mb-3 text-sm font-display text-fg";
 
   return (
-    <ScrollView className="flex-1 bg-bg" contentContainerStyle={{ padding: 16, gap: 12 }}>
+    <ScrollView className="flex-1 bg-bg" contentContainerStyle={{ padding: 16, paddingBottom: TAB_BAR_CLEARANCE, gap: 12 }}>
       <View className="flex-row items-center justify-between">
         <Pressable onPress={() => setPeriod((p) => shiftMonth(p, -1))} className="p-3" hitSlop={8}>
-          <MaterialCommunityIcons name="chevron-left" size={28} color={colors.fg} />
+          <Icon name="chevron-left" size={28} color={colors.fg} />
         </Pressable>
         <Text className="text-base font-medium text-fg">{monthLabel(period)}</Text>
         <Pressable onPress={() => setPeriod((p) => shiftMonth(p, 1))} className="p-3" hitSlop={8}>
-          <MaterialCommunityIcons name="chevron-right" size={28} color={colors.fg} />
+          <Icon name="chevron-right" size={28} color={colors.fg} />
         </Pressable>
       </View>
 
       {overBudgetCategories.length > 0 && (
-        <View className="gap-1 rounded-xl border border-danger/30 bg-danger-soft px-4 py-3">
+        <View className="gap-1 rounded-card border border-danger/30 bg-danger-soft px-4 py-3">
           {overBudgetCategories.map((c) => (
             <Text key={c.id} className="text-xs font-medium text-danger">
               {c.name} is {formatMoney(c.spentMinor - c.monthlyBudgetMinor!, baseCurrency)} over
@@ -263,25 +264,25 @@ export default function DashboardScreen() {
       </View>
 
       <View className="flex-row flex-wrap gap-3">
-        <View className="min-w-[45%] flex-1 rounded-xl bg-surface-2 p-3.5">
+        <View className="min-w-[45%] flex-1 rounded-card bg-surface-2 p-3.5">
           <Text className="text-[11px] text-fg-muted">Carry forward</Text>
           <Text className="font-data mt-1.5 text-base font-semibold tabular-nums text-fg">
             {formatMoney(carryForwardMinor, baseCurrency)}
           </Text>
         </View>
-        <View className="min-w-[45%] flex-1 rounded-xl bg-surface-2 p-3.5">
+        <View className="min-w-[45%] flex-1 rounded-card bg-surface-2 p-3.5">
           <Text className="text-[11px] text-fg-muted">Income</Text>
           <Text className="font-data mt-1.5 text-base font-semibold tabular-nums text-success">
             +{formatMoney(incomeMinor, baseCurrency)}
           </Text>
         </View>
-        <View className="min-w-[45%] flex-1 rounded-xl bg-surface-2 p-3.5">
+        <View className="min-w-[45%] flex-1 rounded-card bg-surface-2 p-3.5">
           <Text className="text-[11px] text-fg-muted">Expense</Text>
           <Text className="font-data mt-1.5 text-base font-semibold tabular-nums text-danger">
             −{formatMoney(expenseMinor, baseCurrency)}
           </Text>
         </View>
-        <View className="min-w-[45%] flex-1 rounded-xl bg-surface-2 p-3.5">
+        <View className="min-w-[45%] flex-1 rounded-card bg-surface-2 p-3.5">
           <Text className="text-[11px] text-fg-muted">Credit card debt</Text>
           <Text className="font-data mt-1.5 text-base font-semibold tabular-nums text-fg">
             {creditCardDebtMinor > 0 ? formatMoney(creditCardDebtMinor, baseCurrency) : "—"}
@@ -358,17 +359,17 @@ export default function DashboardScreen() {
         </View>
         <View className="mb-3 flex-row gap-2">
           <Link href="/transaction/new?type=income" asChild>
-            <Pressable className="flex-1 items-center rounded-lg border border-border py-1.5">
+            <Pressable className="flex-1 items-center rounded-lg border border-glass-border py-1.5">
               <Text className="text-xs font-medium text-fg">+ Income</Text>
             </Pressable>
           </Link>
           <Link href="/transaction/new?type=expense" asChild>
-            <Pressable className="flex-1 items-center rounded-lg border border-border py-1.5">
+            <Pressable className="flex-1 items-center rounded-lg border border-glass-border py-1.5">
               <Text className="text-xs font-medium text-fg">+ Expense</Text>
             </Pressable>
           </Link>
           <Link href="/transaction/new?type=transfer" asChild>
-            <Pressable className="flex-1 items-center rounded-lg border border-border py-1.5">
+            <Pressable className="flex-1 items-center rounded-lg border border-glass-border py-1.5">
               <Text className="text-xs font-medium text-fg">+ Transfer</Text>
             </Pressable>
           </Link>

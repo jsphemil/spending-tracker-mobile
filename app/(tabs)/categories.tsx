@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { Icon } from "../../components/ui/Icon";
 import { Link } from "expo-router";
 import { FlatList, Pressable, Text, View } from "react-native";
 
@@ -14,6 +14,7 @@ import { formatMoney, majorToMinor, minorToMajor } from "../../services/format";
 import { currentMonthPeriod, monthRange } from "../../services/period";
 import { ensureMaterialized } from "../../services/recurrence";
 import { EmptyState } from "../../components/ui/EmptyState";
+import { TAB_BAR_CLEARANCE, FAB_BOTTOM_OFFSET } from "../../theme/tabBar";
 
 export default function CategoriesScreen() {
   const [kind, setKind] = useState<CategoryKind>("expense");
@@ -78,7 +79,7 @@ export default function CategoriesScreen() {
             key={k}
             onPress={() => setKind(k)}
             className={`flex-1 items-center rounded-lg border py-2 ${
-              kind === k ? "border-accent bg-accent-soft" : "border-border bg-surface"
+              kind === k ? "border-accent bg-accent-soft" : "border-glass-border bg-glass"
             }`}
           >
             <Text className={kind === k ? "text-accent" : "text-fg-muted"}>
@@ -91,7 +92,7 @@ export default function CategoriesScreen() {
       <FlatList
         data={categories ?? []}
         keyExtractor={(item) => String(item.id)}
-        contentContainerStyle={{ padding: 16, gap: 8 }}
+        contentContainerStyle={{ padding: 16, paddingBottom: TAB_BAR_CLEARANCE, gap: 8 }}
         ListEmptyComponent={<EmptyState message="No categories yet." />}
         renderItem={({ item }) => {
           const spentMinor = spentByCategoryMinor.get(item.id) ?? 0;
@@ -102,7 +103,7 @@ export default function CategoriesScreen() {
 
           return (
             <Link href={`/category/${item.id}/edit`} asChild>
-              <Pressable className="gap-2 rounded-xl border border-border bg-surface p-3">
+              <Pressable className="gap-2 rounded-card border border-glass-border bg-glass p-3">
                 <View className="flex-row items-center gap-3">
                   <View
                     style={{ backgroundColor: item.color }}
@@ -111,7 +112,7 @@ export default function CategoriesScreen() {
                     {/* Intentionally a literal white, not a theme token — this
                         renders against the category's own arbitrary user-picked
                         color swatch, not a themed surface. */}
-                    <MaterialCommunityIcons name={item.icon as never} size={16} color="#fff" />
+                    <Icon name={item.icon} size={16} color="#fff" />
                   </View>
                   <Text className="flex-1 text-base text-fg">{item.name}</Text>
                   <Text className={`font-data text-xs tabular-nums ${overBudget ? "text-danger" : "text-fg-muted"}`}>
@@ -135,7 +136,10 @@ export default function CategoriesScreen() {
       />
 
       <Link href={`/category/new?kind=${kind}`} asChild>
-        <Pressable className="absolute bottom-6 right-6 h-14 w-14 items-center justify-center rounded-full bg-accent">
+        <Pressable
+          className="absolute right-6 h-14 w-14 items-center justify-center rounded-full bg-accent"
+          style={{ bottom: FAB_BOTTOM_OFFSET }}
+        >
           <Text className="text-2xl text-white">+</Text>
         </Pressable>
       </Link>

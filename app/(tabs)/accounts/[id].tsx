@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { Icon } from "../../../components/ui/Icon";
 import { Link, Stack, useLocalSearchParams } from "expo-router";
 import { FlatList, Pressable, Text, View } from "react-native";
 
@@ -32,6 +32,7 @@ import { ensureMaterialized } from "../../../services/recurrence";
 import { resolveAccountSettings } from "../../../services/settings";
 import { useThemeColors } from "../../../theme/palette";
 import { useBaseCurrencyEquivalent } from "../../../hooks/useBaseCurrencyEquivalent";
+import { TAB_BAR_CLEARANCE } from "../../../theme/tabBar";
 
 export default function AccountDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -207,7 +208,7 @@ export default function AccountDetailScreen() {
           headerRight: () => (
             <Link href={`/account/${accountId}/edit`} asChild>
               <Pressable hitSlop={8} className="px-2">
-                <MaterialCommunityIcons name="pencil-outline" size={22} color={colors.accent} />
+                <Icon name="pencil-outline" size={22} color={colors.accent} />
               </Pressable>
             </Link>
           ),
@@ -216,7 +217,7 @@ export default function AccountDetailScreen() {
       <FlatList
         data={visibleTransactions}
         keyExtractor={(item) => String(item.id)}
-        contentContainerStyle={{ padding: 16, gap: 4 }}
+        contentContainerStyle={{ padding: 16, paddingBottom: TAB_BAR_CLEARANCE, gap: 4 }}
         ListHeaderComponent={
           <View className="mb-6 gap-4">
             <View className="w-full flex-row items-center justify-between">
@@ -225,7 +226,7 @@ export default function AccountDetailScreen() {
                 className="p-3"
                 hitSlop={8}
               >
-                <MaterialCommunityIcons name="chevron-left" size={28} color={colors.fg} />
+                <Icon name="chevron-left" size={28} color={colors.fg} />
               </Pressable>
               <Text className="text-base font-medium text-fg">{monthLabel(period)}</Text>
               <Pressable
@@ -233,7 +234,7 @@ export default function AccountDetailScreen() {
                 className="p-3"
                 hitSlop={8}
               >
-                <MaterialCommunityIcons name="chevron-right" size={28} color={colors.fg} />
+                <Icon name="chevron-right" size={28} color={colors.fg} />
               </Pressable>
             </View>
 
@@ -268,7 +269,7 @@ export default function AccountDetailScreen() {
             </View>
 
             {account.type === "credit_card" && account.creditLimitMinor != null && (
-              <View className="gap-1 border-t border-border pt-3">
+              <View className="gap-1 border-t border-glass-border pt-3">
                 <Text className="text-sm text-fg-muted">
                   Credit limit: {formatMoney(account.creditLimitMinor, account.currency)}
                 </Text>
@@ -310,7 +311,7 @@ export default function AccountDetailScreen() {
             </View>
 
             {budgetActive && (
-              <View className="gap-1.5 rounded-xl bg-surface-2 p-3.5">
+              <View className="gap-1.5 rounded-card bg-surface-2 p-3.5">
                 <View className="flex-row items-center justify-between">
                   <Text className="text-sm font-medium text-fg">Budget Mode</Text>
                   <Text className={`text-sm ${overBudget ? "font-medium text-danger" : "text-fg-muted"}`}>
@@ -334,7 +335,7 @@ export default function AccountDetailScreen() {
             )}
 
             <View className="flex-row flex-wrap gap-3">
-              <View className="min-w-[45%] flex-1 rounded-xl bg-surface-2 p-3.5">
+              <View className="min-w-[45%] flex-1 rounded-card bg-surface-2 p-3.5">
                 <Text className="text-xs text-fg-muted">Carry forward</Text>
                 <CurrencyAmount
                   amountMinor={carryForwardMinor}
@@ -342,7 +343,7 @@ export default function AccountDetailScreen() {
                   className="font-data mt-1.5 text-base font-semibold tabular-nums text-fg"
                 />
               </View>
-              <View className="min-w-[45%] flex-1 rounded-xl bg-surface-2 p-3.5">
+              <View className="min-w-[45%] flex-1 rounded-card bg-surface-2 p-3.5">
                 <Text className="text-xs text-fg-muted">Total in</Text>
                 <CurrencyAmount
                   amountMinor={totalInMinor}
@@ -351,7 +352,7 @@ export default function AccountDetailScreen() {
                   className="font-data mt-1.5 text-base font-semibold tabular-nums text-success"
                 />
               </View>
-              <View className="min-w-[45%] flex-1 rounded-xl bg-surface-2 p-3.5">
+              <View className="min-w-[45%] flex-1 rounded-card bg-surface-2 p-3.5">
                 <Text className="text-xs text-fg-muted">Total out</Text>
                 <CurrencyAmount
                   amountMinor={totalOutMinor}
@@ -360,7 +361,7 @@ export default function AccountDetailScreen() {
                   className="font-data mt-1.5 text-base font-semibold tabular-nums text-danger"
                 />
               </View>
-              <View className="min-w-[45%] flex-1 rounded-xl bg-surface-2 p-3.5">
+              <View className="min-w-[45%] flex-1 rounded-card bg-surface-2 p-3.5">
                 <Text className="text-xs text-fg-muted">Left to spend</Text>
                 <CurrencyAmount
                   amountMinor={leftToSpendMinor}
@@ -381,9 +382,9 @@ export default function AccountDetailScreen() {
             )}
 
             {breakdownSections.length > 0 && (
-              <View className="gap-3 rounded-xl border border-border bg-surface p-4">
+              <View className="gap-3 rounded-card border border-glass-border bg-glass p-4">
                 <View className="flex-row items-center justify-between">
-                  <Text className="text-sm font-semibold text-fg">Breakdown</Text>
+                  <Text className="text-sm font-display text-fg">Breakdown</Text>
                   <Link href={`/transactions?accountId=${accountId}`} asChild>
                     <Pressable>
                       <Text className="text-xs font-medium text-accent">Full history</Text>
@@ -402,7 +403,7 @@ export default function AccountDetailScreen() {
                       <View key={b.key} className="mt-1 flex-row items-center gap-1.5 justify-between">
                         <View className="flex-1 flex-row items-center gap-1.5">
                           {b.iconType === "mdi" ? (
-                            <MaterialCommunityIcons name={b.icon as never} size={14} color={colors.fgMuted} />
+                            <Icon name={b.icon} size={14} color={colors.fgMuted} />
                           ) : (
                             <Text className="text-sm">{b.icon}</Text>
                           )}
@@ -418,7 +419,7 @@ export default function AccountDetailScreen() {
               </View>
             )}
 
-            <Text className="text-sm font-semibold text-fg">{monthLabel(period)} transactions</Text>
+            <Text className="text-sm font-display text-fg">{monthLabel(period)} transactions</Text>
             {hiddenFutureCount > 0 && (
               <Text className="text-xs text-fg-muted">
                 {hiddenFutureCount} upcoming transaction{hiddenFutureCount === 1 ? "" : "s"} hidden — Show

@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { Pressable, ScrollView, Text, View } from "react-native";
+import { Input } from "./ui/Input";
 import DateTimePicker from "@react-native-community/datetimepicker";
 
 import { AmountOperatorRow } from "./AmountOperatorRow";
@@ -10,6 +11,8 @@ import { ACCOUNT_TYPES, type AccountType } from "../db/schema";
 import { evaluateExpression } from "../services/calculator";
 import { majorToMinor, minorToMajor } from "../services/format";
 import { useThemeColors } from "../theme/palette";
+import { Button } from "./ui/Button";
+import { IconPicker } from "./ui/IconPicker";
 
 export interface AccountFormValues {
   name: string;
@@ -58,7 +61,7 @@ function TriStateRow({
             className={`flex-1 items-center rounded-lg border py-2 ${
               value === optValue
                 ? "border-accent bg-accent-soft"
-                : "border-border bg-surface"
+                : "border-glass-border bg-glass"
             }`}
           >
             <Text
@@ -81,6 +84,12 @@ export function AccountForm({
 }: AccountFormProps) {
   const [name, setName] = useState(initialValues?.name ?? "");
   const [type, setType] = useState<AccountType>(initialValues?.type ?? "savings");
+  // Historically auto-derived from `type` with no user choice at all
+  // (ACCOUNT_TYPE_ICONS[type] on every submit). Now user-selectable via
+  // IconPicker: still defaults to the type's icon, but a manual pick is
+  // preserved when the user then changes account type (see the Type
+  // Pressable's onPress below).
+  const [icon, setIcon] = useState(initialValues?.icon ?? ACCOUNT_TYPE_ICONS[initialValues?.type ?? "savings"]);
   const [color, setColor] = useState(initialValues?.color ?? COLOR_PALETTE[0]);
   const [currency, setCurrency] = useState(initialValues?.currency ?? "INR");
   const [creditLimitText, setCreditLimitText] = useState(
@@ -142,7 +151,7 @@ export function AccountForm({
       name: name.trim(),
       type,
       color,
-      icon: ACCOUNT_TYPE_ICONS[type],
+      icon,
       currency: normalizedCurrency,
       creditLimitMinor:
         type === "credit_card" && creditLimitNum !== null
@@ -161,12 +170,12 @@ export function AccountForm({
     <ScrollView className="flex-1 bg-bg" contentContainerStyle={{ padding: 16, gap: 20 }}>
       <View className="gap-2">
         <Text className="text-sm font-medium text-fg-muted">Name</Text>
-        <TextInput
+        <Input
           value={name}
           onChangeText={setName}
           placeholder="e.g. HDFC Salary"
           placeholderTextColor={colors.fgSubtle}
-          className="rounded-lg border border-border bg-surface px-3 py-2 text-base text-fg"
+          className="rounded-lg border border-glass-border bg-glass px-3 py-2 text-base text-fg"
         />
       </View>
 
@@ -176,9 +185,15 @@ export function AccountForm({
           {ACCOUNT_TYPES.map((t) => (
             <Pressable
               key={t}
-              onPress={() => setType(t)}
+              onPress={() => {
+                // Only follow the type's default icon while the user hasn't
+                // picked their own — once icon !== the previous type's
+                // default, treat it as an intentional override.
+                setIcon((prev) => (prev === ACCOUNT_TYPE_ICONS[type] ? ACCOUNT_TYPE_ICONS[t] : prev));
+                setType(t);
+              }}
               className={`rounded-full border px-3 py-2 ${
-                type === t ? "border-accent bg-accent-soft" : "border-border bg-surface"
+                type === t ? "border-accent bg-accent-soft" : "border-glass-border bg-glass"
               }`}
             >
               <Text className={type === t ? "text-accent" : "text-fg-muted"}>
@@ -188,6 +203,8 @@ export function AccountForm({
           ))}
         </View>
       </View>
+
+      <IconPicker value={icon} onChange={setIcon} />
 
       <View className="gap-2">
         <Text className="text-sm font-medium text-fg-muted">Color</Text>
@@ -215,7 +232,7 @@ export function AccountForm({
               className={`rounded-full border px-3 py-1.5 ${
                 currency.toUpperCase() === opt.code
                   ? "border-accent bg-accent-soft"
-                  : "border-border bg-surface"
+                  : "border-glass-border bg-glass"
               }`}
             >
               <Text className={currency.toUpperCase() === opt.code ? "text-accent" : "text-fg-muted"}>
@@ -224,40 +241,40 @@ export function AccountForm({
             </Pressable>
           ))}
         </View>
-        <TextInput
+        <Input
           value={currency}
           onChangeText={setCurrency}
           autoCapitalize="characters"
           maxLength={3}
           placeholder="Or type any 3-letter code"
           placeholderTextColor={colors.fgSubtle}
-          className="rounded-lg border border-border bg-surface px-3 py-2 text-base text-fg"
+          className="rounded-lg border border-glass-border bg-glass px-3 py-2 text-base text-fg"
         />
       </View>
 
       {type === "credit_card" && (
         <View className="gap-2">
           <Text className="text-sm font-medium text-fg-muted">Credit Limit</Text>
-          <TextInput
+          <Input
             value={creditLimitText}
             onChangeText={setCreditLimitText}
             keyboardType="decimal-pad"
             placeholder="0"
             placeholderTextColor={colors.fgSubtle}
-            className="rounded-lg border border-border bg-surface px-3 py-2 text-base text-fg"
+            className="rounded-lg border border-glass-border bg-glass px-3 py-2 text-base text-fg"
           />
         </View>
       )}
 
       <View className="gap-2">
         <Text className="text-sm font-medium text-fg-muted">Opening Balance</Text>
-        <TextInput
+        <Input
           value={openingBalanceText}
           onChangeText={setOpeningBalanceText}
           keyboardType="numeric"
           placeholder="0"
           placeholderTextColor={colors.fgSubtle}
-          className="rounded-lg border border-border bg-surface px-3 py-2 text-base text-fg"
+          className="rounded-lg border border-glass-border bg-glass px-3 py-2 text-base text-fg"
         />
         <AmountOperatorRow value={openingBalanceText} onChange={setOpeningBalanceText} />
       </View>
@@ -266,7 +283,7 @@ export function AccountForm({
         <Text className="text-sm font-medium text-fg-muted">Opening Date</Text>
         <Pressable
           onPress={() => setShowDatePicker(true)}
-          className="rounded-lg border border-border bg-surface px-3 py-2"
+          className="rounded-lg border border-glass-border bg-glass px-3 py-2"
         >
           <Text className="text-fg">{openingDate.toDateString()}</Text>
         </Pressable>
@@ -294,13 +311,13 @@ export function AccountForm({
               <Text className="text-sm font-medium text-fg-muted">
                 Monthly Budget
               </Text>
-              <TextInput
+              <Input
                 value={budgetMonthlyText}
                 onChangeText={setBudgetMonthlyText}
                 keyboardType="decimal-pad"
                 placeholder="0"
                 placeholderTextColor={colors.fgSubtle}
-                className="rounded-lg border border-border bg-surface px-3 py-2 text-base text-fg"
+                className="rounded-lg border border-glass-border bg-glass px-3 py-2 text-base text-fg"
               />
             </View>
           )}
@@ -314,12 +331,7 @@ export function AccountForm({
 
       {error && <Text className="text-sm text-danger">{error}</Text>}
 
-      <Pressable
-        onPress={handleSubmit}
-        className="items-center rounded-lg bg-accent py-3"
-      >
-        <Text className="text-base font-semibold text-white">{submitLabel}</Text>
-      </Pressable>
+      <Button onPress={handleSubmit}>{submitLabel}</Button>
     </ScrollView>
   );
 }

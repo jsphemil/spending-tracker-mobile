@@ -18,7 +18,7 @@ export default function TagsListScreen() {
         }
         renderItem={({ item }) => (
           <Link href={`/tag/${encodeURIComponent(item.name)}`} asChild>
-            <Pressable className="flex-row items-center justify-between rounded-lg border border-border bg-surface px-4 py-3">
+            <Pressable className="flex-row items-center justify-between rounded-lg border border-glass-border bg-glass px-4 py-3">
               <Text className="text-base text-fg">{item.name}</Text>
             </Pressable>
           </Link>

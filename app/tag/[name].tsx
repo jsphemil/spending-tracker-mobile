@@ -69,7 +69,7 @@ export default function TagSummaryScreen() {
         contentContainerStyle={{ padding: 16, gap: 8 }}
         ListHeaderComponent={
           <View className="mb-6 gap-3">
-            <Text className="text-xl font-semibold text-fg">{tagName}</Text>
+            <Text className="text-xl font-display text-fg">{tagName}</Text>
             <Text className="text-base text-fg-muted">
               Net cost of {tagName}: {formatMoney(netMinor, baseCurrency)}
             </Text>
@@ -91,7 +91,7 @@ export default function TagSummaryScreen() {
         }
         ListEmptyComponent={<EmptyState message="No transactions carry this tag yet." />}
         renderItem={({ item }) => (
-          <View className="flex-row items-center justify-between border-b border-border py-3">
+          <View className="flex-row items-center justify-between border-b border-glass-border py-3">
             <View className="flex-1 pr-3">
               <Text className="text-base text-fg">
                 {item.transaction.description || item.accountName}
