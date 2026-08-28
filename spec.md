@@ -30,7 +30,7 @@ pushed to a later phase) · ❌ Dropped (cut from scope).
 | §5.8 | Dashboard | ✅ Built & Verified | Full rebuild (net worth gauge, trend chart, asset allocation donut, over-budget banner, embedded calendar, Accounts/Goals/Recent Transactions/Tags cards) + UAT fixes (icon-as-text banner bug, Show-Future-Transactions wiring). UAT checklist §9 confirms the gauge, trend chart, donut, stat row, calendar, and cards all pass. The over-budget banner itself only got a partial re-check ("please push a category over budget and confirm the banner text is clean") — worth one more explicit look, though the underlying bug (icon-as-text) is fixed and visually reconfirmed since. |
 | §5.9 | Navigation | ✅ Built & Verified | 6 tabs (Dashboard, Accounts, Transactions, Commitments, Categories, Profile) with icons — UAT checklist §14 confirms, and every screenshot from the 2026-08-28 design-refresh session shows tab icons rendering correctly (now Lucide icons, see §5.18). |
 | §5.10 | Profile Page | ✅ Built & Verified | Display name, Budget Mode/Show Future Transactions global switches, Base Currency all confirmed via UAT checklist §13. Dropbox section (connect/backup/restore) shipped and was verified on-device 2026-08-28 — see §3. The Light/Dark/System theme toggle described in the original spec text was **removed 2026-08-28** as part of §5.18's dark-only redesign — see that section. |
-| §5.11 | Home Screen Widget | ⏸️ Deferred | Not started. |
+| §5.11 | Home Screen Widget | 📋 Planned | **Scope expanded and planned 2026-08-28** — two separate selectable widgets now, not one: (1) Accounts & Quick Add (any number of selected accounts' balances + Income/Expense/Transfer quick-add icons), (2) Portfolio Rings & Allocation (net worth gauge + asset allocation donut, mirroring the Dashboard). Android-only for now, matching the iOS-deferred decision. Full build plan in `homescreen-widget-guide.md` — not started yet, first step is verifying `react-native-android-widget`'s compatibility with SDK 57. |
 | §5.12 | Visual Design System (superseded) | ✅ Built & Verified | The dark-first token theme / monospace-tabular / gauge-over-pie system described here shipped and was verified (Phases 1-3, UAT checklist §15). **Superseded 2026-08-28 by §5.18** — the token *values*, glass-card ask from UAT §15 ("a glass effect would be nice"), and the whole visual language were replaced wholesale by the Erebor redesign. Kept here for history; §5.18 is now the authoritative visual-design status. |
 | §5.13 | First-Run Onboarding & Base Currency | ✅ Built & Verified | Onboarding flow + gate, live per-install base currency (not hardcoded INR), searchable ~170-currency picker. UAT checklist §1 confirms every step, the currency-picker search, and base-currency-change recalculation across the whole app — all pass (including the 2026-08-21 SafeAreaView fix for the onboarding-flush-to-top bug). |
 | §5.14 | CSV Export | ✅ Built & Verified | Matches the web app's account/date-filtered CSV export; required a native rebuild for `expo-file-system`/`expo-sharing` — verified on-device 2026-08-12, and re-confirmed working after all the base-currency changes (UAT checklist §12). |
@@ -530,20 +530,40 @@ now stale and kept only for history.
   `MaterialCommunityIcons` `chevron-left`/`chevron-right` at 28px,
   consistent with every other icon in the app.
 
-### 5.11 Mobile Home Screen Widget ⏸️ Deferred
-- Since this app is native mobile from day one (not a wrapped web app),
-  the home-screen widget is **core v1**, not a later phase
-- **Setting up the widget:** when adding the widget to the home screen,
+### 5.11 Mobile Home Screen Widget 📋 Planned
+
+**Scope expanded 2026-08-28 to two separate, independently-selectable
+widgets** (superseding the single-widget description originally
+below, kept struck-through for history) — full build plan lives in
+`homescreen-widget-guide.md`, not duplicated here:
+
+1. **Accounts & Quick Add** — any number of selected accounts' current
+   balances, plus Income/Expense/Transfer quick-add icon buttons that
+   deep-link into the existing transaction form pre-filled.
+2. **Portfolio Rings & Allocation** — a miniature version of the
+   Dashboard's net worth gauge + asset allocation donut, rendered as a
+   refreshing bitmap image (Android widgets can't embed the app's live
+   SVG chart components directly).
+
+Both must adapt to the device's system light/dark theme (shipped as
+two explicit widget appearances, not one CSS-adaptive theme) and are
+**Android-only for now**, matching the iOS-deferred decision (§2).
+Not started — first step is verifying `react-native-android-widget`'s
+compatibility with this project's Expo SDK 57.
+
+~~Since this app is native mobile from day one (not a wrapped web app),
+the home-screen widget is core v1, not a later phase~~
+- ~~Setting up the widget: when adding the widget to the home screen,
   you're asked to pick which account it should track (so you can pin
-  your most-used account, e.g. your daily spending account)
-- Shows: the selected account's name and current balance
-- Two quick-action buttons right on the widget: **+ Expense** and
-  **+ Income**, so a transaction can be logged in a couple of taps from
-  the phone's home screen
-- **Changing the account at entry time:** tapping + Expense or + Income
+  your most-used account, e.g. your daily spending account)~~
+- ~~Shows: the selected account's name and current balance~~
+- ~~Two quick-action buttons right on the widget: + Expense and
+  + Income, so a transaction can be logged in a couple of taps from
+  the phone's home screen~~
+- ~~Changing the account at entry time: tapping + Expense or + Income
   opens the transaction entry screen pre-filled with the widget's
   account, but that account can still be changed there before the
-  transaction is confirmed — the widget's account is a default, not a lock
+  transaction is confirmed — the widget's account is a default, not a lock~~
 
 ### 5.13 First-Run Onboarding & Base Currency ✅ Built & Verified
 - **Decided 2026-08-12.** The real web app hardcodes `INR` as the base
@@ -852,10 +872,11 @@ attempted again.
 **Phase 13 (final feature audit) is done as of 2026-08-28** —
 spec.md/backlog.md sync sweep complete, every UAT checklist section
 worked through and the Status Dashboard now reflects ✅ Built &
-Verified for every v1 feature except the two intentionally-deferred
-ones (§5.11 Home Screen Widget, §5.15 In-App Info/Tips), plus a small
-named list of never-independently-confirmed edges (see the Status
-Dashboard's "Remaining known gaps" note). §3 Dropbox Backup joined the
+Verified for every v1 feature except §5.15 (In-App Info/Tips,
+intentionally deferred) and §5.11 (Home Screen Widget, scope expanded
+to two widgets and 📋 Planned — see `homescreen-widget-guide.md`, not
+started yet), plus a small named list of never-independently-confirmed
+edges (see the Status Dashboard's "Remaining known gaps" note). §3 Dropbox Backup joined the
 ✅ list 2026-08-28 once connect, backup, and restore were all confirmed
 on-device. The
 "full on-device pass in both themes" item is moot — §5.18's redesign
