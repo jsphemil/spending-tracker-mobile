@@ -33,7 +33,22 @@
       "expo-sharing",
       "expo-font",
       "expo-web-browser",
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "react-native-android-widget",
+        {
+          "widgets": [
+            {
+              "name": "Hello",
+              "label": "Widget Spike Test",
+              "description": "Compatibility spike — not a real feature",
+              "minWidth": "180dp",
+              "minHeight": "110dp",
+              "updatePeriodMillis": 0
+            }
+          ]
+        }
+      ]
     ],
     "extra": {
       "router": {},

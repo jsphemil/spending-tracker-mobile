@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/erebor-wealth-app-design-system-d5887e1e-2512-436b-9f64-e086c0c538de/tokens/colors.css">
+  <link rel="stylesheet" href="_ds/erebor-wealth-app-design-system-d5887e1e-2512-436b-9f64-e086c0c538de/tokens/fonts.css">
+  <link rel="stylesheet" href="_ds/erebor-wealth-app-design-system-d5887e1e-2512-436b-9f64-e086c0c538de/tokens/typography.css">
+  <link rel="stylesheet" href="_ds/erebor-wealth-app-design-system-d5887e1e-2512-436b-9f64-e086c0c538de/tokens/spacing.css">
+  <link rel="stylesheet" href="_ds/erebor-wealth-app-design-system-d5887e1e-2512-436b-9f64-e086c0c538de/tokens/radius.css">
+  <link rel="stylesheet" href="_ds/erebor-wealth-app-design-system-d5887e1e-2512-436b-9f64-e086c0c538de/tokens/shadows.css">
+  <link rel="stylesheet" href="_ds/erebor-wealth-app-design-system-d5887e1e-2512-436b-9f64-e086c0c538de/tokens/motion.css">
+  <link rel="stylesheet" href="_ds/erebor-wealth-app-design-system-d5887e1e-2512-436b-9f64-e086c0c538de/tokens/base.css">
+  <link rel="stylesheet" href="_ds/erebor-wealth-app-design-system-d5887e1e-2512-436b-9f64-e086c0c538de/styles.css">
+  <script src="_ds/erebor-wealth-app-design-system-d5887e1e-2512-436b-9f64-e086c0c538de/_ds_bundle.js"></script>
+</helmet>
+<div style="position:relative; min-height:100vh; background:var(--bg-void); overflow:hidden; box-sizing:border-box; padding:56px 24px 40px; display:flex; flex-direction:column; align-items:center; gap:48px;">
+  <div style="position:absolute; top:-140px; left:-160px; width:420px; height:420px; border-radius:50%; background:var(--gradient-aurora-cyan); pointer-events:none;"></div>
+  <div style="position:absolute; bottom:-180px; right:-160px; width:460px; height:460px; border-radius:50%; background:var(--gradient-aurora-purple); pointer-events:none;"></div>
+
+  <div style="position:relative; z-index:1; text-align:center; max-width:640px; display:flex; flex-direction:column; gap:8px;">
+    <div style="font-family:var(--font-display); font-weight:var(--weight-extrabold); font-size:var(--text-2xl); color:var(--text-primary); letter-spacing:var(--tracking-tight);">Erebor — Home Screen Widget</div>
+    <div style="font-family:var(--font-body); font-size:var(--text-base); color:var(--text-secondary);">Account balances and quick actions, sized for a 4×4 widget cell. Solid fills, system font, no blur or gradients — built to match Android's own widget surface rules.</div>
+  </div>
+
+  <div style="position:relative; z-index:1; display:flex; flex-wrap:wrap; justify-content:center; align-items:flex-start; gap:56px;">
+
+    <div data-screen-label="Light theme widget" style="display:flex; flex-direction:column; align-items:center; gap:16px;">
+      <span style="font-family:var(--font-body); font-size:var(--text-sm); font-weight:var(--weight-semibold); color:var(--text-secondary); letter-spacing:var(--tracking-wide); text-transform:uppercase;">Light system theme</span>
+      <x-import component-from-global-scope="AndroidDevice" from="./android-frame.jsx" dark="{{ false }}" hint-size="412px,892px">
+        <div style="height:100%; width:100%; box-sizing:border-box; background:#eef1f7; display:flex; flex-direction:column; align-items:center; padding:40px 20px 20px;">
+          <div style="display:flex; flex-direction:column; align-items:center; gap:4px; margin-bottom:36px;">
+            <span style="font-family:Roboto,-apple-system,'Segoe UI',system-ui,sans-serif; font-size:56px; font-weight:400; color:#12172a; line-height:1;">9:41</span>
+            <span style="font-family:Roboto,-apple-system,'Segoe UI',system-ui,sans-serif; font-size:14px; font-weight:500; color:#5b6478;">Sunday, August 30</span>
+          </div>
+
+          <div style="width:260px; box-sizing:border-box; background:#ffffff; border:1px solid #e4e8f0; border-radius:var(--radius-card); padding:16px; box-shadow:0 6px 20px rgba(18,23,42,.12); font-family:Roboto,-apple-system,'Segoe UI',system-ui,sans-serif; display:flex; flex-direction:column;">
+            <sc-for list="{{ visibleAccounts }}" as="acct" hint-placeholder-count="4">
+              <div style="display:flex; align-items:baseline; justify-content:space-between; gap:12px; padding:9px 0;">
+                <span style="font-size:14px; font-weight:500; color:#5b6478; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0;">{{ acct.name }}</span>
+                <span class="tabular-figures" style="font-size:16px; font-weight:600; color:#12172a; flex-shrink:0;">{{ acct.balance }}</span>
+              </div>
+              <sc-if value="{{ acct.divider }}" hint-placeholder-val="{{ true }}">
+                <div style="height:1px; background:#e4e8f0;"></div>
+              </sc-if>
+            </sc-for>
+            <div style="height:1px; background:#d7dce6; margin:7px 0 12px;"></div>
+            <div style="display:flex; justify-content:space-between; gap:8px;">
+              <div style="display:flex; flex-direction:column; align-items:center; gap:4px; flex:1;">
+                <div style="width:44px; height:44px; border-radius:var(--radius-icon-badge); background:var(--neon-cyan); display:flex; align-items:center; justify-content:center;">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0a0e1a" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"></path><path d="M6 11L12 5L18 11"></path></svg>
+                </div>
+                <sc-if value="{{ showLabels }}" hint-placeholder-val="{{ true }}"><span style="font-size:10px; font-weight:500; color:#5b6478;">Income</span></sc-if>
+              </div>
+              <div style="display:flex; flex-direction:column; align-items:center; gap:4px; flex:1;">
+                <div style="width:44px; height:44px; border-radius:var(--radius-icon-badge); background:var(--neon-blue); display:flex; align-items:center; justify-content:center;">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0a0e1a" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5V19"></path><path d="M18 13L12 19L6 13"></path></svg>
+                </div>
+                <sc-if value="{{ showLabels }}" hint-placeholder-val="{{ true }}"><span style="font-size:10px; font-weight:500; color:#5b6478;">Expense</span></sc-if>
+              </div>
+              <div style="display:flex; flex-direction:column; align-items:center; gap:4px; flex:1;">
+                <div style="width:44px; height:44px; border-radius:var(--radius-icon-badge); background:var(--neon-violet); display:flex; align-items:center; justify-content:center;">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0a0e1a" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7H16"></path><path d="M12 3L16 7L12 11"></path><path d="M20 17H8"></path><path d="M12 13L8 17L12 21"></path></svg>
+                </div>
+                <sc-if value="{{ showLabels }}" hint-placeholder-val="{{ true }}"><span style="font-size:10px; font-weight:500; color:#5b6478;">Transfer</span></sc-if>
+              </div>
+            </div>
+          </div>
+
+          <div style="flex:1;"></div>
+          <div style="display:flex; justify-content:space-evenly; align-items:center; width:100%; padding-bottom:8px;">
+            <div style="width:48px; height:48px; border-radius:16px; background:#ffffff; border:1px solid #e4e8f0; display:flex; align-items:center; justify-content:center;"><div style="width:16px; height:16px; border-radius:5px; background:#c3cad9;"></div></div>
+            <div style="width:48px; height:48px; border-radius:16px; background:#ffffff; border:1px solid #e4e8f0; display:flex; align-items:center; justify-content:center;"><div style="width:16px; height:16px; border-radius:5px; background:#c3cad9;"></div></div>
+            <div style="width:48px; height:48px; border-radius:16px; background:#ffffff; border:1px solid #e4e8f0; display:flex; align-items:center; justify-content:center;"><div style="width:16px; height:16px; border-radius:5px; background:#c3cad9;"></div></div>
+            <div style="width:48px; height:48px; border-radius:16px; background:#ffffff; border:1px solid #e4e8f0; display:flex; align-items:center; justify-content:center;"><div style="width:16px; height:16px; border-radius:5px; background:#c3cad9;"></div></div>
+          </div>
+        </div>
+      </x-import>
+    </div>
+
+    <div data-screen-label="Dark theme widget" style="display:flex; flex-direction:column; align-items:center; gap:16px;">
+      <span style="font-family:var(--font-body); font-size:var(--text-sm); font-weight:var(--weight-semibold); color:var(--text-secondary); letter-spacing:var(--tracking-wide); text-transform:uppercase;">Dark system theme</span>
+      <x-import component-from-global-scope="AndroidDevice" from="./android-frame.jsx" dark="{{ true }}" hint-size="412px,892px">
+        <div style="height:100%; width:100%; box-sizing:border-box; background:var(--bg-void); display:flex; flex-direction:column; align-items:center; padding:40px 20px 20px;">
+          <div style="display:flex; flex-direction:column; align-items:center; gap:4px; margin-bottom:36px;">
+            <span style="font-family:Roboto,-apple-system,'Segoe UI',system-ui,sans-serif; font-size:56px; font-weight:400; color:var(--text-primary); line-height:1;">9:41</span>
+            <span style="font-family:Roboto,-apple-system,'Segoe UI',system-ui,sans-serif; font-size:14px; font-weight:500; color:var(--text-secondary);">Sunday, August 30</span>
+          </div>
+
+          <div style="width:260px; box-sizing:border-box; background:var(--bg-elevated-2); border:1px solid var(--line-subtle); border-radius:var(--radius-card); padding:16px; box-shadow:var(--shadow-card); font-family:Roboto,-apple-system,'Segoe UI',system-ui,sans-serif; display:flex; flex-direction:column;">
+            <sc-for list="{{ visibleAccounts }}" as="acct" hint-placeholder-count="4">
+              <div style="display:flex; align-items:baseline; justify-content:space-between; gap:12px; padding:9px 0;">
+                <span style="font-size:14px; font-weight:500; color:var(--text-secondary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0;">{{ acct.name }}</span>
+                <span class="tabular-figures" style="font-size:16px; font-weight:600; color:var(--text-primary); flex-shrink:0;">{{ acct.balance }}</span>
+              </div>
+              <sc-if value="{{ acct.divider }}" hint-placeholder-val="{{ true }}">
+                <div style="height:1px; background:var(--line-subtle);"></div>
+              </sc-if>
+            </sc-for>
+            <div style="height:1px; background:var(--line-default); margin:7px 0 12px;"></div>
+            <div style="display:flex; justify-content:space-between; gap:8px;">
+              <div style="display:flex; flex-direction:column; align-items:center; gap:4px; flex:1;">
+                <div style="width:44px; height:44px; border-radius:var(--radius-icon-badge); background:var(--neon-cyan); display:flex; align-items:center; justify-content:center;">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0a0e1a" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"></path><path d="M6 11L12 5L18 11"></path></svg>
+                </div>
+                <sc-if value="{{ showLabels }}" hint-placeholder-val="{{ true }}"><span style="font-size:10px; font-weight:500; color:var(--text-secondary);">Income</span></sc-if>
+              </div>
+              <div style="display:flex; flex-direction:column; align-items:center; gap:4px; flex:1;">
+                <div style="width:44px; height:44px; border-radius:var(--radius-icon-badge); background:var(--neon-blue); display:flex; align-items:center; justify-content:center;">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0a0e1a" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5V19"></path><path d="M18 13L12 19L6 13"></path></svg>
+                </div>
+                <sc-if value="{{ showLabels }}" hint-placeholder-val="{{ true }}"><span style="font-size:10px; font-weight:500; color:var(--text-secondary);">Expense</span></sc-if>
+              </div>
+              <div style="display:flex; flex-direction:column; align-items:center; gap:4px; flex:1;">
+                <div style="width:44px; height:44px; border-radius:var(--radius-icon-badge); background:var(--neon-violet); display:flex; align-items:center; justify-content:center;">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0a0e1a" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7H16"></path><path d="M12 3L16 7L12 11"></path><path d="M20 17H8"></path><path d="M12 13L8 17L12 21"></path></svg>
+                </div>
+                <sc-if value="{{ showLabels }}" hint-placeholder-val="{{ true }}"><span style="font-size:10px; font-weight:500; color:var(--text-secondary);">Transfer</span></sc-if>
+              </div>
+            </div>
+          </div>
+
+          <div style="flex:1;"></div>
+          <div style="display:flex; justify-content:space-evenly; align-items:center; width:100%; padding-bottom:8px;">
+            <div style="width:48px; height:48px; border-radius:16px; background:var(--bg-elevated); border:1px solid var(--line-subtle); display:flex; align-items:center; justify-content:center;"><div style="width:16px; height:16px; border-radius:5px; background:var(--line-default);"></div></div>
+            <div style="width:48px; height:48px; border-radius:16px; background:var(--bg-elevated); border:1px solid var(--line-subtle); display:flex; align-items:center; justify-content:center;"><div style="width:16px; height:16px; border-radius:5px; background:var(--line-default);"></div></div>
+            <div style="width:48px; height:48px; border-radius:16px; background:var(--bg-elevated); border:1px solid var(--line-subtle); display:flex; align-items:center; justify-content:center;"><div style="width:16px; height:16px; border-radius:5px; background:var(--line-default);"></div></div>
+            <div style="width:48px; height:48px; border-radius:16px; background:var(--bg-elevated); border:1px solid var(--line-subtle); display:flex; align-items:center; justify-content:center;"><div style="width:16px; height:16px; border-radius:5px; background:var(--line-default);"></div></div>
+          </div>
+        </div>
+      </x-import>
+    </div>
+
+  </div>
+
+  <div style="position:relative; z-index:1; max-width:480px; text-align:center; font-family:var(--font-body); font-size:var(--text-xs); color:var(--text-tertiary);">
+    Widget footprint ≈ 260×258dp — fits a 4-column × 4-row cell on a standard 5-column launcher grid. Income / Expense / Transfer keep one fixed accent per action across both themes.
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{
+  &quot;accountCount&quot;: {&quot;editor&quot;: &quot;range&quot;, &quot;default&quot;: 4, &quot;min&quot;: 1, &quot;max&quot;: 4, &quot;step&quot;: 1, &quot;tsType&quot;: &quot;number&quot;, &quot;section&quot;: &quot;Content&quot;},
+  &quot;showLabels&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: true, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;Content&quot;}
+}">
+class Component extends DCLogic {
+  accounts = [
+    { name: 'Checking', balance: '$12,480.32' },
+    { name: 'High-Yield Savings', balance: '$48,250.00' },
+    { name: 'Brokerage', balance: '$186,940.55' },
+    { name: 'Crypto', balance: '$9,215.80' },
+  ];
+
+  renderVals() {
+    const count = Math.max(1, Math.min(4, Math.round(this.props.accountCount ?? 4)));
+    const list = this.accounts.slice(0, count);
+    const visibleAccounts = list.map((a, i) => ({ name: a.name, balance: a.balance, divider: i < list.length - 1 }));
+    return {
+      visibleAccounts,
+      showLabels: this.props.showLabels ?? true,
+    };
+  }
+}
+</script>
+</body>
+</html>
