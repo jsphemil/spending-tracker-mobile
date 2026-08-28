@@ -10,7 +10,7 @@ _Last updated: [DATE — fill in when published]_
 
 ## Summary
 
-Spending Tracker is a **local-first** personal finance app. Your
+Erebor Wealth Management is a **local-first** personal finance app. Your
 financial data — accounts, transactions, categories, balances — is
 stored only on your own device. We do not operate a server that
 stores, sees, or has access to your financial data, and we do not

@@ -906,6 +906,12 @@ Claude smart features, analytics, IAP)._
       16KB-page-aligned — not independently verifiable from source;
       check the EAS build output once a production build is run.
 
+### Legal
+- [x] **License decided 2026-08-28: All Rights Reserved / proprietary**
+      (`LICENSE`), copyright held by Melior Developments by EJE —
+      replaces the leftover Expo-template MIT license, correctly
+      reflecting this as a closed-source commercial product.
+
 ### Store listing
 - [ ] App icon (512×512), feature graphic (1024×500), 2-8
       screenshots — none exist yet. `assets/` currently only has the
@@ -913,9 +919,11 @@ Claude smart features, analytics, IAP)._
       not dedicated store-listing assets.
 - [x] Title (≤30 chars) / short description (≤80 chars) / full
       description (≤4,000 chars) — **drafted 2026-08-28**, see
-      `store-listing.md`. Uses "Spending Tracker" as a placeholder
-      name — `app.json`'s name/slug are still the generic project
-      name, a real product name hasn't been chosen yet.
+      `store-listing.md`. Product name decided 2026-08-28: **Erebor
+      Wealth Management** — `app.json`'s `name` updated to match;
+      `slug`/`scheme`/Android package/iOS bundle identifier stay as
+      the original technical project name (internal identifiers, not
+      user-facing).
 - [ ] Content Rating questionnaire — not started (Play Console step,
       no code dependency).
 - [ ] Target Audience declaration — not started (Play Console step,

@@ -1,4 +1,4 @@
-# Spending Tracker (mobile)
+# Erebor Wealth Management
 
 A personal finance app for tracking money across multiple accounts —
 bank accounts, credit cards, cash, savings, and investments — built
@@ -66,10 +66,6 @@ npx jest           # run the test suite
 
 ## License
 
-**Not yet decided.** The `LICENSE` file currently present is the
-default MIT license from the Expo project template (copyright held by
-Expo, not this project) — it doesn't reflect an actual licensing
-decision for this app and should not be treated as one. This is a
-private repository for a paid, closed-source product; an appropriate
-license (or an explicit "all rights reserved, no LICENSE file" choice)
-still needs to be decided before publishing.
+All rights reserved — proprietary, closed-source. See `LICENSE`.
+Copyright held by Melior Developments by EJE, decided 2026-08-28
+alongside the product name.
