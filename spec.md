@@ -997,16 +997,19 @@ Claude smart features, analytics, IAP)._
 
 ### Accounts & process
 - [ ] Google Play Developer account ($25, individual, government-ID
-      verification, few days to a week) — not started.
+      verification, few days to a week) — **in progress 2026-08-28**,
+      user has started sign-up; step-by-step in `closed-testing-guide.md`.
 - [ ] Google Payments Merchant account — only needed once
       monetization is built; separate KYC queue from the developer
       account, start it early once IAP is scoped.
 - [ ] **Closed testing (12 opted-in testers, 14 continuous days).**
       Mandatory for personal developer accounts created after Nov
       2023, and the single longest lead-time item in the whole
-      process. Can run in parallel with development once the app
-      reaches a stable/demoable state — don't wait for 100% feature
-      completion to start this.
+      process. **Started 2026-08-28** — see `closed-testing-guide.md`
+      for the full walkthrough. First production AAB kicked off via
+      `eas build --platform android --profile production` in
+      parallel with the developer-account wait, so it's ready the
+      moment a Play Console app exists to upload it to.
 
 ---
 *Once this file reflects what you want, the next step is setting up a
