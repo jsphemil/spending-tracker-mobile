@@ -10,7 +10,7 @@
 ## Status Dashboard
 
 _Kept current per CLAUDE.md's Idea Backlog Protocol — updated the
-moment a status genuinely changes, not batched. Last updated: 2026-08-20._
+moment a status genuinely changes, not batched. Last updated: 2026-08-28._
 
 **Legend:** ✅ Built & Verified (built *and* confirmed working on a
 real device/build) · 🚧 In Progress (code exists, not yet verified, or
@@ -19,32 +19,36 @@ pushed to a later phase) · ❌ Dropped (cut from scope).
 
 | Section | Feature | Status | Notes |
 |---|---|---|---|
-| §5.1 | Accounts | 🚧 In Progress | Full Phase 10 parity pass 2026-08-12: Account Detail page rebuilt (correct capacity-gauge ring, Carry Forward/Total In/Total Out/Left to Spend, Safe-to-spend/day, debt payoff projection, Budget Mode bar wired up, category/counterpart Breakdown section, Show-Future-Transactions hidden-count notice, Duplicate+Edit+Delete icons); Accounts list gained month nav + per-account Income/Expense/Transfers row + period-scoped balance. UAT round 1 (2026-08-20): 3 bugs found and fixed (credit limit now required for credit_card accounts, delete-account navigation, Breakdown icon rendering). Also fixed 2026-08-20 (2 rounds): `deleteAccount` didn't guard against recurring rules referencing the account at all (raw FK error) — first fix blocked deletion with a friendly message, but that turned out to be a dead end since nothing in the app can actually delete a `recurring_rules` row (closing a rule off via "delete this and future" only deactivates it). Now deletes those rows outright instead of blocking on them, which is safe since real transactions are checked first and `transactions.recurringRuleId` is `onDelete: set null`, not cascade — on-device re-verification pending |
-| §5.2 | Transactions | 🚧 In Progress | Entry/edit/list/filters/calendar built; recurring transactions (Phase 5) code-complete 2026-08-12 — engine (`services/recurrence.ts`) unit-tested (13 tests), "make recurring" toggle, just-this-one/this-and-future edit+delete scope picker, 🔁 badge, `ensureMaterialized` wired into Dashboard/Transactions/Accounts/Categories/Calendar. Phase 10 (2026-08-12): "Clear (show all time)" toggle, SummaryBand proportional bar, Duplicate+Edit+Delete icons, Duplicate-transaction flow, inline "+ New category" on the transaction form. UAT (2026-08-20): the standalone Calendar screen existed but had no link to it anywhere — added a header icon on the Transactions list. Added 2026-08-21: a Recurring/Transfers type filter alongside the existing Account/Category filters — on-device re-verification pending |
-| §5.3 | Categories | 🚧 In Progress | Full CRUD + starter seed built. UAT round 3 (2026-08-20): 2 bugs fixed — a category with no budget set showed no monthly total at all, and the Income tab's totals were always ₹0 (the sum was hardcoded to expense-type transactions only, regardless of the active tab) — on-device re-verification pending |
-| §5.3a | Tags | 🚧 In Progress | Inline creation + per-tag summary (with currency conversion) built. Added 2026-08-20 per UAT feedback: Dashboard "Tags" card (recent tags) + a new `/tag` list screen ("More" link), since a tag's summary page was previously only reachable via a chip on a transaction already showing it — on-device verification pending |
-| §5.4 | Spending Summary | 🚧 In Progress | Month nav, net worth, Indian formatting, Carry Forward (Dashboard + Account Detail), asset allocation donut all built; a literal income/expense-by-category pie chart specifically hasn't been built (Categories list's spend-vs-budget bars cover the budget-comparison need, but not a pie visualization) — on-device verification pending |
-| §5.5 | Budget Mode | 🚧 In Progress | Account-level toggle + schema built, spend-vs-budget comparison now wired up (Phase 10, `resolveAccountSettings` actually called from Account Detail's Budget Mode bar); category-level budgets (separate from the toggle) built 2026-08-12 with spend-vs-budget bars on the Categories list — on-device verification pending for both |
-| §5.6 | Show/Hide Future Transactions | ✅ Built & Verified | Toggle + schema built; filtering applied (Phase 10, Account Detail hides future-dated rows when the resolved setting is off). UAT found 2026-08-20 that Dashboard, the Transactions list, and the standalone Calendar never had this wired in at all — fixed same day, same declutter-only semantics (rows/day-cells hidden, totals unaffected, current-month-only). User confirmed on-device 2026-08-20: all 4 screens pass |
+| §5.1 | Accounts | ✅ Built & Verified | Phase 10 parity pass + UAT round 1 (2026-08-20, 3 bugs fixed: credit limit required for credit_card accounts, delete-account navigation, Breakdown icon rendering) + the 2-round recurring-rule FK delete fix (2026-08-20). Confirmed on-device via `backlog.md`'s UAT checklist §2: create-each-type, opening balance ≠0/=0, currency validation, header pencil→edit+delete, delete-blocked-with-transactions, Breakdown totals, Accounts-list month-nav+per-account figures all pass. **Two items never got a specific on-device check and are worth a final look**: Safe-to-spend/day, and the credit-card debt payoff projection line — both are code-complete, just unconfirmed live. |
+| §5.2 | Transactions | ✅ Built & Verified | Recurring transactions (Phase 5, 13 tests) + Phase 10 (SummaryBand, Duplicate+Edit+Delete icons, inline "+ New category") + the 2026-08-21 Recurring/Transfers type filter. UAT checklist §3 confirms create-all-3-types, category-required, amount-positive+expression-eval, tag inline add/select, edit/delete icons, opening-balance-row lockout, inward-transfer-leg visibility, signed transfer display, This month/Custom range/All time filter, and SummaryBand — all pass. One item stays intentionally as-is: the Duplicate icon doesn't prefill account/category (user explicitly withdrew the fix request 2026-08-21, "leave it"). |
+| §5.3 | Categories | ✅ Built & Verified | Full CRUD + starter seed + UAT round 3 fixes (no-budget category showing no total, Income tab totals hardcoded to ₹0). UAT checklist §4 confirms create/edit/delete and the spend-vs-budget bar — pass. |
+| §5.3a | Tags | ✅ Built & Verified | Inline creation + per-tag summary + the 2026-08-20 Dashboard Tags card/`/tag` list screen addition. UAT checklist §5 confirms tag summary + transaction list — pass. |
+| §5.4 | Spending Summary | ✅ Built & Verified | Month nav, net worth, Indian formatting, Carry Forward, asset allocation donut all confirmed via the Dashboard/Account UAT items. The "literal pie chart" from the original description was a deliberate substitution, not a gap — matches §5.12's own gauge/donut-over-pie design decision (Categories' spend-vs-budget bars + the asset allocation donut + Account Detail's Breakdown list cover composition/budget-comparison needs). |
+| §5.5 | Budget Mode | ✅ Built & Verified | Account-level toggle + category-level budgets, both confirmed via UAT checklist §4 ("Account-level Budget Mode toggle... passed") and §13 (Profile global switches). |
+| §5.6 | Show/Hide Future Transactions | ✅ Built & Verified | Toggle + schema built; filtering applied across all 4 screens (Account Detail, Dashboard, Transactions, Calendar). User confirmed on-device 2026-08-20: all 4 screens pass. |
 | §5.7 | Smart Features (Claude) | ❌ Dropped | User confirmed 2026-08-20 this isn't getting built — inert FAB placeholder removed same day |
-| §5.8 | Dashboard | 🚧 In Progress | Fully rebuilt 2026-08-12 to match the real app: net worth capacity gauge, net worth trend chart (history-capped), asset allocation donut, over-budget banner, embedded calendar with quick-add buttons, Accounts card, Goals card (top 3), Recent Transactions card with inline edit/delete icons. Tags card added 2026-08-20 (see §5.3a). UAT round (2026-08-20): fixed the over-budget banner's same icon-slug-as-text bug as Breakdown/Commitments, and the Show-Future-Transactions gap (see §5.6) — on-device re-verification pending |
-| §5.9 | Navigation | 🚧 In Progress | Built; Commitments tab added 2026-08-12 (Dashboard, Accounts, Transactions, Commitments, Categories, Profile — 6 tabs total, matching the real app's order). UAT (2026-08-20): tabs never had icons set (`tabBarIcon` missing entirely, showing a broken-icon placeholder) — fixed same day with a `MaterialCommunityIcons` per tab — on-device re-verification pending |
-| §5.10 | Profile Page | 🚧 In Progress | Built; Dropbox section is an inert placeholder |
-| §5.11 | Home Screen Widget | ⏸️ Deferred | Phase 5 |
-| §5.12 | Visual Design System | 🚧 In Progress | Full port of the web app's dark-first token theme, monospace tabular numerals, gauge-over-pie pattern, and card/FAB/empty-state conventions — decided 2026-08-11, supersedes the earlier "out of scope" call in §6. Status corrected 2026-08-19 (was stuck on 📋 Planned despite being built across Phases 1-3); month-nav arrows switched from thin text glyphs to proper icons same day — on-device verification pending |
-| §5.13 | First-Run Onboarding & Base Currency | 🚧 In Progress | New — decided 2026-08-12. Unlike the web app (INR-only, single market), mobile ships for global customers: base currency becomes a real, live-editable user setting, not hardcoded INR. Phase 12 code-complete 2026-08-13: onboarding flow + gate, base currency generalized across every screen, full searchable currency dropdown (Frankfurter's ~170 currencies) replacing the old 6-pill picker. UAT (2026-08-21): fixed `OnboardingFlow` using a hardcoded `pt-16` guess at status-bar clearance instead of a real `SafeAreaView` — on-device re-verification pending |
-| §5.14 | CSV Export | ✅ Built & Verified | New — decided 2026-08-12, matches the web app's account/date-filtered CSV export. Phase 11 code-complete 2026-08-12 (`services/csv.ts`, `services/export.ts`, `ExportTransactionsForm` on Profile), required a native rebuild for `expo-file-system`/`expo-sharing` — verified on-device 2026-08-12 |
-| §5.15 | In-App Info/Tips | ⏸️ Deferred | New — decided 2026-08-12, explicitly deferred by the user to a later pass |
-| §5.16 | Commitments | 🚧 In Progress | New — discovered during repo comparison (not in the original spec), Phase 6. Code-complete 2026-08-12: new "Commitments" tab, monthly-normalized recurring rules split into expense/transfer/income sections, % of recurring income committed. UAT round 4 (2026-08-20): fixed the same icon-slug-as-text bug the Breakdown section had; confirmed the monthly-equivalent math is correct (average-month normalization, not a bug); a request for complex recurrence patterns (nth-weekday-of-month etc.) logged as a deferred future feature, not started — on-device re-verification pending |
-| §5.17 | Goals | 🚧 In Progress | New — discovered during repo comparison, Phases 7-8. Code-complete 2026-08-12: `services/balance.ts`'s `getNetWorthSeries` (Phase 8, unit-tested), goal CRUD + trailing-6-month pace projection + behind-pace flag (Phase 7). Reached via a temporary "Goals →" link on the Dashboard (not a tab, matching the real app) — Phase 9's Dashboard rebuild replaces it with the real top-3-goals card. UAT round (2026-08-20): fixed the Goals list screen having no header at all (`goal/index` was never registered in the root Stack) — on-device re-verification pending |
-| §3 | Dropbox Backup/Restore | ⏸️ Deferred | Phase 3 |
+| §5.8 | Dashboard | ✅ Built & Verified | Full rebuild (net worth gauge, trend chart, asset allocation donut, over-budget banner, embedded calendar, Accounts/Goals/Recent Transactions/Tags cards) + UAT fixes (icon-as-text banner bug, Show-Future-Transactions wiring). UAT checklist §9 confirms the gauge, trend chart, donut, stat row, calendar, and cards all pass. The over-budget banner itself only got a partial re-check ("please push a category over budget and confirm the banner text is clean") — worth one more explicit look, though the underlying bug (icon-as-text) is fixed and visually reconfirmed since. |
+| §5.9 | Navigation | ✅ Built & Verified | 6 tabs (Dashboard, Accounts, Transactions, Commitments, Categories, Profile) with icons — UAT checklist §14 confirms, and every screenshot from the 2026-08-28 design-refresh session shows tab icons rendering correctly (now Lucide icons, see §5.18). |
+| §5.10 | Profile Page | ✅ Built & Verified | Display name, Budget Mode/Show Future Transactions global switches, Base Currency all confirmed via UAT checklist §13. Dropbox section stays an inert placeholder by design — that's §3's scope, tracked separately as deferred, not a Profile bug. The Light/Dark/System theme toggle described in the original spec text was **removed 2026-08-28** as part of §5.18's dark-only redesign — see that section. |
+| §5.11 | Home Screen Widget | ⏸️ Deferred | Not started. |
+| §5.12 | Visual Design System (superseded) | ✅ Built & Verified | The dark-first token theme / monospace-tabular / gauge-over-pie system described here shipped and was verified (Phases 1-3, UAT checklist §15). **Superseded 2026-08-28 by §5.18** — the token *values*, glass-card ask from UAT §15 ("a glass effect would be nice"), and the whole visual language were replaced wholesale by the Erebor redesign. Kept here for history; §5.18 is now the authoritative visual-design status. |
+| §5.13 | First-Run Onboarding & Base Currency | ✅ Built & Verified | Onboarding flow + gate, live per-install base currency (not hardcoded INR), searchable ~170-currency picker. UAT checklist §1 confirms every step, the currency-picker search, and base-currency-change recalculation across the whole app — all pass (including the 2026-08-21 SafeAreaView fix for the onboarding-flush-to-top bug). |
+| §5.14 | CSV Export | ✅ Built & Verified | Matches the web app's account/date-filtered CSV export; required a native rebuild for `expo-file-system`/`expo-sharing` — verified on-device 2026-08-12, and re-confirmed working after all the base-currency changes (UAT checklist §12). |
+| §5.15 | In-App Info/Tips | ⏸️ Deferred | Explicitly deferred by the user to a later pass — not started. |
+| §5.16 | Commitments | ✅ Built & Verified | New tab, monthly-normalized recurring rules, % of recurring income committed. UAT checklist §7 confirms the sections and monthly-equivalent math (verified correct, not a bug — average-month normalization). Complex recurrence patterns (nth-weekday-of-month etc.) were requested then **withdrawn by the user 2026-08-21** ("it can be ignored") — not building. The "% of recurring income" line was explained to the user but never independently re-confirmed against their own live data — low-stakes, worth a glance next time it's relevant. |
+| §5.17 | Goals | ✅ Built & Verified | Goal CRUD, trailing-6-month pace projection, behind-pace flag, Dashboard card. UAT checklist §8 confirms creation, progress bar, projection text, and behind-pace warning — all pass. |
+| §5.18 | Design Refresh — "Erebor" | ✅ Built & Verified | **New, 2026-08-28.** Complete visual redesign sourced from a separate Claude Design project the user built ("Erebor Wealth App Design System," dark glassy-neon fintech language), applied as a presentational-only pass on the `design-refresh` branch and merged to `master` the same day. See the full write-up below (§5.18) for what shipped, what was explicitly decided, and the one behavior change (AccountForm's icon became user-selectable, at the user's explicit request). Verified via multiple rounds of on-device testing on the user's Pixel 10, including native rebuilds for the new `expo-linear-gradient`/`expo-font` dependencies. |
+| §3 | Dropbox Backup/Restore | ⏸️ Deferred | Not started. |
 
-§5.14 CSV Export is the only section marked ✅ so far — everything else
-above is code-complete and type-checked but hasn't individually cleared
-a full on-device verification pass yet (spot-checks of specific bug
-fixes have gone well, per backlog.md's Triaged/Done sections, but that's
-not the same as a systematic per-feature pass). Clearing the rest of
-these is Phase 13's job (spec §8).
+**Remaining known gaps** (everything else above is fully verified):
+Safe-to-spend/day and the debt-payoff-projection line (§5.1) never got
+an explicit on-device check; the over-budget banner (§5.8) only got a
+partial re-check; offline currency-conversion fallback (mentioned under
+§5.13) couldn't be tested in the user's current environment (no way to
+go offline to test it). None of these are known-broken — they're
+code-complete and either passed indirectly or simply weren't
+individually re-confirmed. See `backlog.md`'s UAT checklist for the
+exact unchecked items.
 
 ## 1. What this app is
 
@@ -642,6 +646,71 @@ now stale and kept only for history.
   transaction." Added the same two `Stack.Screen` entries used for the
   other three entities. On-device verification pending.
 
+### 5.18 Design Refresh — "Erebor" ✅ Built & Verified
+
+- **New, 2026-08-28.** The user built a separate Claude Design project
+  ("Erebor Wealth App Design System," a dark glassy-neon fintech visual
+  language — frosted-glass panels, neon gradient accents, Manrope
+  display / Inter body typography, pill shapes, colored glow shadows)
+  and asked for it applied to this app as a **presentational-only
+  pass**: styling, theme tokens, and markup structure change; state
+  management, calculations, API calls, navigation logic, and data
+  persistence do not.
+- Done on a `design-refresh` branch, merged into `master` the same day
+  after full on-device verification on the user's Pixel 10.
+- **Scope decisions confirmed with the user before implementation:**
+  - **Dark-only.** Erebor has no light theme in its source. The
+    Light/Dark/System toggle was removed from Profile (§5.10);
+    `settings.themePreference`'s schema/storage/`updateSettings` logic
+    is untouched, just no longer exposed in the UI — `theme/palette.ts`'s
+    `useResolvedTheme()` now always resolves `"dark"`.
+  - **Glass = translucent solid fills, no real blur.** React Native has
+    no `backdrop-filter` equivalent; `expo-blur` was deliberately not
+    added (avoids a new native dependency and Android blur performance
+    cost) — frosted panels are approximated with semi-transparent fills
+    + hairline borders + drop shadows instead.
+  - **Full icon-library swap**, `@expo/vector-icons`'
+    MaterialCommunityIcons → `lucide-react-native`, via a lookup layer
+    (`theme/icons.ts`) so every already-persisted category/account icon
+    slug keeps resolving without a data migration.
+- **The one place this touched more than pure styling, done at the
+  user's explicit request mid-implementation:** categories *and*
+  accounts now get full icon freedom via a new searchable ~70-icon
+  picker (`constants/iconLibrary.ts`, `components/ui/IconPicker.tsx`),
+  replacing the old fixed 19-option category grid. Accounts previously
+  had **no icon choice at all** — the icon was silently auto-derived
+  from account type (`ACCOUNT_TYPE_ICONS[type]`) on every save.
+  `AccountForm` now defaults to the type's icon but lets the user
+  override it, and the Accounts list renders the chosen icon (previously
+  just a bare color circle).
+- **What shipped:** theme/palette rewrite to Erebor's token values,
+  gradient + glow-shadow helpers, Manrope/Inter font loading, the full
+  icon swap above, a glass-surface sweep across ~22 files (solid
+  card/pill/input backgrounds → translucent glass tokens), a pill-shaped
+  `ui/Button` (gradient-filled primary via `expo-linear-gradient`,
+  tinted-glass success/danger/transfer, transparent-to-glass ghost) wired
+  into every form that previously hand-rolled its own submit button, a
+  glass `ui/Card`, a floating glass-pill bottom tab bar (with a
+  `theme/tabBar.ts` constant so every screen's scroll content and FAB
+  correctly clear it — this needed its own follow-up fix after the first
+  on-device test found labels clipping and screen content hidden
+  underneath the floating bar), a focus-glow `ui/Input` used everywhere
+  a `TextInput` existed, and two-tier typography (money → Inter via the
+  `font-data` Tailwind key, headline figures/section titles → Manrope
+  via `font-display`/`font-display-xbold`).
+- **Explicitly not built:** no new in-app Toast/Dialog component system
+  — the app's only transient/confirmation UI is native `Alert.alert` in
+  4 places, which can't be restyled from React Native and had nothing
+  existing to "re-skin," so introducing one would have been new
+  interaction plumbing, not a presentational pass.
+- **Native-rebuild detour:** `expo-linear-gradient` and `expo-font` are
+  real native modules, not JS-only — installing them required a full
+  `expo prebuild --clean` + `expo run:android` (not just a Metro
+  reload) to get them properly linked into the dev-client build on the
+  user's phone, plus resolving a stray-Metro-process port collision
+  along the way. See [[project_android_native_build_env]] memory for
+  the exact failure signatures if this recurs.
+
 ## 6. Explicitly out of scope for v1
 
 (Move these up if you want them sooner — just say so.)
@@ -719,18 +788,35 @@ attempted again.
 
 ### Next priorities
 
-1. **Finish Phase 13 (this final audit)**: spec.md/backlog.md sync
-   sweep (in progress), hardcoded-color grep (done 2026-08-13 — found
-   and fixed 2 real gaps: `placeholderTextColor` hardcoded to the
-   light-mode value in 3 files, `CreditUsageRing`'s overflow-arc color
-   not passed through to the theme's danger color), full on-device pass
-   across every screen in both themes.
-2. Clear the remaining "on-device verification pending" items in the
-   Status Dashboard — most Phase 4-10 features are code-complete but
-   not yet individually confirmed working live.
-3. Once Phase 13 is done and the user considers the app genuinely
-   complete: add a README.md (per backlog.md's Triaged section), then
-   revisit spec.md §9's Play Store Launch Readiness checklist for real.
+**Phase 13 (final feature audit) is done as of 2026-08-28** —
+spec.md/backlog.md sync sweep complete, every UAT checklist section
+worked through and the Status Dashboard now reflects ✅ Built &
+Verified for every v1 feature except the two intentionally-deferred
+ones (§5.11 Home Screen Widget, §5.15 In-App Info/Tips) and §3 Dropbox
+Backup, plus a small named list of never-independently-confirmed edges
+(see the Status Dashboard's "Remaining known gaps" note). The
+"full on-device pass in both themes" item is moot — §5.18's redesign
+made the app dark-only, there's no second theme to compare against
+anymore.
+
+**The design refresh (§5.18) also shipped and merged to `master`
+2026-08-28**, on top of the feature-complete app.
+
+With features and visual design both done, what's left before this is
+genuinely ready to ship is almost entirely **§9 (Play Store Launch
+Readiness)** — not app code:
+
+1. Add a README.md (per backlog.md's Triaged section) — still not
+   done, deferred until the app was "fully complete," which it now is.
+2. Work through §9 top to bottom: store listing assets (icon,
+   screenshots, feature graphic — none exist yet), a hosted privacy
+   policy, the Data Safety form, a Google Play Developer account, and
+   — the single longest lead-time item — the mandatory 12-tester/
+   14-day closed testing track, which can start as soon as a stable
+   build exists rather than waiting for every last checklist box.
+3. Monetization (one-time purchase, confirmed direction) still needs
+   an actual implementation decision and `expo-iap`/RevenueCat
+   integration — currently just a §7 open question, not started.
 
 ## 9. Play Store Launch Readiness
 

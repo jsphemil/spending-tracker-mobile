@@ -66,23 +66,45 @@
 - **In-app Info/Tips reference page** (Profile) — a fuller explainer than the one-time onboarding intro above. User explicitly said "later" — deferred, no phase assigned. Accepted into current work (deferred) — spec.md §5.15.
 
 ## In Progress
-- **Visual design system port** (spec.md §5.12) — full token-based theming (light/dark), system-monospace money figures, Card/Button/EmptyState primitives, FAB coordinate audit. Values verified directly against github.com/jsphemil/claude-spending-tracker's `src/app/globals.css`. Started 2026-08-11.
-- **Recurring transactions** (spec.md §5.2, task-list Phase 5 — not the same "Phase 5" referenced in the Triaged items above, which used an earlier phase numbering). Code-complete 2026-08-12: `services/recurrence.ts` (materialize/edit-scope/delete-scope engine, ported from the real app's `recurrence.ts` with one deliberate deviation — the whole "this and future" edit runs inside a real `db.transaction()` instead of sequential calls, since mobile's local SQLite doesn't have the pooled-Postgres-connection constraint that forced that workaround server-side; also no separate RecurringException table, since the monotonic `materializedThrough` cursor already makes re-materialization impossible without one), 13 passing tests in `__tests__/recurrence.test.ts`, "make recurring" toggle + edit/delete scope picker in `TransactionForm.tsx`/`app/transaction/[id]/edit.tsx`, 🔁 badge on list rows, `ensureMaterialized` called from Dashboard/Transactions/Account detail/Categories/Calendar. Also fixed a real gap found along the way: `__tests__/testDb.ts` was only applying migration 0000, silently skipping 0001/0002 — tests weren't running against the real current schema. On-device verification still pending.
-- **Commitments** (spec.md §5.16, task-list Phase 6) — new tab discovered during the repo comparison, not in the original spec. Code-complete 2026-08-12: `app/(tabs)/commitments.tsx` + `db/queries/recurringRules.ts`, reusing Phase 5's `monthlyEquivalent`/`describeSchedule`. Tab order now matches the real app exactly (Dashboard, Accounts, Transactions, Commitments, Categories, Profile). On-device verification pending.
-- **Goals** (spec.md §5.17, task-list Phases 7-8) — new feature discovered during the repo comparison, not in the original spec. Code-complete 2026-08-12: `getNetWorthSeries` in `services/balance.ts` (Phase 8, deliberately reuses the already-tested `getAccountBalanceMinor` per account per cutoff rather than re-deriving the real app's single-pass-fold optimization — at this app's scale a handful of extra cheap indexed queries beats a second, potentially-drifting implementation of the same balance math), full goal CRUD + trailing-6-month pace projection + behind-pace flag (Phase 7). Not a tab (matches the real app — reached via a Dashboard card there); the temporary "Goals →" link is gone now that Phase 9 added the real card. On-device verification pending.
-- **Dashboard rebuild** (spec.md §5.8, task-list Phase 9) — full replacement of the old simple Dashboard. Code-complete 2026-08-12. New reusable components: `components/rings/GaugeRing.tsx` (capacity gauge, replaces the wrongly-shaped `BalanceRing` on the Dashboard — `BalanceRing` itself is intentionally left in place on the Account Detail page for now, since fixing it properly there needs Carry-Forward/Total-In figures that page doesn't compute yet; bundling a half-correct swap into this phase would leave it in a worse, inconsistent state than just deferring the whole thing cleanly to Phase 10), `components/charts/NetWorthTrendChart.tsx` and `AssetAllocationChart.tsx` (custom SVG, no chart library), `formatCompactMoney` in `services/format.ts` (₹14L axis labels), `getEarliestTransactionDate` + `monthsBetween`/`monthShortLabel` for the trend length cap. `TransactionListItem` gained an optional `showActionIcons` mode (inline Edit/Delete instead of tap-the-row) used here on the Dashboard; Account Detail and the Transactions list still use tap-the-row pending their own Phase 10 pass. Extracted `components/confirmDeleteTransaction.ts` (recurring-aware delete confirm) out of the transaction edit screen so the Dashboard could reuse it without duplicating the scope-picker logic. On-device verification pending — this is by far the largest single-pass change in the app so far, worth checking carefully.
-- **Accounts/Transactions parity** (spec.md §5.1/§5.2, task-list Phase 10) — code-complete 2026-08-12. Account Detail page: swapped in `GaugeRing` (the fix deferred from Phase 9, now done properly with real Carry-Forward/Total-In figures), Carry Forward/Total In/Total Out/Left to Spend stat row, Safe-to-spend/day (only while viewing the real current month — a past/future month has no meaningful "days left"), credit-card debt payoff projection (`getDebtPayoffProjection`, anchored to today regardless of viewed month, same reasoning as Goals), account-level Budget Mode bar actually wired up via `resolveAccountSettings` (existed since Phase 3/4 but was never called from anywhere), category/counterpart Breakdown section (`services/breakdown.ts`, ported from the real app's `addToBucket`/`sortedBuckets`), Show-Future-Transactions hidden-count notice, Duplicate+Edit+Delete icons. Accounts list: month nav, per-account Income/Expense/Transfers row (one pass over the month's transactions, not N+1 queries), and the balance itself became period-scoped (`getAccountBalanceMinor(..., range.end)`) instead of always-now. Transactions list: "Clear (show all time)" toggle, `SummaryBand` gained the real app's proportional green/red bar, Duplicate+Edit+Delete icons. `TransactionListItem` gained `showDuplicateIcon`; `app/transaction/new.tsx` gained `duplicateId` prefill support (excludes opening-balance rows, same guard as their edit/delete). `TransactionForm.tsx` gained an inline "+ New category" toggle. On-device verification pending.
-
-- **First-run onboarding + real base currency** (spec.md §5.13, task-list Phase 12) — code-complete 2026-08-13. `settings.onboardingCompleted` column (migration 0005, backfilled `true` for any row with existing accounts — never sends existing installs with real data through onboarding). `components/OnboardingFlow.tsx`: currency → name → first account (via `AccountForm` inline) → feature intro, rendered in `app/_layout.tsx` in place of the normal `<Stack>` (not a routed screen — step 3 needs the form inline and there's no back-nav to manage). Clarified 2026-08-12 by the user: base currency isn't a one-time onboarding pick — it's live-editable from Profile anytime, and every conversion in the app recalibrates to whichever base currency is *current*. Implemented by generalizing `services/currency.ts`'s `getRatesToINR`/`getExchangeRate` (INR-hardcoded) to `getRatesToBase(db, currencies, baseCurrency)` — `getExchangeRate` actually got simpler in the process, a single Frankfurter call using `target` as the pivot instead of the old always-through-INR two-hop — then sweeping all 8 files with a hardcoded `BASE_CURRENCY = "INR"` module constant (Dashboard, Transactions, Categories, Commitments, Calendar, Goals, Tag summary, `CurrencyAmount`) to read `settings.baseCurrency` live via `useSettings()` instead. Also folded in a same-day Inbox request: Profile's base-currency field only offered 6 quick-pick pills — new `services/currency.ts`'s `getSupportedCurrencies()` (Frankfurter's `/v2/currencies`, ~170 currencies, in-memory session cache, hardcoded 6-currency fallback on fetch failure) + `components/CurrencyPicker.tsx` (searchable modal list) replace it, used in both onboarding and Profile. Account-level currency (`AccountForm`) is untouched — still its own pill+free-text field, not in scope for this request. 9 currency-service tests (was 6 — added a non-INR-base case and a cache-isolation-across-base-switch case). On-device verification pending — the largest cross-cutting change since the useLiveQuery fix; worth checking the onboarding flow itself plus every foreign-currency figure after changing base currency in Profile.
+_(empty — everything below graduated to Done 2026-08-28 once the full UAT checklist confirmed each one working on-device; see spec.md's Status Dashboard for the authoritative per-feature status.)_
 
 ## Done
+- **Visual design system port** (spec.md §5.12, superseded 2026-08-28 by the Erebor redesign below) — full token-based theming (light/dark), system-monospace money figures, Card/Button/EmptyState primitives, FAB coordinate audit. Verified via UAT checklist §15 (2026-08-20/21).
+- **Recurring transactions** (spec.md §5.2, task-list Phase 5) — `services/recurrence.ts` engine (13 tests), "make recurring" toggle + edit/delete scope picker, 🔁 badge, `ensureMaterialized` wired app-wide. Verified via UAT checklist §6 (all pass, including end-date stopping generation).
+- **Commitments** (spec.md §5.16, task-list Phase 6) — new tab, monthly-normalized recurring rules. Verified via UAT checklist §7; the icon-as-text bug found there got fixed same day, complex recurrence patterns requested then withdrawn by the user.
+- **Goals** (spec.md §5.17, task-list Phases 7-8) — net-worth target tracking, pace projection, behind-pace flag. Verified via UAT checklist §8 (creation, progress bar, projection text, behind-pace warning all pass).
+- **Dashboard rebuild** (spec.md §5.8, task-list Phase 9) — net worth gauge, trend chart, asset allocation donut, over-budget banner, embedded calendar, Accounts/Goals/Recent Transactions/Tags cards. Verified via UAT checklist §9 (gauge, trend, donut, stat row, calendar, cards all pass — over-budget banner itself only got a partial re-check, noted as a remaining small gap in spec.md).
+- **Accounts/Transactions parity** (spec.md §5.1/§5.2, task-list Phase 10) — Account Detail's GaugeRing/Carry Forward/Total In/Out/Left to Spend/Safe-to-spend-per-day/debt payoff projection/Budget Mode bar/Breakdown section, Accounts list month-nav + per-account figures, Transactions' Clear/SummaryBand/Duplicate+Edit+Delete icons, inline "+ New category." Verified via UAT checklist §2-3 — two items (Safe-to-spend/day, debt payoff projection) never got an explicit dedicated re-check and are flagged in spec.md as the two remaining small gaps.
+- **First-run onboarding + real base currency** (spec.md §5.13, task-list Phase 12) — onboarding flow + gate, live per-install base currency, searchable ~170-currency picker (`CurrencyPicker`). Verified via UAT checklist §1 (every onboarding step, currency search, and app-wide recalculation after a base-currency change all pass).
+- **Transactions Recurring/Transfers type filter** — added 2026-08-21 alongside the existing Account/Category filters, final set narrowed to Recurring + Transfers per user request (Opening Balance/Carry Forward explicitly left out). `tsc`/`jest` clean; folded into the Accounts/Transactions parity verification above.
+- **Account Detail's ring and the Accounts list page's balance figure never showed a base-currency equivalent, even when the account's own currency differed from the live base currency** (spec.md §5.1/§5.13). Reported 2026-08-13 after switching base currency from INR to EUR: the ring center on Account Detail kept showing plain ₹ with no €, and the Accounts list page's balance figure did too — inconsistent with the 4 stat boxes right below the ring (Carry forward/Total in/Total out/Left to spend), which already correctly showed "₹X · ≈ €Y" via `CurrencyAmount`. User clarified the exact rule: the base-currency equivalent should show **only** for accounts whose own currency differs from the live base currency — which is exactly what `CurrencyAmount` already implements (`useBaseCurrencyEquivalent` returns `null` when they match); the actual gap was that the ring (`GaugeRing`/`CreditUsageRing`, plain `formatMoney`, no `CurrencyAmount`) and the Accounts list page (same) never had an equivalent-computing code path at all. Fixed 2026-08-13: extracted `CurrencyAmount`'s conversion logic into a shared `hooks/useBaseCurrencyEquivalent.ts`, added an optional `centerEquivalent`/`owedEquivalent` prop to `GaugeRing`/`CreditUsageRing`, wired it in `app/(tabs)/accounts/[id].tsx`, and swapped the Accounts list page's plain `formatMoney` balance for `CurrencyAmount`. User confirmed on-device 2026-08-13: "all good, so far."
+- **No discoverable Edit/Delete Account entry point** (spec.md §5.1). Both already existed (`app/account/[id]/edit.tsx` has always had full edit + a destructive-confirm delete), but the only way in was a plain, easy-to-miss "Edit Account" text link buried after the Breakdown section on the Account Detail page. Reported 2026-08-13, fixed same day: moved the entry point to a header-right pencil icon on the Account Detail screen, via the standard expo-router `<Stack.Screen options={{headerRight}}>` pattern, and removed the now-redundant buried text link. User confirmed on-device 2026-08-13: "all good so far."
+- **CSV Export** (spec.md §5.14, task-list Phase 11) — built and verified 2026-08-12: `services/csv.ts` (`toCsv`/`csvField`, ported verbatim from the real app's RFC-4180 escaping + UTF-8 BOM), `services/export.ts`'s `buildTransactionsCsv` (account filter matching either leg of a transfer, inclusive To-date, tag names joined with "; ", 5 tests), `components/ExportTransactionsForm.tsx` wired onto the Profile page, using `expo-file-system`'s new `File`/`Paths` API to write the CSV and `expo-sharing` to hand it to the OS share sheet. Required installing two new native packages and a full `expo run:android` rebuild (JS-only reload isn't enough for new native modules — confirmed live 2026-08-12 via a "cannot find native module 'ExpoSharing'" error before the rebuild). The rebuild itself hit an unrelated environment issue worth remembering: Android Studio's bundled JDK is version 25, which is too new for this project's Gradle/CMake native toolchain and broke `react-native-worklets`' CMake configure step ("restricted method in java.lang.System has been called"). Fixed by pointing `JAVA_HOME` at the JDK 17 install already present at `C:\Program Files\Eclipse Adoptium\jdk-17.0.20.8-hotspot` instead — any future native rebuild (`expo run:android`) on this machine needs that same JAVA_HOME, not Android Studio's default. User confirmed on-device 2026-08-12: exported, opened the CSV, and every column (including a transfer's "A → B" account, an opening-balance row's category label, and a tagged transaction's "; "-joined tags) matched expectations.
+- **Design Refresh — "Erebor"** (spec.md §5.18, new 2026-08-28) — complete dark glassy-neon fintech visual redesign, sourced from a separate Claude Design project the user built ("Erebor Wealth App Design System," Claude Design project `d5887e1e-2512-436b-9f64-e086c0c538de`), applied as a presentational-only pass. Built on a `design-refresh` branch across several phases: theme foundation (palette rewrite, gradient/glow helpers, Manrope/Inter font loading), a full MaterialCommunityIcons → `lucide-react-native` swap (via `theme/icons.ts`'s lookup layer, so already-persisted icon data keeps working), free icon choice for categories *and* accounts (new `IconPicker`, ~70 icons — accounts previously had zero icon choice at all, silently auto-derived from account type; done at the user's explicit mid-implementation request), a glass-surface sweep across ~22 files, pill-shaped gradient buttons, a floating glass-pill tab bar, focus-glow text inputs, and two-tier Manrope/Inter typography. Per the user's explicit "dark-only" decision, the Light/Dark/System toggle was removed from Profile (schema/storage untouched, just unexposed). Hit and resolved three real bugs during on-device testing: (1) the floating tab bar needed its own content-clearance constant (`theme/tabBar.ts`) after screens' last items and the "+" FABs were found hidden underneath/overlapping it; (2) `expo-linear-gradient`/`expo-font` are native modules, not JS-only, requiring a full `expo prebuild --clean` + `expo run:android` rebuild rather than a Metro reload — first rebuild attempt also surfaced a stale-autolinking `ClassNotFoundException` requiring the clean prebuild specifically, not just a rebuild; (3) a stray duplicate Metro process left over from testing collided on port 8081, silently dropping connections until killed. `tsc`/`jest` (45/45) clean throughout every phase. Verified on the user's Pixel 10 across all 6 tabs, category/account forms, and the icon picker; merged into `master` 2026-08-28 (commit `bf0ab5e`) at the user's explicit request. See [[project_erebor_design_refresh]] memory for full detail.
 - **Account Detail's ring and the Accounts list page's balance figure never showed a base-currency equivalent, even when the account's own currency differed from the live base currency** (spec.md §5.1/§5.13). Reported 2026-08-13 after switching base currency from INR to EUR: the ring center on Account Detail kept showing plain ₹ with no €, and the Accounts list page's balance figure did too — inconsistent with the 4 stat boxes right below the ring (Carry forward/Total in/Total out/Left to spend), which already correctly showed "₹X · ≈ €Y" via `CurrencyAmount`. User clarified the exact rule: the base-currency equivalent should show **only** for accounts whose own currency differs from the live base currency — which is exactly what `CurrencyAmount` already implements (`useBaseCurrencyEquivalent` returns `null` when they match); the actual gap was that the ring (`GaugeRing`/`CreditUsageRing`, plain `formatMoney`, no `CurrencyAmount`) and the Accounts list page (same) never had an equivalent-computing code path at all. Fixed 2026-08-13: extracted `CurrencyAmount`'s conversion logic into a shared `hooks/useBaseCurrencyEquivalent.ts`, added an optional `centerEquivalent`/`owedEquivalent` prop to `GaugeRing`/`CreditUsageRing`, wired it in `app/(tabs)/accounts/[id].tsx`, and swapped the Accounts list page's plain `formatMoney` balance for `CurrencyAmount`. User confirmed on-device 2026-08-13: "all good, so far."
 - **No discoverable Edit/Delete Account entry point** (spec.md §5.1). Both already existed (`app/account/[id]/edit.tsx` has always had full edit + a destructive-confirm delete), but the only way in was a plain, easy-to-miss "Edit Account" text link buried after the Breakdown section on the Account Detail page. Reported 2026-08-13, fixed same day: moved the entry point to a header-right pencil icon on the Account Detail screen, via the standard expo-router `<Stack.Screen options={{headerRight}}>` pattern, and removed the now-redundant buried text link. User confirmed on-device 2026-08-13: "all good so far."
 - **CSV Export** (spec.md §5.14, task-list Phase 11) — built and verified 2026-08-12: `services/csv.ts` (`toCsv`/`csvField`, ported verbatim from the real app's RFC-4180 escaping + UTF-8 BOM), `services/export.ts`'s `buildTransactionsCsv` (account filter matching either leg of a transfer, inclusive To-date, tag names joined with "; ", 5 tests), `components/ExportTransactionsForm.tsx` wired onto the Profile page, using `expo-file-system`'s new `File`/`Paths` API to write the CSV and `expo-sharing` to hand it to the OS share sheet. Required installing two new native packages and a full `expo run:android` rebuild (JS-only reload isn't enough for new native modules — confirmed live 2026-08-12 via a "cannot find native module 'ExpoSharing'" error before the rebuild). The rebuild itself hit an unrelated environment issue worth remembering: Android Studio's bundled JDK is version 25, which is too new for this project's Gradle/CMake native toolchain and broke `react-native-worklets`' CMake configure step ("restricted method in java.lang.System has been called"). Fixed by pointing `JAVA_HOME` at the JDK 17 install already present at `C:\Program Files\Eclipse Adoptium\jdk-17.0.20.8-hotspot` instead — any future native rebuild (`expo run:android`) on this machine needs that same JAVA_HOME, not Android Studio's default. User confirmed on-device 2026-08-12: exported, opened the CSV, and every column (including a transfer's "A → B" account, an opening-balance row's category label, and a tagged transaction's "; "-joined tags) matched expectations.
 
-## UAT Checklist (Phase 13 — started 2026-08-19)
+## UAT Checklist (Phase 13 — started 2026-08-19, closed out 2026-08-28)
 
-**How to use this:** work through each item on the physical device. Tick
+**Status: done.** Every item below was worked through; results are
+folded into spec.md's Status Dashboard (now ✅ Built & Verified for
+every v1 feature except the two deliberately-deferred ones and Dropbox
+backup). 8 checkboxes are deliberately left unticked — not failures,
+just either explicitly withdrawn by the user (duplicate-icon prefill),
+never independently re-confirmed after their fix (credit-card 0/negative
+validation, over-budget banner text, calendar screen month-nav, "%
+of recurring income"), never tested at all (Safe-to-spend/day, debt
+payoff projection), or untestable in the user's current environment
+(offline currency fallback — no way to go offline to check it). See
+spec.md's "Remaining known gaps" note under the Status Dashboard.
+
+The "second pass in the other theme" instruction below is now obsolete
+— the 2026-08-28 Erebor redesign (spec.md §5.18) made the app
+dark-only, so there's no second theme left to compare against. Kept
+here only as a historical record of how this pass was originally run.
+
+~~**How to use this:** work through each item on the physical device. Tick
 `[x]` when it behaves as described. Whether it passes or not, use the
 line under it to write down what you actually saw — for a pass, a short
 "looks right" is enough; for anything off, describe it (what you tapped,
@@ -95,199 +117,199 @@ Do a first pass in your normal theme, then a lighter second pass in
 **Settings → Profile → Theme** switched to the other one (Section 15
 below has the details) — you don't need to redo every single item in
 both themes, just re-look at each *screen* once more for anything that
-reads wrong (low contrast, invisible text, a color that didn't flip).
+reads wrong (low contrast, invisible text, a color that didn't flip).~~
 
 ### 1. First-Run Onboarding & Base Currency (§5.13)
 _You've likely already been through onboarding once — if you don't want to wipe app data to re-trigger it, skip straight to the Profile sub-items below and just confirm you remember the flow matching this description._
-- [ ] A brand-new install (or app data cleared) opens straight into onboarding, not the main tabs
+- [x] A brand-new install (or app data cleared) opens straight into onboarding, not the main tabs
   - Observations: currency selection screen also has the same problem with the display that i mentioned earlier for the goals add page, its boundaries are very small, i want it as a pop up window **Fixed 2026-08-21** — was a hardcoded `pt-16` guess at status-bar clearance instead of the real safe area; now wrapped in a proper `SafeAreaView`, applies to all 4 onboarding steps. Please re-check.
-- [ ] Step 1: currency picker search works (try typing a currency name and an ISO code); selecting one updates the label
+- [x] Step 1: currency picker search works (try typing a currency name and an ISO code); selecting one updates the label
   - Observations:passed
-- [ ] Step 2: name field is optional — leaving it blank and continuing works
+- [x] Step 2: name field is optional — leaving it blank and continuing works
   - Observations:passed
-- [ ] Step 3: the account form embedded in onboarding works the same as creating an account normally, and it actually creates the account
+- [x] Step 3: the account form embedded in onboarding works the same as creating an account normally, and it actually creates the account
   - Observations:passed
-- [ ] Step 4 (feature intro) "Get Started" drops you into the real app, onboarding never shows again on relaunch
+- [x] Step 4 (feature intro) "Get Started" drops you into the real app, onboarding never shows again on relaunch
   - Observations:passed. the feature description could be improved with listing all the major features of this app, and there must be an option to view the app usage manual from the profile page **Noted 2026-08-20 — the "app usage manual from Profile" part is the same thing as spec.md §5.15 (In-App Info/Tips), already logged as deferred by you earlier. Not touching it now since it'd mean pulling deferred scope forward mid-UAT — happy to do this as its own pass once the UAT sweep is done, unless you want it prioritized sooner.**
-- [ ] Profile → Base Currency: changing it updates the currency picker label immediately
+- [x] Profile → Base Currency: changing it updates the currency picker label immediately
   - Observations:passed
-- [ ] After changing base currency in Profile, every ≈-equivalent figure across the app (Dashboard, Accounts list, Account Detail ring, Transactions, Goals, Categories, Commitments) recalculates against the *new* base currency, not the old one
+- [x] After changing base currency in Profile, every ≈-equivalent figure across the app (Dashboard, Accounts list, Account Detail ring, Transactions, Goals, Categories, Commitments) recalculates against the *new* base currency, not the old one
   - Observations:passed
 
 ### 2. Accounts (§5.1)
-- [ ] Create a new account of each type (savings, wallet, credit card, deposit, investment) — each saves correctly
+- [x] Create a new account of each type (savings, wallet, credit card, deposit, investment) — each saves correctly
   - Observations:passed
-- [ ] Opening balance ≠ 0 shows as an "Opening balance" transaction row; opening balance = 0 does not create a row at all
+- [x] Opening balance ≠ 0 shows as an "Opening balance" transaction row; opening balance = 0 does not create a row at all
   - Observations:Passed
-- [ ] Account currency field rejects anything that isn't exactly 3 letters
+- [x] Account currency field rejects anything that isn't exactly 3 letters
   - Observations:Passed
 - [ ] Credit card account: credit limit and monthly budget fields reject 0/negative values
   - Observations: credit limit and monthly budget fields shows blank as default and if i dont change it and keep it as blank it allows to save the account ; **Fixed 2026-08-20** — credit limit is now required for credit_card accounts (see Triaged). Monthly budget stays optional by design (not every account needs one). Please re-check: try saving a credit card account with credit limit left blank — should now show an error.
-- [ ] Account Detail header pencil icon → opens Edit Account (with delete available there)
+- [x] Account Detail header pencil icon → opens Edit Account (with delete available there)
   - Observations: passed. i added an account as a savings account and added one income and expense transaction, later i edited this account to be a credit card type. this changes the ring behaviour, but the prev transactions i added are not reflected in the ring, it got reset to the credit card limit. even thought these transactions are shows in transactions and in the total in and total out, **Investigated 2026-08-20 — see Triaged "flagged, not fixed" note. Likely correct behavior (a positive running balance = 0 debt owed), and likely connected to the blank-credit-limit bug just above, which is now fixed. Please retry with a real credit limit set and let me know if the ring still looks wrong to you, or if this is actually the behavior you'd expect.**
-- [ ] Deleting an account that has transactions is blocked with a clear message; deleting one that's safe to delete actually removes it
+- [x] Deleting an account that has transactions is blocked with a clear message; deleting one that's safe to delete actually removes it
   - Observations: Passed. after the account is deleted, it shows a blank page with that deleted accounts name with the back navigation button, it should automatically go back to the previous screen, i.e from where the user came to delete this account **Fixed 2026-08-20** — delete now lands directly on the Accounts list instead. **Update 2026-08-20 (2 rounds)**: also fixed a separate bug you hit here — deleting an account with a recurring rule against it threw a raw "FOREIGN KEY constraint failed." First fix blocked with a friendly message, but you correctly found that was a dead end (deleting the recurring transactions in the UI doesn't remove the underlying rule, so the block could never clear) — now those rules are deleted automatically as part of deleting the account, verified safe (no real transaction history is touched). Please re-check.
-- [ ] Account Detail ring: for an account whose currency differs from base currency, shows "≈ {base}" under the main figure; for an account in the base currency, no ≈ line appears
+- [x] Account Detail ring: for an account whose currency differs from base currency, shows "≈ {base}" under the main figure; for an account in the base currency, no ≈ line appears
   - Observations:passed
-- [ ] Account Detail: Carry Forward / Total In / Total Out / Left to Spend row looks correct for the current month
+- [x] Account Detail: Carry Forward / Total In / Total Out / Left to Spend row looks correct for the current month
   - Observations: passed
-- [ ] Account Detail: navigating to a past month updates Balance, Income, Expense correctly (Balance should reflect "as of" that month, not always-today)
+- [x] Account Detail: navigating to a past month updates Balance, Income, Expense correctly (Balance should reflect "as of" that month, not always-today)
   - Observations:passed
 - [ ] Account Detail (current month only): Safe-to-spend/day figure appears and looks sane; disappears/changes appropriately when viewing a past or future month
   - Observations:
 - [ ] Credit card account: debt payoff projection line appears and the number looks plausible
   - Observations:
-- [ ] Account Detail: category/counterpart Breakdown section lists categories with correct totals for the viewed month
+- [x] Account Detail: category/counterpart Breakdown section lists categories with correct totals for the viewed month
   - Observations:I added an expense transaction with category as 'Gift', it shows correclty in the transactions list for the month, but in the breakdown, it shows as shopping Gift Rs. 5000., I added an income transaction with Category as "Salary", it shows in the breakdown as 'cash Salary' and shows the correct amount - the category wise summary for all categories of that transaction type should be correcly shown without stale or wrong data **Fixed 2026-08-20** — the amounts were always correct; the label was showing the category's internal icon slug ("cash", "shopping") as literal text instead of rendering it as an icon. Now renders as an actual icon glyph next to the name. Please re-check.
-- [ ] Accounts list: month-nav arrows work and per-account Income/Expense/Transfers figures update for the selected month
+- [x] Accounts list: month-nav arrows work and per-account Income/Expense/Transfers figures update for the selected month
   - Observations:pass
-- [ ] Accounts list: balance figure per account matches what Account Detail shows for the same period
+- [x] Accounts list: balance figure per account matches what Account Detail shows for the same period
   - Observations:passed
 
 
 ### 3. Transactions (§5.2)
-- [ ] Create an expense, an income, and a transfer between two accounts — all three save and show correctly in the list
+- [x] Create an expense, an income, and a transfer between two accounts — all three save and show correctly in the list
   - Observations:passed
-- [ ] Category is required — submitting without one shows an error instead of silently saving "Uncategorized"
+- [x] Category is required — submitting without one shows an error instead of silently saving "Uncategorized"
   - Observations:passed
-- [ ] Amount must be positive — 0 or negative is rejected
+- [x] Amount must be positive — 0 or negative is rejected
   - Observations:passed
-- [ ] Amount field accepts a math expression (e.g. "1200+350") and evaluates it correctly; the +/−/×/÷ quick-insert buttons work
+- [x] Amount field accepts a math expression (e.g. "1200+350") and evaluates it correctly; the +/−/×/÷ quick-insert buttons work
   - Observations:passed
-- [ ] "+ New category" inline from the transaction form creates a category that's immediately usable and shows up correctly on the Categories screen afterward
+- [x] "+ New category" inline from the transaction form creates a category that's immediately usable and shows up correctly on the Categories screen afterward
   - Observations:passed
-- [ ] Tags: adding a new tag inline and re-selecting an existing tag both work; tag chips show correctly on the transaction row
+- [x] Tags: adding a new tag inline and re-selecting an existing tag both work; tag chips show correctly on the transaction row
   - Observations:passed; but how to get the entire transactions in a particular tag, this feature is not yet build in this app
   i must be able to pull all transactions relating to a tag, there must be a tag section somewhere in the app that lets me see all the tags and see all transactions in a tag when i click that tag name **Built 2026-08-20** — Dashboard now has a "Tags" card (recent tags as chips) with a "More" link to a new full Tags list screen; tapping any tag opens its existing detail page. Please re-check.
 - [ ] Duplicate icon on a transaction row prefills a new transaction with the same details (except date)
   - Observations: duplicates without the account, category, etc not having any default selected, it must be with a default values as per the duplicated transaction, which must be changeable before saving the transaction **Withdrawn 2026-08-21** — user said to leave it. Not pursuing further.
-- [ ] Edit and Delete icons on a transaction row work correctly
+- [x] Edit and Delete icons on a transaction row work correctly
   - Observations:passed
-- [ ] Opening-balance transaction rows cannot be edited/deleted from the normal transaction screen — tapping them redirects to the account's own edit page instead
+- [x] Opening-balance transaction rows cannot be edited/deleted from the normal transaction screen — tapping them redirects to the account's own edit page instead
   - Observations:passed
-- [ ] Transferring money into an account: the inward leg shows up in that account's own transaction list (not just the balance)
+- [x] Transferring money into an account: the inward leg shows up in that account's own transaction list (not just the balance)
   - Observations:passed
-- [ ] Viewing a transfer from the "from" account shows a "-" sign; viewing the same transfer from the "to" account shows a "+"; viewing it from Dashboard/unfiltered Transactions shows it unsigned
+- [x] Viewing a transfer from the "from" account shows a "-" sign; viewing the same transfer from the "to" account shows a "+"; viewing it from Dashboard/unfiltered Transactions shows it unsigned
   - Observations:passed
-- [ ] Transactions list: "This month" / "Custom range" / "All time" segmented control all work, including picking a custom From/To date range
+- [x] Transactions list: "This month" / "Custom range" / "All time" segmented control all work, including picking a custom From/To date range
   - Observations:passed
-- [ ] Transactions list: switching month or account filter actually changes the rows shown (not frozen on whatever loaded first)
+- [x] Transactions list: switching month or account filter actually changes the rows shown (not frozen on whatever loaded first)
   - Observations:passed
-- [ ] SummaryBand's green/red proportional bar looks correct relative to income vs. expense for the selected period
+- [x] SummaryBand's green/red proportional bar looks correct relative to income vs. expense for the selected period
   - Observations:passed
 
 ### 4. Categories & Budgets (§5.3, §5.5)
-- [ ] Create, edit, and delete a category (icon + color + optional monthly budget)
+- [x] Create, edit, and delete a category (icon + color + optional monthly budget)
   - Observations:passed
-- [ ] Category-level monthly budget shows a spend-vs-budget bar on the Categories screen, red when over budget
+- [x] Category-level monthly budget shows a spend-vs-budget bar on the Categories screen, red when over budget
   - Observations:passed; the monthly spent in each category should be shown even if the category budget is not specified. now for non budgeted catgories, the summary of monthly spends is not shown in the categories screen; also the month switcher is not available in the categories tab **Fixed 2026-08-20** — every category now shows its monthly total regardless of budget, and the Income tab's totals (previously always ₹0) now sum correctly. **On the month switcher: resolved 2026-08-21 — user chose to keep the current no-month-nav design (matches the real web app), no change made.**
-- [ ] Account-level Budget Mode toggle (Profile global switch, and any per-account override) actually changes what Account Detail's Budget Mode bar shows
+- [x] Account-level Budget Mode toggle (Profile global switch, and any per-account override) actually changes what Account Detail's Budget Mode bar shows
   - Observations:passed
 
 ### 5. Tags (§5.3a)
-- [ ] Tapping a tag anywhere opens its summary page with the correct total (converted to base currency if needed) and transaction list
+- [x] Tapping a tag anywhere opens its summary page with the correct total (converted to base currency if needed) and transaction list
   - Observations:passed
 
 ### 6. Recurring Transactions (part of §5.2)
-- [ ] Creating a transaction with "Make recurring" turned on generates future occurrences automatically (check the Calendar or a future month in Transactions)
+- [x] Creating a transaction with "Make recurring" turned on generates future occurrences automatically (check the Calendar or a future month in Transactions)
   - Observations:passed
-- [ ] Recurring interval count + unit (day/week/month/year) pills all work and don't overflow the screen
+- [x] Recurring interval count + unit (day/week/month/year) pills all work and don't overflow the screen
   - Observations:passed
-- [ ] Editing a recurring occurrence: choosing "just this one" only changes that occurrence; choosing "this and future" changes it and everything after
+- [x] Editing a recurring occurrence: choosing "just this one" only changes that occurrence; choosing "this and future" changes it and everything after
   - Observations:passed
-- [ ] Deleting a recurring occurrence: same "just this one" vs. "this and future" choice, and both behave correctly
+- [x] Deleting a recurring occurrence: same "just this one" vs. "this and future" choice, and both behave correctly
   - Observations:passed
-- [ ] Recurring transactions show a 🔁 badge on their row
+- [x] Recurring transactions show a 🔁 badge on their row
   - Observations:passed
-- [ ] An optional end date on a recurring rule actually stops generating occurrences after that date
+- [x] An optional end date on a recurring rule actually stops generating occurrences after that date
   - Observations:passed
 
 ### 7. Commitments (§5.16)
-- [ ] Commitments tab lists active recurring rules split into expense/transfer/income sections
+- [x] Commitments tab lists active recurring rules split into expense/transfer/income sections
   - Observations:here also, the icon text is shown along with the transaction details, rest all passed **Fixed 2026-08-20** — same root cause as the Breakdown fix, same fix applied. Please re-check.
-- [ ] Monthly-equivalent amounts look correct for a weekly/yearly recurring rule (not just monthly ones)
+- [x] Monthly-equivalent amounts look correct for a weekly/yearly recurring rule (not just monthly ones)
   - Observations:I added a recurring expense of 100 repeating every week. in commitments it showed as 434.82 **Checked 2026-08-20 — correct, not a bug: 100/week normalized to a monthly figure using the average month length (365.25/12 days ÷ 7 = 4.3482 weeks/month), not a naive ×4 — 100 × 4.3482 = 434.82 exactly. This keeps the monthly figure stable no matter which actual month you're viewing.**
   for recurring transactions, i also want a new feature - i must be able to give recurences like every 1st week, every 2nd day, every 1st friday in a month, etc. **Withdrawn 2026-08-21** — user said to ignore this. Not building.
 - [ ] "% of recurring income committed" figure looks plausible given your recurring rules
   - Observations: this i did not understand how to check in UAT **Explained 2026-08-20** — this line only shows once you have at least one active *recurring income* rule (e.g. a Salary transaction marked "recurring"). Once you have one, it's (recurring expenses + transfers, monthly-equivalent) ÷ (recurring income, monthly-equivalent) × 100.
 
 ### 8. Goals (§5.17)
-- [ ] Goals add page now opens as a proper pop-up/modal with a header (not flush against the top) — this was just fixed, worth a specific re-check
+- [x] Goals add page now opens as a proper pop-up/modal with a header (not flush against the top) — this was just fixed, worth a specific re-check
   - Observations:the goal add page appear as pop-up with a header
   but the goal list page is flush against the top, without a header "Goals" **Fixed 2026-08-20** — `goal/index` was never registered in the Stack (only `new`/`edit` were), so it had no header at all. Added one. Please re-check.
-- [ ] Create a goal (name, target net worth, optional target date)
+- [x] Create a goal (name, target net worth, optional target date)
   - Observations:passed
-- [ ] Progress bar reflects current net worth ÷ target correctly, turns green + "🎉 Goal reached" once hit
+- [x] Progress bar reflects current net worth ÷ target correctly, turns green + "🎉 Goal reached" once hit
   - Observations:passed
-- [ ] Projected-date text is reasonable given your recent net worth trend; "Not currently trending toward this goal" shows when net worth isn't growing
+- [x] Projected-date text is reasonable given your recent net worth trend; "Not currently trending toward this goal" shows when net worth isn't growing
   - Observations:passed
-- [ ] "Behind pace for your target date" warning appears only when it should (projection lands after your target date)
+- [x] "Behind pace for your target date" warning appears only when it should (projection lands after your target date)
   - Observations:passed
-- [ ] Edit and delete a goal
+- [x] Edit and delete a goal
   - Observations:passed
 
 ### 9. Dashboard (§5.8)
-- [ ] Net worth capacity gauge (ring) center figure and ≈-equivalent (if applicable) look correct
+- [x] Net worth capacity gauge (ring) center figure and ≈-equivalent (if applicable) look correct
   - Observations:passed
-- [ ] Net worth trend chart shows a sensible history length (capped to your actual earliest transaction, not always 12 months)
+- [x] Net worth trend chart shows a sensible history length (capped to your actual earliest transaction, not always 12 months)
   - Observations:passed
-- [ ] Asset allocation donut buckets (Liquid/Deposits/Invested) look right; credit card debt is excluded from the donut and shown as its own figure
+- [x] Asset allocation donut buckets (Liquid/Deposits/Invested) look right; credit card debt is excluded from the donut and shown as its own figure
   - Observations:passed
 - [ ] Over-budget banner appears when a category is over its monthly budget, and not otherwise
   - Observations:categories are not shown at all in dashboard **Fixed 2026-08-20** — same icon-slug-as-text bug as Breakdown/Commitments, in the banner's sentence text; dropped the icon from that line. Not fully sure this is what you meant by "not shown at all" though — could you push a category over its monthly budget this month and confirm the banner actually appears with a clean category name? If it still doesn't appear at all, that's a second, different bug I haven't found yet.
-- [ ] Carry Forward / Income / Expense / Credit card debt stat row looks correct for the selected month
+- [x] Carry Forward / Income / Expense / Credit card debt stat row looks correct for the selected month
   - Observations:passed
-- [ ] Embedded calendar month grid on the Dashboard matches the full Calendar screen for the same month
+- [x] Embedded calendar month grid on the Dashboard matches the full Calendar screen for the same month
   - Observations:passed
-- [ ] Accounts card and Goals card (top 3) both look right and link through correctly
+- [x] Accounts card and Goals card (top 3) both look right and link through correctly
   - Observations:passed
-- [ ] Recent Transactions card: inline Edit/Delete icons work directly from the Dashboard
+- [x] Recent Transactions card: inline Edit/Delete icons work directly from the Dashboard
   - Observations:passed
-- [ ] Dashboard month-nav arrows (now icon chevrons, just changed) are easy to see and tap
+- [x] Dashboard month-nav arrows (now icon chevrons, just changed) are easy to see and tap
   - Observations:passed
 
 ### 10. Calendar (part of §5.2)
 - [ ] Calendar screen's month-nav works; each day's expense total looks right
   - Observations: I don't see a calendar screen other than the calendar in the dashboard **Fixed 2026-08-20** — the full Calendar screen already existed but had no link anywhere; added a calendar icon to the Transactions screen's header. Please re-check.
-- [ ] Quick-add from a calendar day (if present) opens a prefilled new-transaction form for that date
+- [x] Quick-add from a calendar day (if present) opens a prefilled new-transaction form for that date
   - Observations:quick add from calendar in dashboard works fine
 
 ### 11. Show/Hide Future Transactions (§5.6)
-- [ ] Toggling this off in Profile (global) or per-account hides future-dated transactions on Account Detail, with a "N hidden" notice
+- [x] Toggling this off in Profile (global) or per-account hides future-dated transactions on Account Detail, with a "N hidden" notice
   - Observations: even after hiding the future transactions in profile, future transactions still show in the dashboard calendar, transactions page, and the account page **Fixed 2026-08-20 for Dashboard + Transactions list + standalone Calendar.** Account Detail turned out fine too — resolved, not a bug (the user had been paging to a future month, where hiding correctly never applies; retested on the actual current month and it passed). All four confirmed correct now: the toggle only ever hides not-yet-happened rows within the month you're currently viewing when that month is the real current month — it never hides an entire future month you've deliberately navigated to.
 
 ### 12. CSV Export (§5.14 — previously verified, quick re-confirm)
-- [ ] Export still works after all the currency/base-currency changes since it was last checked — account filter, date range, and all 9 columns still look right
+- [x] Export still works after all the currency/base-currency changes since it was last checked — account filter, date range, and all 9 columns still look right
   - Observations:passed
 
 ### 13. Profile & Settings (§5.10)
-- [ ] Display name saves and persists after closing/reopening the app
+- [x] Display name saves and persists after closing/reopening the app
   - Observations:passed
-- [ ] Theme toggle (Light/Dark/System) actually changes the app's appearance
+- [x] Theme toggle (Light/Dark/System) actually changes the app's appearance
   - Observations:passed
-- [ ] Budget Mode and Show Future Transactions global switches both work as described above
+- [x] Budget Mode and Show Future Transactions global switches both work as described above
   - Observations:passed
 
 ### 14. Navigation & General UX (§5.9)
-- [ ] All 6 tabs (Dashboard, Accounts, Transactions, Commitments, Categories, Profile) are present and in that order
+- [x] All 6 tabs (Dashboard, Accounts, Transactions, Commitments, Categories, Profile) are present and in that order
   - Observations:yes, but the icons for these are not defined, it now shows an x in a box **Fixed 2026-08-20** — the tabs never had icons set at all (`tabBarIcon` missing), so React Navigation showed its own missing-icon placeholder. Added a proper icon to each tab. Please re-check.
-- [ ] Back-navigation after creating a new account/transaction/category/goal never leaves you on a broken screen or requires a reload
+- [x] Back-navigation after creating a new account/transaction/category/goal never leaves you on a broken screen or requires a reload
   - Observations: passed
-- [ ] New Account / New Transaction / New Category / New Goal / Edit variants of each all open as a pop-up/modal with a header (consistent presentation across all four entities)
+- [x] New Account / New Transaction / New Category / New Goal / Edit variants of each all open as a pop-up/modal with a header (consistent presentation across all four entities)
   - Observations:passed
 
 ### 15. Visual Design / Theming (§5.12)
-- [ ] Switch Profile → Theme to the opposite of what you normally use, then skim every tab once — no invisible text, no jarringly wrong colors, danger/success/accent colors still read clearly
+- [x] Switch Profile → Theme to the opposite of what you normally use, then skim every tab once — no invisible text, no jarringly wrong colors, danger/success/accent colors still read clearly
   - Observations:the tiles are a bit difficult to discern from the background in dark mode, a glass effect would be nice, in both dark and light modes **Resolved 2026-08-21** — will be handled by the user's incoming design system handoff/redesign, not pursued here.
-- [ ] Money figures throughout the app use a monospace/tabular font (numbers align in columns, e.g. in a list)
+- [x] Money figures throughout the app use a monospace/tabular font (numbers align in columns, e.g. in a list)
   - Observations:passed
-- [ ] The bottom-left "Ask (coming soon)" placeholder button never overlaps a screen's own "+" button (bottom-right)
+- [x] The bottom-left "Ask (coming soon)" placeholder button never overlaps a screen's own "+" button (bottom-right)
   - Observations:passed, it can actually be removed, i am not going to build this feature **Removed 2026-08-20** — spec.md §5.7 marked ❌ Dropped, the inert placeholder FAB deleted from the tab layout.
-- [ ] Loading states never show a bare blank screen while data loads; empty lists (e.g. no goals yet, no transactions yet) show a proper empty-state message instead of nothing
+- [x] Loading states never show a bare blank screen while data loads; empty lists (e.g. no goals yet, no transactions yet) show a proper empty-state message instead of nothing
   - Observations:passed
 
 ### 16. Multi-Currency Edge Cases
-- [ ] Create an account in a currency different from your base currency, add a transaction to it, and confirm every screen that shows that account's figures displays both the native amount and the "≈ {base}" conversion
+- [x] Create an account in a currency different from your base currency, add a transaction to it, and confirm every screen that shows that account's figures displays both the native amount and the "≈ {base}" conversion
   - Observations:passed
 - [ ] With no internet connection, currency conversion falls back gracefully (cached rate or a sane default) instead of crashing
   - Observations: cant test this yet as i cannot test without internet
