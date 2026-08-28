@@ -48,10 +48,15 @@ module.exports = {
         pill: "9999px",
       },
       fontFamily: {
-        // Matches the source app's --font-data stack exactly (system
-        // monospace, no custom font package) — see knowledge-transfer.md §4.2
-        // and spec.md §5.12.
-        data: ["ui-monospace", "SF Mono", "Cascadia Mono", "Roboto Mono", "monospace"],
+        // Was a monospace stack (system-only, no custom font package) used
+        // purely as a stand-in for tabular alignment — see knowledge-transfer
+        // .md §4.2 / spec.md §5.12. Erebor's spec calls for Inter (semibold)
+        // on financial figures with `.tabular-figures`, which the app's
+        // existing `tabular-nums` Tailwind class already provides regardless
+        // of font family — so retargeting this one config key to Inter
+        // cascades to every existing `font-data` money display app-wide,
+        // no per-file changes needed.
+        data: ["Inter_600SemiBold"],
         // Erebor design system: Manrope (display/headline numbers) + Inter
         // (body/UI). RN loads each weight as its own font family via
         // expo-font (see app/_layout.tsx), so weights need distinct classes

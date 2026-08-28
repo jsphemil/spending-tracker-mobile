@@ -50,7 +50,7 @@ export function CreditUsageRing({
     >
       <Text className="text-xs text-fg-muted">Owed</Text>
       <Text
-        className={`font-data text-lg font-semibold tabular-nums ${overLimit ? "text-danger" : "text-fg"}`}
+        className={`font-display-xbold text-xl tabular-nums ${overLimit ? "text-danger" : "text-fg"}`}
       >
         {formatMoney(owedMinor, currency)}
       </Text>
