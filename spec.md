@@ -110,13 +110,6 @@ core idea as the original web app, rebuilt as a standalone, sellable,
   project (e.g. their own Supabase project) for closer-to-real-time
   sync across their devices — still not hosted or paid for by the
   developer, since it would be the user's own project
-- **Note on the Claude-powered smart features (section 5.7):** these
-  need a small server-side piece to safely hold the Claude API key
-  (never embed a real API key in app code). This is a stateless request
-  relay, not a database — it never stores or has persistent access to
-  any user's financial data, and is a separate concern from the "who
-  hosts user data" question above
-
 **Dropbox backup implementation, built and fully verified on-device
 2026-08-28** (✅ Built & Verified in the Status Dashboard):
 - **OAuth: PKCE flow via `expo-auth-session`/`expo-web-browser`**, App-
@@ -196,7 +189,7 @@ password. Identity is simply tied to the device itself.
 Everything below is the "must-have" list. Anything not listed here
 (see section 6) is intentionally left out of v1 and can be added later.
 
-### 5.1 Accounts 🚧 In Progress
+### 5.1 Accounts ✅ Built & Verified
 - Create, edit, delete accounts (e.g. "Cash", "HDFC Salary", "Credit Card")
 - Each account has: a name, a type, a color or icon, and a running balance
 - Supported account types: Savings, Investment, Deposit (FD/RD-style),
@@ -247,7 +240,7 @@ Everything below is the "must-have" list. Anything not listed here
   its internal name slug as literal text (e.g. "cash Salary" → 🪙 Salary) —
   see backlog.md for full detail.
 
-### 5.2 Transactions 🚧 In Progress
+### 5.2 Transactions ✅ Built & Verified
 
 **Every transaction captures:** amount, date, category, account, and an
 optional description.
@@ -296,7 +289,7 @@ optional description.
 - **Calendar view:** a calendar where you can add a transaction on a
   specific day, and each day shows that day's total expenses at a glance
 
-### 5.3 Categories 🚧 In Progress
+### 5.3 Categories ✅ Built & Verified
 - Separate lists for Expense categories and Income categories
 - Create, edit, delete categories
 - Each category has a name, an icon, **and a color** (chosen when the
@@ -305,7 +298,7 @@ optional description.
   new users (e.g. Shopping, Eating Out, Travel, Rent, Salary), which they
   can change
 
-### 5.3a Tags 🚧 In Progress
+### 5.3a Tags ✅ Built & Verified
 - A **separate, optional label** that can be added to any transaction
   (income, expense, or transfer) at entry time — alongside account,
   category, date, etc. A transaction keeps its normal account and
@@ -343,7 +336,7 @@ optional description.
   list screen** (`/tag`, alphabetical, every tag that exists) for
   anything not recent enough to show on the Dashboard card.
 
-### 5.4 Spending Summary 🚧 In Progress
+### 5.4 Spending Summary ✅ Built & Verified
 - Pick a month (or "all accounts" vs. a single account) and see:
   - Total income for the period
   - Total expenses for the period, broken down by category (largest first)
@@ -371,7 +364,7 @@ optional description.
 - **Number format:** Indian numbering system throughout (e.g. ₹1,53,168.00,
   not ₹153,168.00)
 
-### 5.5 Budget Mode 🚧 In Progress
+### 5.5 Budget Mode ✅ Built & Verified
 - A toggle in **Settings**, available both **globally** (whole app) and
   **per account**
 - **Budget limits can be set at both the account level and the category
@@ -391,7 +384,7 @@ optional description.
   category's row in the Categories list, red when spending exceeds the
   budget. Built 2026-08-12, on-device verification pending.
 
-### 5.6 Show/Hide Future Transactions 🚧 In Progress
+### 5.6 Show/Hide Future Transactions ✅ Built & Verified
 - A toggle that controls whether transactions dated in the future show
   up in lists/summaries
 - Can be set **globally** or **per account**, same pattern as Budget Mode
@@ -415,7 +408,7 @@ optional description.
   was removed the same day, along with the bottom-left/right FAB-
   collision-avoidance logic it existed for.
 
-### 5.8 Dashboard (Landing Page) 🚧 In Progress
+### 5.8 Dashboard (Landing Page) ✅ Built & Verified
 - The first screen you land on; a persistent month-nav pill at the top
   scopes every figure below to the viewed month (not just "always today")
 - **Rebuilt 2026-08-12 to match the real app exactly**, superseding the
@@ -448,7 +441,7 @@ optional description.
     tags as tappable chips, "More" link to the full Tags list (`/tag`)
 - Acts as the "home base" you can always return to
 
-### 5.9 Navigation 🚧 In Progress
+### 5.9 Navigation ✅ Built & Verified
 - A persistent bottom tab bar to move between the main sections —
   **6 tabs**: Dashboard, Accounts, Transactions, Commitments (§5.16),
   Categories, Profile, each with its own icon (added 2026-08-20 — UAT
@@ -460,13 +453,13 @@ optional description.
 - Goals (§5.17) is deliberately not a tab, matching the real app — it's
   reached via the Dashboard's Goals card
 
-### 5.10 Profile Page 🚧 In Progress
+### 5.10 Profile Page ✅ Built & Verified
 - No account/login (see section 4), so no email, password, or sign-out —
   this page becomes local app preferences instead: a local display name
   (optional, cosmetic only), Dropbox connection status/management,
   currency/date-format preferences
 
-### 5.12 Visual Design System 🚧 In Progress
+### 5.12 Visual Design System (superseded by §5.18) ✅ Built & Verified
 
 **Decided 2026-08-11: full port of the source web app's design language**,
 per `knowledge-transfer.md` §4 — supersedes the earlier "dark mode /
@@ -546,7 +539,7 @@ now stale and kept only for history.
   account, but that account can still be changed there before the
   transaction is confirmed — the widget's account is a default, not a lock
 
-### 5.13 First-Run Onboarding & Base Currency 🚧 In Progress
+### 5.13 First-Run Onboarding & Base Currency ✅ Built & Verified
 - **Decided 2026-08-12.** The real web app hardcodes `INR` as the base
   currency everywhere (`BASE_CURRENCY = "INR"` in its Dashboard,
   Transactions, Categories, and `CurrencyAmount` — it's a single-market,
@@ -654,7 +647,7 @@ now stale and kept only for history.
   features in more depth than the one-time onboarding intro (§5.13) does.
   No phase assigned yet.
 
-### 5.16 Commitments 🚧 In Progress
+### 5.16 Commitments ✅ Built & Verified
 - **New, discovered during the 2026-08-12 repo comparison** — not in the
   original spec, since the earlier knowledge-transfer summary this app
   started from missed it entirely.
@@ -674,7 +667,7 @@ now stale and kept only for history.
 - Built 2026-08-12: `app/(tabs)/commitments.tsx`,
   `db/queries/recurringRules.ts`. On-device verification pending.
 
-### 5.17 Goals 🚧 In Progress
+### 5.17 Goals ✅ Built & Verified
 - **New, discovered during the 2026-08-12 repo comparison** — not in the
   original spec, same as Commitments.
 - A net-worth target (name, target amount in the base currency, optional
@@ -788,12 +781,11 @@ add-on — see section 3.
 
 ## 7. Open questions / things to decide
 
-- [ ] **Monetization:** one-time purchase for the core app confirmed;
-      how exactly should the Claude-powered features (section 5.7) be
-      sold — separate one-time unlock, or a subscription? Still undecided.
-- [ ] **Where does the small Claude API proxy (section 3) get hosted?**
-      Needs to be cheap/free at low volume — a serverless function
-      (Vercel, Cloudflare Workers) is the likely fit, but not yet chosen.
+- [x] ~~Monetization: how should the Claude-powered features (§5.7) be
+      sold~~ — **moot, 2026-08-28.** §5.7 was dropped entirely
+      2026-08-20; there's no Claude feature left to price or host a
+      proxy for. One-time purchase for the core app is still the
+      confirmed direction (see §9 Monetization).
 - [ ] **Which cloud backup providers beyond Dropbox, if any, and in what
       order?** (Google Drive, iCloud)
 - [ ] **App Store / Play Store submission specifics** — Play Store side
