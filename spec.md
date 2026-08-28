@@ -927,12 +927,15 @@ Claude smart features, analytics, IAP)._
       recentered programmatically to fit Android's adaptive-icon safe
       zone (verified via a circle-mask composite preview — no
       clipping). `app.json`'s `adaptiveIcon.backgroundColor` updated
-      to `#4c7dff` to match. **Needs a native rebuild** (`expo
-      prebuild --clean` + `expo run:android`) before the new icon
-      shows up on-device — app icons are baked in at build time, not
-      Metro-reloadable.
-- [ ] Feature graphic (1024×500), 2-8
-      screenshots — not yet done, see `store-assets-guide.md`.
+      to `#4c7dff` to match. Native rebuild done same day — new icon
+      confirmed live on the user's device.
+- [x] **Feature graphic — done 2026-08-28.** `assets/store/feature-graphic.png`
+      (1024×500, RGB, no alpha). First draft used an unrelated orange
+      dot-pyramid mark that didn't match the real app icon — caught in
+      review, regenerated in Claude Design using the actual icon file
+      as reference; now uses the same chevron glyph and brand
+      gradient as `assets/icon.png`.
+- [ ] 2-8 screenshots — not yet done, see `store-assets-guide.md`.
 - [x] Title (≤30 chars) / short description (≤80 chars) / full
       description (≤4,000 chars) — **drafted 2026-08-28**, see
       `store-listing.md`. Product name decided 2026-08-28: **Erebor
