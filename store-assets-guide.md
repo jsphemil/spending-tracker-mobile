@@ -145,7 +145,7 @@ gradient glow, with a short marketing caption above or beside it
 (1 line, e.g. "See your whole net worth at a glance" for the
 dashboard). Export at 1080x2340px, no transparency. Keep the actual
 app screenshot content unedited and fully legible — don't alter or
-redraw the UI itself.
+redraw the UI itself. Change the account and transactions details such as names, values, etc.
 ```
 Repeat per screenshot, swapping the caption for something specific to
 that screen.

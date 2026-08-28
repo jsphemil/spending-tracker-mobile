@@ -869,14 +869,14 @@ With features and visual design both done, what's left before this is
 genuinely ready to ship is almost entirely **§9 (Play Store Launch
 Readiness)** — not app code:
 
-1. Add a README.md (per backlog.md's Triaged section) — still not
-   done, deferred until the app was "fully complete," which it now is.
-2. Work through §9 top to bottom: store listing assets (icon,
-   screenshots, feature graphic — none exist yet), a hosted privacy
-   policy, the Data Safety form, a Google Play Developer account, and
-   — the single longest lead-time item — the mandatory 12-tester/
-   14-day closed testing track, which can start as soon as a stable
-   build exists rather than waiting for every last checklist box.
+1. ~~Add a README.md~~ — done.
+2. Work through §9 top to bottom: ~~store listing assets (icon,
+   screenshots, feature graphic)~~ — done 2026-08-28, ~~a hosted
+   privacy policy~~ — done. Still open: the Data Safety form, a Google
+   Play Developer account, Content Rating/Target Audience, and — the
+   single longest lead-time item — the mandatory 12-tester/14-day
+   closed testing track, which can start as soon as a stable build
+   exists rather than waiting for every last checklist box.
 3. Monetization (one-time purchase, confirmed direction) still needs
    an actual implementation decision and `expo-iap`/RevenueCat
    integration — currently just a §7 open question, not started.
@@ -935,7 +935,22 @@ Claude smart features, analytics, IAP)._
       review, regenerated in Claude Design using the actual icon file
       as reference; now uses the same chevron glyph and brand
       gradient as `assets/icon.png`.
-- [ ] 2-8 screenshots — not yet done, see `store-assets-guide.md`.
+- [x] **Screenshots — done 2026-08-28.** 7 phone screenshots at
+      `assets/store/screenshots/` (1080×2340, RGB, no alpha), covering
+      Dashboard (net worth, asset allocation, accounts card),
+      Accounts, Transactions, Categories, and Profile — each a real
+      screenshot in a device frame with a marketing caption, per
+      `store-assets-guide.md`. Two review rounds caught real defects
+      before these shipped: (1) the first batch had a systemic
+      double-exposure/ghosting artifact on every image (unrelated
+      content bleeding through near the tab bar) — regenerated; (1a)
+      that same first batch leaked the user's **real personal Dropbox
+      email** in the Profile screenshot's ghosted layer — fixed by
+      both removing the ghosting and anonymizing the shown email to
+      `you@example.com`; (2) two of the regenerated screenshots
+      (allocation legend, account list) had text wrapping and
+      overlapping the line below it — fixed with a targeted spacing
+      prompt, verified clean on the third pass.
 - [x] Title (≤30 chars) / short description (≤80 chars) / full
       description (≤4,000 chars) — **drafted 2026-08-28**, see
       `store-listing.md`. Product name decided 2026-08-28: **Erebor
