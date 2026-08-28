@@ -913,10 +913,26 @@ Claude smart features, analytics, IAP)._
       reflecting this as a closed-source commercial product.
 
 ### Store listing
-- [ ] App icon (512×512), feature graphic (1024×500), 2-8
-      screenshots — none exist yet. `assets/` currently only has the
-      in-app-bundle icon set (adaptive icon layers, splash, favicon),
-      not dedicated store-listing assets.
+- [x] **App icon — done 2026-08-28.** Designed in Claude Design (dark
+      glassy-neon mountain-peak glyph on the brand gradient, per
+      `store-assets-guide.md`), exported text-free after an initial
+      version with a wordmark was rejected for illegibility at small
+      sizes. Play Store listing icon at `assets/store/icon-512.png`
+      (512×512, RGBA PNG). Also regenerated the in-app icon set from
+      it: `assets/icon.png` (1024×1024, iOS/general), Android adaptive
+      icon layers (`assets/android-icon-foreground.png`,
+      `-background.png` — the brand gradient recreated at full bleed,
+      `-monochrome.png` — a white silhouette for Android 13+ themed
+      icons), and `assets/favicon.png`. The glyph was rescaled/
+      recentered programmatically to fit Android's adaptive-icon safe
+      zone (verified via a circle-mask composite preview — no
+      clipping). `app.json`'s `adaptiveIcon.backgroundColor` updated
+      to `#4c7dff` to match. **Needs a native rebuild** (`expo
+      prebuild --clean` + `expo run:android`) before the new icon
+      shows up on-device — app icons are baked in at build time, not
+      Metro-reloadable.
+- [ ] Feature graphic (1024×500), 2-8
+      screenshots — not yet done, see `store-assets-guide.md`.
 - [x] Title (≤30 chars) / short description (≤80 chars) / full
       description (≤4,000 chars) — **drafted 2026-08-28**, see
       `store-listing.md`. Product name decided 2026-08-28: **Erebor
