@@ -62,6 +62,12 @@ core idea as the original web app, rebuilt as a standalone, sellable,
 - **Mobile only** — iOS and Android, distributed through the App Store
   and Play Store. No web/browser version of this product (that's what
   the original web app already covers, kept separately for personal use).
+- **Launch sequencing decided 2026-08-28: Android first, iOS deferred.**
+  All current publishing work (developer account, closed testing, store
+  assets) targets Play Store only. No iOS-specific work has started —
+  no Apple Developer account, no App Store Connect, no iOS build ever
+  tested. iOS is a follow-up phase once Android ships, not dropped from
+  v1 scope entirely, just not simultaneous.
 - **Recommended tech stack: Expo (React Native) + TypeScript.**
   Reasoning: same language as the web app, so existing TypeScript
   knowledge carries over directly; purpose-built for native mobile
@@ -788,9 +794,11 @@ add-on — see section 3.
       confirmed direction (see §9 Monetization).
 - [ ] **Which cloud backup providers beyond Dropbox, if any, and in what
       order?** (Google Drive, iCloud)
-- [ ] **App Store / Play Store submission specifics** — Play Store side
-      now tracked in detail in §9 (Play Store Launch Readiness); iOS/App
-      Store equivalent still not scoped out.
+- [x] **App Store / Play Store submission specifics** — Play Store side
+      tracked in detail in §9 (Play Store Launch Readiness). iOS/App
+      Store equivalent **deliberately deferred 2026-08-28** — Android
+      ships first, iOS is a follow-up phase (see §2 Platform); not
+      scoped out further until that phase starts.
 - [ ] (Add your own notes here)
 
 ---
@@ -977,33 +985,38 @@ Claude smart features, analytics, IAP)._
       Developer account existing first).
 
 ### Monetization
-- [ ] §7 already flags "one-time purchase" as confirmed but unscoped
-      (Claude features' pricing model still undecided). Not yet
-      built: no `expo-iap`/RevenueCat in `package.json`. When it is
-      built: must go through Google Play Billing (not
-      Stripe/Razorpay/etc. — grounds for rejection), needs a Restore
-      Purchases flow, needs the Payments Merchant account (separate
-      verification queue from the developer-account ID check, start
-      early), and needs testing via an EAS dev-client build (IAP
-      can't be tested in Expo Go).
+- [x] **Resolved 2026-08-28: simple paid app, no in-app purchases.**
+      Now that §5.7 (Smart Features, the only feature that ever needed
+      a separate unlock) is dropped, there's nothing left to sell
+      beyond the core app itself. This means: **no `expo-iap`/
+      RevenueCat integration and no Restore Purchases flow needed** —
+      a one-time purchase price is set directly in Play Console's
+      Pricing & Distribution page for the app listing, a pure Play
+      Console config step with zero code dependency. Whether Play
+      Console still requires some form of payments-profile/Merchant
+      KYC just to set a price on a paid listing (separate from IAP) is
+      a Play Console policy question, not confirmable from this repo
+      — see the Payments Merchant item below.
 
 ### Accounts & process
 - [ ] Google Play Developer account ($25, individual, government-ID
       verification, few days to a week) — **in progress 2026-08-28**,
       user has started sign-up; step-by-step in `closed-testing-guide.md`.
-- [ ] Google Payments Merchant account — **deliberately deferred
-      2026-08-28.** The user started this (Play Console prompted for
-      it while setting up payments) and hit BillDesk's KYC form asking
-      for a live Website URL / Mobile App APK URL — neither exists yet
-      (app isn't uploaded to Play Console, let alone public), so
-      there's nothing real to enter. Decided to pause this rather than
-      fill it with placeholders: (1) it isn't needed for closed
-      testing at all — that runs on a free listing with zero payments
-      setup; (2) monetization (free/paid/IAP) still isn't decided, so
-      doing payment-provider KYC now would be for a business model
-      that doesn't exist yet. Revisit once the app has a real Play
-      Store presence **and** a monetization decision is made — not
-      before.
+- [ ] **Google Payments Merchant account — not needed yet, revisited
+      2026-08-28.** The user had started this (Play Console prompted
+      for it while poking at payments setup) and hit BillDesk's KYC
+      form asking for a live Website URL / Mobile App APK URL that
+      didn't exist yet — paused pending a monetization decision. Now
+      that monetization is resolved (simple one-time-purchase paid
+      listing, no IAP/subscriptions — see Monetization above), the
+      `expo-iap`/RevenueCat-specific reason for this account is gone.
+      **Not independently verified whether Play Console still requires
+      a payments profile just to set a price on a paid app listing at
+      all** (separate from IAP) — that's a Play Console policy
+      question, not something confirmable from this repo. Revisit when
+      actually setting the app's price in Play Console; if prompted
+      there, this is that same flow, now with a real Play Store
+      listing to reference in the KYC form.
 - [ ] **Closed testing (12 opted-in testers, 14 continuous days).**
       Mandatory for personal developer accounts created after Nov
       2023, and the single longest lead-time item in the whole
