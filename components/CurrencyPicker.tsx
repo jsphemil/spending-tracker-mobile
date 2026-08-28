@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { FlatList, Modal, Pressable, Text, TextInput, View } from "react-native";
+import { FlatList, Modal, Pressable, Text, View } from "react-native";
+import { Input } from "./ui/Input";
 
 import { getSupportedCurrencies, type CurrencyInfo } from "../services/currency";
 import { useThemeColors } from "../theme/palette";
@@ -58,7 +59,7 @@ export function CurrencyPicker({ value, onChange, label = "Currency" }: Currency
               <Text className="text-accent">Done</Text>
             </Pressable>
           </View>
-          <TextInput
+          <Input
             value={query}
             onChangeText={setQuery}
             placeholder="Search by code or name"

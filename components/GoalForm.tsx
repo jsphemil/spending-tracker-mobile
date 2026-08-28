@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { Pressable, ScrollView, Text, View } from "react-native";
+import { Input } from "./ui/Input";
 import DateTimePicker from "@react-native-community/datetimepicker";
 
 import type { GoalInput } from "../db/actions/goals";
@@ -51,7 +52,7 @@ export function GoalForm({ initialValues, onSubmit, submitLabel }: GoalFormProps
     <ScrollView className="flex-1 bg-bg" contentContainerStyle={{ padding: 16, gap: 20 }}>
       <View className="gap-2">
         <Text className="text-sm font-medium text-fg-muted">Goal name</Text>
-        <TextInput
+        <Input
           value={name}
           onChangeText={setName}
           placeholder="e.g. Emergency fund, House down payment"
@@ -62,7 +63,7 @@ export function GoalForm({ initialValues, onSubmit, submitLabel }: GoalFormProps
 
       <View className="gap-2">
         <Text className="text-sm font-medium text-fg-muted">Target net worth (₹)</Text>
-        <TextInput
+        <Input
           value={targetText}
           onChangeText={setTargetText}
           keyboardType="decimal-pad"

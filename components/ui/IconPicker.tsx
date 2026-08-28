@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
-import { Pressable, Text, TextInput, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
+import { Input } from "./Input";
 
 import { ALL_ICON_OPTIONS, ICON_LIBRARY } from "../../constants/iconLibrary";
 import { useThemeColors } from "../../theme/palette";
@@ -36,7 +37,7 @@ export function IconPicker({ value, onChange, label = "Icon" }: IconPickerProps)
         {label}
         {selectedLabel ? ` · ${selectedLabel}` : ""}
       </Text>
-      <TextInput
+      <Input
         value={query}
         onChangeText={setQuery}
         placeholder="Search icons…"

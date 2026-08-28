@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { ScrollView, Text, TextInput, View } from "react-native";
+import { ScrollView, Text, View } from "react-native";
+import { Input } from "./ui/Input";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { AccountForm } from "./AccountForm";
@@ -71,7 +72,7 @@ export function OnboardingFlow({ settings }: { settings: Settings }) {
           </Text>
           <View className="gap-2">
             <Text className="text-sm font-medium text-fg-muted">Name (optional)</Text>
-            <TextInput
+            <Input
               value={name}
               onChangeText={setName}
               placeholder="Your name"

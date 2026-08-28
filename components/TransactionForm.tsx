@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { Alert, Pressable, ScrollView, Switch, Text, TextInput, View } from "react-native";
+import { Alert, Pressable, ScrollView, Switch, Text, View } from "react-native";
+import { Input } from "./ui/Input";
 import DateTimePicker from "@react-native-community/datetimepicker";
 
 import { AmountOperatorRow } from "./AmountOperatorRow";
@@ -223,7 +224,7 @@ export function TransactionForm({
 
       <View className="gap-2">
         <Text className="text-sm font-medium text-fg-muted">Amount</Text>
-        <TextInput
+        <Input
           value={amountText}
           onChangeText={setAmountText}
           keyboardType="decimal-pad"
@@ -305,7 +306,7 @@ export function TransactionForm({
           </View>
           {addingCategory && (
             <View className="flex-row gap-2">
-              <TextInput
+              <Input
                 value={newCategoryName}
                 onChangeText={setNewCategoryName}
                 placeholder="Category name"
@@ -345,7 +346,7 @@ export function TransactionForm({
 
       <View className="gap-2">
         <Text className="text-sm font-medium text-fg-muted">Description (optional)</Text>
-        <TextInput
+        <Input
           value={description}
           onChangeText={setDescription}
           placeholder="Add a note"
@@ -406,7 +407,7 @@ export function TransactionForm({
               <View className="gap-2">
                 <View className="flex-row items-center gap-2">
                   <Text className="text-sm text-fg-muted">Repeat every</Text>
-                  <TextInput
+                  <Input
                     value={intervalCountText}
                     onChangeText={setIntervalCountText}
                     keyboardType="number-pad"

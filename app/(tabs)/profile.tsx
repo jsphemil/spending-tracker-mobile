@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Pressable, ScrollView, Switch, Text, TextInput, View } from "react-native";
+import { Pressable, ScrollView, Switch, Text, View } from "react-native";
+import { Input } from "../../components/ui/Input";
 
 import { CurrencyPicker } from "../../components/CurrencyPicker";
 import { ExportTransactionsForm } from "../../components/ExportTransactionsForm";
@@ -22,7 +23,7 @@ export default function ProfileScreen() {
     <ScrollView className="flex-1 bg-bg" contentContainerStyle={{ padding: 16, paddingBottom: TAB_BAR_CLEARANCE, gap: 24 }}>
       <View className="gap-2">
         <Text className="text-sm font-medium text-fg-muted">Display Name (optional)</Text>
-        <TextInput
+        <Input
           value={nameValue}
           onChangeText={(text) => {
             setEditedName(true);

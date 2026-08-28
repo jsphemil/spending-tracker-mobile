@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { Pressable, ScrollView, Text, View } from "react-native";
+import { Input } from "./ui/Input";
 import DateTimePicker from "@react-native-community/datetimepicker";
 
 import { AmountOperatorRow } from "./AmountOperatorRow";
@@ -169,7 +170,7 @@ export function AccountForm({
     <ScrollView className="flex-1 bg-bg" contentContainerStyle={{ padding: 16, gap: 20 }}>
       <View className="gap-2">
         <Text className="text-sm font-medium text-fg-muted">Name</Text>
-        <TextInput
+        <Input
           value={name}
           onChangeText={setName}
           placeholder="e.g. HDFC Salary"
@@ -240,7 +241,7 @@ export function AccountForm({
             </Pressable>
           ))}
         </View>
-        <TextInput
+        <Input
           value={currency}
           onChangeText={setCurrency}
           autoCapitalize="characters"
@@ -254,7 +255,7 @@ export function AccountForm({
       {type === "credit_card" && (
         <View className="gap-2">
           <Text className="text-sm font-medium text-fg-muted">Credit Limit</Text>
-          <TextInput
+          <Input
             value={creditLimitText}
             onChangeText={setCreditLimitText}
             keyboardType="decimal-pad"
@@ -267,7 +268,7 @@ export function AccountForm({
 
       <View className="gap-2">
         <Text className="text-sm font-medium text-fg-muted">Opening Balance</Text>
-        <TextInput
+        <Input
           value={openingBalanceText}
           onChangeText={setOpeningBalanceText}
           keyboardType="numeric"
@@ -310,7 +311,7 @@ export function AccountForm({
               <Text className="text-sm font-medium text-fg-muted">
                 Monthly Budget
               </Text>
-              <TextInput
+              <Input
                 value={budgetMonthlyText}
                 onChangeText={setBudgetMonthlyText}
                 keyboardType="decimal-pad"

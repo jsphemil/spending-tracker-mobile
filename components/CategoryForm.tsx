@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { Pressable, ScrollView, Text, View } from "react-native";
+import { Input } from "./ui/Input";
 
 import { ALL_ICON_OPTIONS } from "../constants/iconLibrary";
 import { COLOR_PALETTE } from "../constants/colorPalette";
@@ -59,7 +60,7 @@ export function CategoryForm({ initialValues, onSubmit, submitLabel }: CategoryF
     <ScrollView className="flex-1 bg-bg" contentContainerStyle={{ padding: 16, gap: 20 }}>
       <View className="gap-2">
         <Text className="text-sm font-medium text-fg-muted">Name</Text>
-        <TextInput
+        <Input
           value={name}
           onChangeText={setName}
           placeholder="e.g. Groceries"
@@ -108,7 +109,7 @@ export function CategoryForm({ initialValues, onSubmit, submitLabel }: CategoryF
           <Text className="text-sm font-medium text-fg-muted">
             Monthly Budget (₹, optional)
           </Text>
-          <TextInput
+          <Input
             value={budgetText}
             onChangeText={setBudgetText}
             keyboardType="decimal-pad"

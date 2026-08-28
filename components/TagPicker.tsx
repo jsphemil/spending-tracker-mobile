@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Pressable, Text, TextInput, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
+import { Input } from "./ui/Input";
 
 import { findOrCreateTag } from "../db/actions/tags";
 import { useTags } from "../db/queries/tags";
@@ -52,7 +53,7 @@ export function TagPicker({ selectedTagIds, onChange }: TagPickerProps) {
         })}
       </View>
       <View className="flex-row gap-2">
-        <TextInput
+        <Input
           value={newTagName}
           onChangeText={setNewTagName}
           placeholder="New tag"
