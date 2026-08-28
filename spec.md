@@ -1006,10 +1006,11 @@ Claude smart features, analytics, IAP)._
       Mandatory for personal developer accounts created after Nov
       2023, and the single longest lead-time item in the whole
       process. **Started 2026-08-28** — see `closed-testing-guide.md`
-      for the full walkthrough. First production AAB kicked off via
-      `eas build --platform android --profile production` in
-      parallel with the developer-account wait, so it's ready the
-      moment a Play Console app exists to upload it to.
+      for the full walkthrough. First production AAB built 2026-08-28
+      via `eas build --platform android --profile production`
+      (versionCode 2), ready to upload the moment a Play Console app
+      exists: https://expo.dev/artifacts/eas/a-XWPkXk4p5iYVT7JamaajK7gMVl1vP_vBU9ALhJEO0.aab
+      (build logs: https://expo.dev/accounts/jsphemil/projects/spending-tracker-mobile/builds/a58ff3f9-d2fc-4227-957e-53e50266008e).
 
 ---
 *Once this file reflects what you want, the next step is setting up a
