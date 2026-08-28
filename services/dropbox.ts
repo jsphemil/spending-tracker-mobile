@@ -123,8 +123,11 @@ export async function connectDropbox(settingsId: number): Promise<string> {
   );
 
   const accountRes = await fetch(DROPBOX_ACCOUNT_ENDPOINT, {
+    // No body/Content-Type: this endpoint takes no arguments, and
+    // Dropbox's API returns 400 if a JSON Content-Type is declared with
+    // an empty body (it tries to parse the body as JSON and fails).
     method: "POST",
-    headers: { Authorization: `Bearer ${tokenResult.accessToken}`, "Content-Type": "application/json" },
+    headers: { Authorization: `Bearer ${tokenResult.accessToken}` },
   });
   if (!accountRes.ok) throw new Error(`Couldn't read Dropbox account info (${accountRes.status})`);
   const account = (await accountRes.json()) as { email: string };

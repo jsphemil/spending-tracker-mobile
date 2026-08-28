@@ -29,7 +29,7 @@ pushed to a later phase) · ❌ Dropped (cut from scope).
 | §5.7 | Smart Features (Claude) | ❌ Dropped | User confirmed 2026-08-20 this isn't getting built — inert FAB placeholder removed same day |
 | §5.8 | Dashboard | ✅ Built & Verified | Full rebuild (net worth gauge, trend chart, asset allocation donut, over-budget banner, embedded calendar, Accounts/Goals/Recent Transactions/Tags cards) + UAT fixes (icon-as-text banner bug, Show-Future-Transactions wiring). UAT checklist §9 confirms the gauge, trend chart, donut, stat row, calendar, and cards all pass. The over-budget banner itself only got a partial re-check ("please push a category over budget and confirm the banner text is clean") — worth one more explicit look, though the underlying bug (icon-as-text) is fixed and visually reconfirmed since. |
 | §5.9 | Navigation | ✅ Built & Verified | 6 tabs (Dashboard, Accounts, Transactions, Commitments, Categories, Profile) with icons — UAT checklist §14 confirms, and every screenshot from the 2026-08-28 design-refresh session shows tab icons rendering correctly (now Lucide icons, see §5.18). |
-| §5.10 | Profile Page | ✅ Built & Verified | Display name, Budget Mode/Show Future Transactions global switches, Base Currency all confirmed via UAT checklist §13. Dropbox section stays an inert placeholder by design — that's §3's scope, tracked separately as deferred, not a Profile bug. The Light/Dark/System theme toggle described in the original spec text was **removed 2026-08-28** as part of §5.18's dark-only redesign — see that section. |
+| §5.10 | Profile Page | ✅ Built & Verified | Display name, Budget Mode/Show Future Transactions global switches, Base Currency all confirmed via UAT checklist §13. Dropbox section (connect/backup/restore) shipped and was verified on-device 2026-08-28 — see §3. The Light/Dark/System theme toggle described in the original spec text was **removed 2026-08-28** as part of §5.18's dark-only redesign — see that section. |
 | §5.11 | Home Screen Widget | ⏸️ Deferred | Not started. |
 | §5.12 | Visual Design System (superseded) | ✅ Built & Verified | The dark-first token theme / monospace-tabular / gauge-over-pie system described here shipped and was verified (Phases 1-3, UAT checklist §15). **Superseded 2026-08-28 by §5.18** — the token *values*, glass-card ask from UAT §15 ("a glass effect would be nice"), and the whole visual language were replaced wholesale by the Erebor redesign. Kept here for history; §5.18 is now the authoritative visual-design status. |
 | §5.13 | First-Run Onboarding & Base Currency | ✅ Built & Verified | Onboarding flow + gate, live per-install base currency (not hardcoded INR), searchable ~170-currency picker. UAT checklist §1 confirms every step, the currency-picker search, and base-currency-change recalculation across the whole app — all pass (including the 2026-08-21 SafeAreaView fix for the onboarding-flush-to-top bug). |
@@ -38,7 +38,7 @@ pushed to a later phase) · ❌ Dropped (cut from scope).
 | §5.16 | Commitments | ✅ Built & Verified | New tab, monthly-normalized recurring rules, % of recurring income committed. UAT checklist §7 confirms the sections and monthly-equivalent math (verified correct, not a bug — average-month normalization). Complex recurrence patterns (nth-weekday-of-month etc.) were requested then **withdrawn by the user 2026-08-21** ("it can be ignored") — not building. The "% of recurring income" line was explained to the user but never independently re-confirmed against their own live data — low-stakes, worth a glance next time it's relevant. |
 | §5.17 | Goals | ✅ Built & Verified | Goal CRUD, trailing-6-month pace projection, behind-pace flag, Dashboard card. UAT checklist §8 confirms creation, progress bar, projection text, and behind-pace warning — all pass. |
 | §5.18 | Design Refresh — "Erebor" | ✅ Built & Verified | **New, 2026-08-28.** Complete visual redesign sourced from a separate Claude Design project the user built ("Erebor Wealth App Design System," dark glassy-neon fintech language), applied as a presentational-only pass on the `design-refresh` branch and merged to `master` the same day. See the full write-up below (§5.18) for what shipped, what was explicitly decided, and the one behavior change (AccountForm's icon became user-selectable, at the user's explicit request). Verified via multiple rounds of on-device testing on the user's Pixel 10, including native rebuilds for the new `expo-linear-gradient`/`expo-font` dependencies. |
-| §3 | Dropbox Backup/Restore | 🚧 In Progress | **Code-complete 2026-08-28.** PKCE OAuth connect flow (`services/dropbox.ts`, `expo-auth-session`+`expo-web-browser`, App-folder-scoped access), tokens in `expo-secure-store` (never the unencrypted `settings` table), `VACUUM INTO`-based consistent snapshot backup (not a raw file copy or JSON export), check-on-app-open "automatic daily" backup (a true OS background task is unreliable on mobile — see the feature's own write-up below), manual backup, and a restore picker (`app/backup/restore.tsx`) that replaces the local DB file and prompts a manual app restart. Blocked on the user creating a Dropbox App Console app and providing the App Key (`app.json`'s `extra.dropboxAppKey` is currently a placeholder) before the real OAuth flow, upload/download, and restore can be verified on-device. |
+| §3 | Dropbox Backup/Restore | ✅ Built & Verified | **Built and fully verified on-device 2026-08-28.** PKCE OAuth connect flow (`services/dropbox.ts`, `expo-auth-session`+`expo-web-browser`, App-folder-scoped access), tokens in `expo-secure-store` (never the unencrypted `settings` table), `VACUUM INTO`-based consistent snapshot backup (not a raw file copy or JSON export), check-on-app-open "automatic daily" backup (a true OS background task is unreliable on mobile — see the feature's own write-up below), manual backup, and a restore picker (`app/backup/restore.tsx`) that replaces the local DB file and prompts a manual app restart. Connect, manual backup, and restore-then-restart all confirmed working on the user's phone. |
 
 **Remaining known gaps** (everything else above is fully verified):
 Safe-to-spend/day and the debt-payoff-projection line (§5.1) never got
@@ -117,9 +117,8 @@ core idea as the original web app, rebuilt as a standalone, sellable,
   any user's financial data, and is a separate concern from the "who
   hosts user data" question above
 
-**Dropbox backup implementation, code-complete 2026-08-28** (🚧 In
-Progress in the Status Dashboard — blocked on the user's own Dropbox
-App Console setup for on-device verification, see below):
+**Dropbox backup implementation, built and fully verified on-device
+2026-08-28** (✅ Built & Verified in the Status Dashboard):
 - **OAuth: PKCE flow via `expo-auth-session`/`expo-web-browser`**, App-
   folder-scoped access (Dropbox's least-privilege option — the app can
   only see its own sandboxed folder in the user's Dropbox, never the
@@ -152,12 +151,21 @@ App Console setup for on-device verification, see below):
 - Filenames distinguish auto vs. manual for the restore picker per the
   design above: `backup-auto-YYYY-MM-DD.db` /
   `backup-manual-YYYY-MM-DDTHHmmss.db`.
-- **Blocked on the user creating a Dropbox App Console app** (Scoped
-  access → App folder, redirect URI `spendingtracker://dropbox-auth`,
-  permissions `files.content.write`/`files.content.read`/
-  `files.metadata.read`/`account_info.read`) and providing the App Key
-  — `app.json`'s `extra.dropboxAppKey` is a placeholder until then. A
-  newly-created Dropbox app also starts capped at 50 linked accounts
+- **Dropbox App Console app created, App Key provisioned into
+  `app.json`'s `extra.dropboxAppKey`, native rebuild done** — the real
+  Dropbox login → OAuth consent → connect flow is confirmed working on
+  the user's phone as of 2026-08-28. Two bugs found and fixed during
+  that first on-device pass: (1) the OAuth redirect
+  (`spendingtracker://dropbox-auth`) was separately caught by
+  expo-router's own deep-link matching and briefly showed an
+  "Unmatched Route" screen — fixed with a no-op `app/dropbox-auth.tsx`
+  bounce screen that just routes back to Profile; (2) the post-connect
+  account-info request was sending a JSON `Content-Type` header with no
+  body, which Dropbox's API rejects with a 400 — fixed by dropping that
+  header on the no-argument `users/get_current_account` call. Manual
+  backup upload and a restore-then-restart were both confirmed working
+  on-device immediately after. The Dropbox app itself starts capped at
+  50 linked accounts
   until Dropbox approves it for Production — worth starting that
   approval in parallel with other publishing prep, same lead-time
   lesson as §9's Play Store closed testing.
@@ -845,9 +853,11 @@ attempted again.
 spec.md/backlog.md sync sweep complete, every UAT checklist section
 worked through and the Status Dashboard now reflects ✅ Built &
 Verified for every v1 feature except the two intentionally-deferred
-ones (§5.11 Home Screen Widget, §5.15 In-App Info/Tips) and §3 Dropbox
-Backup, plus a small named list of never-independently-confirmed edges
-(see the Status Dashboard's "Remaining known gaps" note). The
+ones (§5.11 Home Screen Widget, §5.15 In-App Info/Tips), plus a small
+named list of never-independently-confirmed edges (see the Status
+Dashboard's "Remaining known gaps" note). §3 Dropbox Backup joined the
+✅ list 2026-08-28 once connect, backup, and restore were all confirmed
+on-device. The
 "full on-device pass in both themes" item is moot — §5.18's redesign
 made the app dark-only, there's no second theme to compare against
 anymore.

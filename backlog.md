@@ -66,9 +66,10 @@
 - **In-app Info/Tips reference page** (Profile) — a fuller explainer than the one-time onboarding intro above. User explicitly said "later" — deferred, no phase assigned. Accepted into current work (deferred) — spec.md §5.15.
 
 ## In Progress
-- **Dropbox Backup/Restore** (spec.md §3, new 2026-08-28) — code-complete: PKCE OAuth connect flow (`services/dropbox.ts`, App-folder-scoped access), tokens in `expo-secure-store`, `VACUUM INTO`-based consistent backup snapshots, check-on-app-open automatic daily backup, manual backup, a restore picker (`app/backup/restore.tsx`) that replaces the local DB and prompts a manual restart, `settings.dropboxAccountEmail`/`settings.lastAutoBackupDate` migration (`0006_overconfident_shriek`). 8 new unit tests for the pure filename logic (`services/dropboxBackupNaming.ts`), `tsc`/`jest` (53/53) clean. **Blocked on the user creating a Dropbox App Console app and providing the App Key** (`app.json`'s `extra.dropboxAppKey` is a placeholder) before the real OAuth flow, upload/download, and restore can be exercised and verified on-device — see spec.md §3's full write-up for the Dropbox app setup steps.
+*(none)*
 
 ## Done
+- **Dropbox Backup/Restore** (spec.md §3, new 2026-08-28) — built and verified 2026-08-28: PKCE OAuth connect flow (`services/dropbox.ts`, App-folder-scoped access), tokens in `expo-secure-store`, `VACUUM INTO`-based consistent backup snapshots, check-on-app-open automatic daily backup, manual backup, a restore picker (`app/backup/restore.tsx`) that replaces the local DB and prompts a manual restart, `settings.dropboxAccountEmail`/`settings.lastAutoBackupDate` migration (`0006_overconfident_shriek`). 8 new unit tests for the pure filename logic (`services/dropboxBackupNaming.ts`), `tsc`/`jest` (53/53) clean. User created the Dropbox App Console app, provided the App Key, and a full `expo prebuild --clean` + `expo run:android` rebuild linked the new native modules (`expo-auth-session`/`expo-web-browser`/`expo-secure-store`). Two bugs found and fixed during on-device testing: (1) the OAuth redirect was also caught by expo-router's own deep-link matching, briefly showing an "Unmatched Route" screen — fixed with a no-op `app/dropbox-auth.tsx` bounce screen that routes back to Profile; (2) the post-connect `users/get_current_account` call sent a JSON `Content-Type` header with an empty body, which Dropbox's API 400s on — fixed by dropping that header. User confirmed on-device 2026-08-28: connect, manual backup, and restore-then-restart all worked.
 - **Visual design system port** (spec.md §5.12, superseded 2026-08-28 by the Erebor redesign below) — full token-based theming (light/dark), system-monospace money figures, Card/Button/EmptyState primitives, FAB coordinate audit. Verified via UAT checklist §15 (2026-08-20/21).
 - **Recurring transactions** (spec.md §5.2, task-list Phase 5) — `services/recurrence.ts` engine (13 tests), "make recurring" toggle + edit/delete scope picker, 🔁 badge, `ensureMaterialized` wired app-wide. Verified via UAT checklist §6 (all pass, including end-date stopping generation).
 - **Commitments** (spec.md §5.16, task-list Phase 6) — new tab, monthly-normalized recurring rules. Verified via UAT checklist §7; the icon-as-text bug found there got fixed same day, complex recurrence patterns requested then withdrawn by the user.
@@ -89,8 +90,8 @@
 
 **Status: done.** Every item below was worked through; results are
 folded into spec.md's Status Dashboard (now ✅ Built & Verified for
-every v1 feature except the two deliberately-deferred ones and Dropbox
-backup). 8 checkboxes are deliberately left unticked — not failures,
+every v1 feature except the two deliberately-deferred ones). 8
+checkboxes are deliberately left unticked — not failures,
 just either explicitly withdrawn by the user (duplicate-icon prefill),
 never independently re-confirmed after their fix (credit-card 0/negative
 validation, over-budget banner text, calendar screen month-nav, "%
