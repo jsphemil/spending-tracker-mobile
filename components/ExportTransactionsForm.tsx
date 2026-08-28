@@ -67,7 +67,7 @@ export function ExportTransactionsForm() {
 
   return (
     <View className="gap-3 rounded-lg border border-glass-border bg-glass p-4">
-      <Text className="text-base text-fg">Export Transactions</Text>
+      <Text className="text-base font-display text-fg">Export Transactions</Text>
 
       <View className="gap-2">
         <Text className="text-sm font-medium text-fg-muted">Accounts</Text>

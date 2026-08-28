@@ -384,7 +384,7 @@ export default function AccountDetailScreen() {
             {breakdownSections.length > 0 && (
               <View className="gap-3 rounded-card border border-glass-border bg-glass p-4">
                 <View className="flex-row items-center justify-between">
-                  <Text className="text-sm font-semibold text-fg">Breakdown</Text>
+                  <Text className="text-sm font-display text-fg">Breakdown</Text>
                   <Link href={`/transactions?accountId=${accountId}`} asChild>
                     <Pressable>
                       <Text className="text-xs font-medium text-accent">Full history</Text>
@@ -419,7 +419,7 @@ export default function AccountDetailScreen() {
               </View>
             )}
 
-            <Text className="text-sm font-semibold text-fg">{monthLabel(period)} transactions</Text>
+            <Text className="text-sm font-display text-fg">{monthLabel(period)} transactions</Text>
             {hiddenFutureCount > 0 && (
               <Text className="text-xs text-fg-muted">
                 {hiddenFutureCount} upcoming transaction{hiddenFutureCount === 1 ? "" : "s"} hidden — Show

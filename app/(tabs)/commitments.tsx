@@ -75,7 +75,7 @@ export default function CommitmentsScreen() {
       ) : (
         sections.map((section) => (
           <View key={section.title} className="rounded-card border border-glass-border bg-glass p-4">
-            <Text className="mb-3 text-sm font-semibold text-fg">{section.title}</Text>
+            <Text className="mb-3 text-sm font-display text-fg">{section.title}</Text>
             {section.rows.map(({ rule, monthly }, i) => (
               <View key={rule.id} className={`py-2.5 ${i > 0 ? "border-t border-glass-border" : ""}`}>
                 <View className="flex-row items-center justify-between gap-2">

@@ -54,7 +54,7 @@ export function CurrencyPicker({ value, onChange, label = "Currency" }: Currency
       <Modal visible={visible} animationType="slide" onRequestClose={() => setVisible(false)}>
         <View className="flex-1 bg-bg pt-16">
           <View className="flex-row items-center justify-between px-4 pb-3">
-            <Text className="text-lg font-semibold text-fg">Select Currency</Text>
+            <Text className="text-lg font-display text-fg">Select Currency</Text>
             <Pressable onPress={() => setVisible(false)}>
               <Text className="text-accent">Done</Text>
             </Pressable>

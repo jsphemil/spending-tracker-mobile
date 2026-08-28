@@ -69,7 +69,7 @@ export default function TagSummaryScreen() {
         contentContainerStyle={{ padding: 16, gap: 8 }}
         ListHeaderComponent={
           <View className="mb-6 gap-3">
-            <Text className="text-xl font-semibold text-fg">{tagName}</Text>
+            <Text className="text-xl font-display text-fg">{tagName}</Text>
             <Text className="text-base text-fg-muted">
               Net cost of {tagName}: {formatMoney(netMinor, baseCurrency)}
             </Text>

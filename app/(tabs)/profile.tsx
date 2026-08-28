@@ -83,7 +83,7 @@ export default function ProfileScreen() {
       <ExportTransactionsForm />
 
       <View className="gap-2 rounded-lg border border-glass-border bg-glass p-4">
-        <Text className="text-base text-fg">Dropbox Backup</Text>
+        <Text className="text-base font-display text-fg">Dropbox Backup</Text>
         <Text className="text-sm text-fg-muted">
           Not connected. Automatic and manual backups are coming in a future update.
         </Text>

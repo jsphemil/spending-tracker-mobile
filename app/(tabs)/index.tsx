@@ -206,7 +206,7 @@ export default function DashboardScreen() {
   const accountName = (id: number | null) => accounts?.find((a) => a.id === id)?.name;
 
   const card = "rounded-card border border-glass-border bg-glass p-4";
-  const cardTitle = "mb-3 text-sm font-semibold text-fg";
+  const cardTitle = "mb-3 text-sm font-display text-fg";
 
   return (
     <ScrollView className="flex-1 bg-bg" contentContainerStyle={{ padding: 16, paddingBottom: TAB_BAR_CLEARANCE, gap: 12 }}>
