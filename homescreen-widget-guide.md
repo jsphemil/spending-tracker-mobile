@@ -113,39 +113,55 @@ constrained native view system, not React Native. This means:
   own periodic update schedule (minimum 30 minutes, an OS-level
   constraint, not a design choice).
 
-## 3. Claude Design briefs
+## 3. Claude Design briefs — DONE, mockups received and confirmed 2026-08-28
 
-Two separate briefs, one per widget — Claude Design doesn't know
-`RemoteViews` constraints, so tell it explicitly. Ask for **light and
-dark versions of each**, not one adaptive design.
+Both mockups delivered as Claude Design `.dc.html` components
+(`Erebor Home Screen Widget.dc.html`, `Erebor Portfolio Widget.dc.html`
+in the repo root) — interactive design-tool files, not static images;
+open them in Claude Design itself to view/tweak, the specs below are
+what's locked in from them.
 
-**Widget 1 — Accounts & Quick Add:**
-```
-Design an Android home screen widget for Erebor Wealth Management.
-Layout: a vertical list of account rows (account name + current
-balance, one row per selected account, 1-4 accounts typical), and a
-bottom row of 3 icon buttons (Income / Expense / Transfer — use
-up-arrow, down-arrow, and swap-arrows glyphs respectively). Solid
-fills only, no blur/glass/gradient backgrounds, system-safe fonts
-only. Deliver TWO versions: one for light system theme (light
-background, dark text), one for dark system theme (dark background,
-light text) — matching the brand's [cyan/blue/violet accent] for the
-icon buttons in both. Keep it compact — widgets are small, this needs
-to read at a glance.
-```
+**Widget 1 — Accounts & Quick Add, confirmed layout:**
+- A card (~260×258dp total footprint, fits a 4×4 launcher cell) with:
+  - Up to 4 account rows: name (left, truncates with ellipsis) +
+    balance (right, tabular-numeral, bold), thin divider between rows
+  - A heavier divider, then 3 icon action buttons in a row: Income
+    (up-arrow, `neon-cyan` badge), Expense (down-arrow, `neon-blue`
+    badge), Transfer (swap-arrows, `neon-violet` badge) — 44×44
+    rounded-square badges, black-stroke icons for contrast on the
+    neon fill, optional text label under each (toggleable)
+  - Same 3 accent colors in both light and dark — only the
+    surrounding card/background/text colors swap
+- Light theme: white card, `#12172a` text on `#eef1f7` background.
+  Dark theme: `--bg-elevated-2` card on `--bg-void`, theme-token text.
 
-**Widget 2 — Portfolio Rings & Allocation:**
-```
-Design an Android home screen widget for Erebor Wealth Management
-showing portfolio overview. Layout: a capacity ring/gauge (like a
-speedometer arc) showing net worth with a center label, plus a small
-donut chart below or beside it showing asset allocation
-(Liquid/Deposits/Invested proportions). Solid fills only, no blur/
-glass/gradient backgrounds. This will be rendered as a static image
-that refreshes periodically, not a live interactive chart, so design
-it as a single flat composition, not overlapping interactive layers.
-Deliver TWO versions: light system theme and dark system theme.
-```
+**Widget 2 — Portfolio Rings & Allocation, confirmed layout:**
+- A single wide card (356px) with two halves separated by a vertical
+  divider:
+  - **Left: ring gauge** (112px, 12px stroke) — **confirmed metric
+    2026-08-28: "% of net worth currently invested vs. liquid,"** a
+    new derived metric specific to this widget, not the same as the
+    Dashboard's `GaugeRing` (which is expense-used-against-
+    carry-forward+income capacity). Center shows "Net Worth" label,
+    the net worth figure, and an "X% invested" subtext. Used-color
+    `neon-violet`, available-color a muted line-gray.
+  - **Right: donut chart** (76px, 14px stroke) for Liquid/Deposits/
+    Invested, plus a 3-line legend (colored dot + name + %) — same
+    fixed cyan/blue/violet mapping as the Dashboard's asset
+    allocation donut, just laid out as a legend instead of below the
+    chart.
+- Same card/background token pattern as Widget 1 for light/dark.
+
+**Implementation note on `RingGauge`/`DonutChart` in the mockup**:
+those are Claude Design's own preview components, not something to
+import — they exist only to produce an accurate visual. The actual
+widget renders equivalent shapes via `SvgWidget` (§1), generating SVG
+arc strings with the same math already implemented in
+`components/rings/GaugeRing.tsx` and the Dashboard's asset-allocation
+donut component, just serialized to a string instead of react-native-
+svg JSX. For stacking the center label/value/subtext text on top of
+the ring SVG, use `OverlapWidget` (confirmed present in the library's
+API, §1) — it exists for exactly this layering case.
 
 ## 4. Build order
 
