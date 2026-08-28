@@ -173,7 +173,7 @@ export function AccountForm({
         <Input
           value={name}
           onChangeText={setName}
-          placeholder="e.g. HDFC Salary"
+          placeholder="e.g. Everyday Wallet"
           placeholderTextColor={colors.fgSubtle}
           className="rounded-lg border border-glass-border bg-glass px-3 py-2 text-base text-fg"
         />
