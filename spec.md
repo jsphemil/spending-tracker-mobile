@@ -999,9 +999,19 @@ Claude smart features, analytics, IAP)._
 - [ ] Google Play Developer account ($25, individual, government-ID
       verification, few days to a week) — **in progress 2026-08-28**,
       user has started sign-up; step-by-step in `closed-testing-guide.md`.
-- [ ] Google Payments Merchant account — only needed once
-      monetization is built; separate KYC queue from the developer
-      account, start it early once IAP is scoped.
+- [ ] Google Payments Merchant account — **deliberately deferred
+      2026-08-28.** The user started this (Play Console prompted for
+      it while setting up payments) and hit BillDesk's KYC form asking
+      for a live Website URL / Mobile App APK URL — neither exists yet
+      (app isn't uploaded to Play Console, let alone public), so
+      there's nothing real to enter. Decided to pause this rather than
+      fill it with placeholders: (1) it isn't needed for closed
+      testing at all — that runs on a free listing with zero payments
+      setup; (2) monetization (free/paid/IAP) still isn't decided, so
+      doing payment-provider KYC now would be for a business model
+      that doesn't exist yet. Revisit once the app has a real Play
+      Store presence **and** a monetization decision is made — not
+      before.
 - [ ] **Closed testing (12 opted-in testers, 14 continuous days).**
       Mandatory for personal developer accounts created after Nov
       2023, and the single longest lead-time item in the whole
