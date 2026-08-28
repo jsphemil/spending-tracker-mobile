@@ -13,6 +13,7 @@ import { currentMonthPeriod, monthLabel, monthRange, shiftMonth } from "../../..
 import { ensureMaterialized } from "../../../services/recurrence";
 import { CurrencyAmount } from "../../../components/CurrencyAmount";
 import { EmptyState } from "../../../components/ui/EmptyState";
+import { TAB_BAR_CLEARANCE, FAB_BOTTOM_OFFSET } from "../../../theme/tabBar";
 import { useThemeColors } from "../../../theme/palette";
 
 interface AccountFlow {
@@ -59,7 +60,7 @@ export default function AccountsListScreen() {
       <FlatList
         data={accounts ?? []}
         keyExtractor={(item) => String(item.id)}
-        contentContainerStyle={{ padding: 16, gap: 12 }}
+        contentContainerStyle={{ padding: 16, paddingBottom: TAB_BAR_CLEARANCE, gap: 12 }}
         ListHeaderComponent={
           <View className="mb-3 flex-row items-center justify-center gap-2">
             <Pressable onPress={() => setPeriod((p) => shiftMonth(p, -1))} className="p-3" hitSlop={8}>
@@ -131,7 +132,10 @@ export default function AccountsListScreen() {
         }}
       />
       <Link href="/account/new" asChild>
-        <Pressable className="absolute bottom-6 right-6 h-14 w-14 items-center justify-center rounded-full bg-accent">
+        <Pressable
+          className="absolute right-6 h-14 w-14 items-center justify-center rounded-full bg-accent"
+          style={{ bottom: FAB_BOTTOM_OFFSET }}
+        >
           <Text className="text-2xl text-white">+</Text>
         </Pressable>
       </Link>

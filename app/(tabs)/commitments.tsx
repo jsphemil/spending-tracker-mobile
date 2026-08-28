@@ -8,6 +8,7 @@ import { useActiveRecurringRules } from "../../db/queries/recurringRules";
 import { useSettings } from "../../db/queries/settings";
 import { formatMoney } from "../../services/format";
 import { describeSchedule, monthlyEquivalent } from "../../services/recurrence";
+import { TAB_BAR_CLEARANCE } from "../../theme/tabBar";
 import { useThemeColors } from "../../theme/palette";
 
 const SECTION_DEFS = [
@@ -50,7 +51,7 @@ export default function CommitmentsScreen() {
   const percentOfIncome = totalIncomeMonthly > 0 ? (totalCommitmentMonthly / totalIncomeMonthly) * 100 : null;
 
   return (
-    <ScrollView className="flex-1 bg-bg" contentContainerStyle={{ padding: 16, gap: 16 }}>
+    <ScrollView className="flex-1 bg-bg" contentContainerStyle={{ padding: 16, paddingBottom: TAB_BAR_CLEARANCE, gap: 16 }}>
       <Text className="text-sm text-fg-muted">
         Everything you&rsquo;re locked into every month, normalized from each rule&rsquo;s own
         cadence — a yearly charge and a weekly one both roll into one monthly figure here.

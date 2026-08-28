@@ -9,6 +9,7 @@ import { useSettings } from "../../../db/queries/settings";
 import { useFilteredTransactions } from "../../../db/queries/transactions";
 import { currentMonthPeriod, monthLabel, monthRange, shiftMonth } from "../../../services/period";
 import { ensureMaterialized } from "../../../services/recurrence";
+import { TAB_BAR_CLEARANCE } from "../../../theme/tabBar";
 import { useThemeColors } from "../../../theme/palette";
 
 export default function TransactionsCalendarScreen() {
@@ -48,7 +49,7 @@ export default function TransactionsCalendarScreen() {
   }, [rows, accounts, hidingFuture]);
 
   return (
-    <ScrollView className="flex-1 bg-bg" contentContainerStyle={{ padding: 16 }}>
+    <ScrollView className="flex-1 bg-bg" contentContainerStyle={{ padding: 16, paddingBottom: TAB_BAR_CLEARANCE }}>
       <View className="mb-4 flex-row items-center justify-between">
         <Pressable
           onPress={() => setPeriod((p) => shiftMonth(p, -1))}

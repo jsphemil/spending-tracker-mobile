@@ -19,18 +19,20 @@ export default function TabsLayout() {
           left: 16,
           right: 16,
           bottom: 16,
-          height: 64,
+          height: 78,
           borderRadius: 9999,
           backgroundColor: "rgba(19, 26, 44, 0.86)",
           borderTopWidth: 0,
           borderWidth: 1,
           borderColor: colors.glassBorder,
-          paddingTop: 8,
+          paddingBottom: 10,
+          paddingTop: 10,
           ...NAV_SHADOW,
         },
         tabBarActiveTintColor: colors.accent,
         tabBarInactiveTintColor: colors.fgSubtle,
         tabBarLabelStyle: { fontFamily: "Inter_500Medium", fontSize: 10 },
+        tabBarItemStyle: { paddingVertical: 0 },
       }}
     >
       <Tabs.Screen

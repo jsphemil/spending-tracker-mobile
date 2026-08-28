@@ -32,6 +32,7 @@ import {
   type MonthPeriod,
 } from "../../services/period";
 import { ensureMaterialized } from "../../services/recurrence";
+import { TAB_BAR_CLEARANCE } from "../../theme/tabBar";
 import { useThemeColors } from "../../theme/palette";
 
 const ASSET_ALLOCATION_BUCKETS = [
@@ -208,7 +209,7 @@ export default function DashboardScreen() {
   const cardTitle = "mb-3 text-sm font-semibold text-fg";
 
   return (
-    <ScrollView className="flex-1 bg-bg" contentContainerStyle={{ padding: 16, gap: 12 }}>
+    <ScrollView className="flex-1 bg-bg" contentContainerStyle={{ padding: 16, paddingBottom: TAB_BAR_CLEARANCE, gap: 12 }}>
       <View className="flex-row items-center justify-between">
         <Pressable onPress={() => setPeriod((p) => shiftMonth(p, -1))} className="p-3" hitSlop={8}>
           <Icon name="chevron-left" size={28} color={colors.fg} />

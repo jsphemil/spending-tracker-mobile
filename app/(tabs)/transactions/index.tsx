@@ -18,6 +18,7 @@ import { majorToMinor, minorToMajor } from "../../../services/format";
 import { currentMonthPeriod, monthLabel, monthRange, shiftMonth } from "../../../services/period";
 import { ensureMaterialized } from "../../../services/recurrence";
 import { resolveAccountSettings } from "../../../services/settings";
+import { TAB_BAR_CLEARANCE, FAB_BOTTOM_OFFSET } from "../../../theme/tabBar";
 import { useThemeColors } from "../../../theme/palette";
 
 type FilterMode = "month" | "custom" | "allTime";
@@ -334,7 +335,7 @@ export default function TransactionsListScreen() {
       <FlatList
         data={visibleRows}
         keyExtractor={(item) => String(item.id)}
-        contentContainerStyle={{ padding: 16 }}
+        contentContainerStyle={{ padding: 16, paddingBottom: TAB_BAR_CLEARANCE }}
         ListEmptyComponent={<EmptyState message="No transactions for this filter." />}
         renderItem={({ item }) => (
           <TransactionListItem
@@ -352,7 +353,10 @@ export default function TransactionsListScreen() {
       />
 
       <Link href="/transaction/new" asChild>
-        <Pressable className="absolute bottom-6 right-6 h-14 w-14 items-center justify-center rounded-full bg-accent">
+        <Pressable
+          className="absolute right-6 h-14 w-14 items-center justify-center rounded-full bg-accent"
+          style={{ bottom: FAB_BOTTOM_OFFSET }}
+        >
           <Text className="text-2xl text-white">+</Text>
         </Pressable>
       </Link>

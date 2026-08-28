@@ -5,6 +5,7 @@ import { CurrencyPicker } from "../../components/CurrencyPicker";
 import { ExportTransactionsForm } from "../../components/ExportTransactionsForm";
 import { updateSettings } from "../../db/actions/settings";
 import { useSettings } from "../../db/queries/settings";
+import { TAB_BAR_CLEARANCE } from "../../theme/tabBar";
 import { useThemeColors } from "../../theme/palette";
 
 export default function ProfileScreen() {
@@ -18,7 +19,7 @@ export default function ProfileScreen() {
   const nameValue = editedName ? displayName : (settings.displayName ?? "");
 
   return (
-    <ScrollView className="flex-1 bg-bg" contentContainerStyle={{ padding: 16, gap: 24 }}>
+    <ScrollView className="flex-1 bg-bg" contentContainerStyle={{ padding: 16, paddingBottom: TAB_BAR_CLEARANCE, gap: 24 }}>
       <View className="gap-2">
         <Text className="text-sm font-medium text-fg-muted">Display Name (optional)</Text>
         <TextInput

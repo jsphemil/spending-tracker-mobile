@@ -32,6 +32,7 @@ import { ensureMaterialized } from "../../../services/recurrence";
 import { resolveAccountSettings } from "../../../services/settings";
 import { useThemeColors } from "../../../theme/palette";
 import { useBaseCurrencyEquivalent } from "../../../hooks/useBaseCurrencyEquivalent";
+import { TAB_BAR_CLEARANCE } from "../../../theme/tabBar";
 
 export default function AccountDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -216,7 +217,7 @@ export default function AccountDetailScreen() {
       <FlatList
         data={visibleTransactions}
         keyExtractor={(item) => String(item.id)}
-        contentContainerStyle={{ padding: 16, gap: 4 }}
+        contentContainerStyle={{ padding: 16, paddingBottom: TAB_BAR_CLEARANCE, gap: 4 }}
         ListHeaderComponent={
           <View className="mb-6 gap-4">
             <View className="w-full flex-row items-center justify-between">

@@ -14,6 +14,7 @@ import { formatMoney, majorToMinor, minorToMajor } from "../../services/format";
 import { currentMonthPeriod, monthRange } from "../../services/period";
 import { ensureMaterialized } from "../../services/recurrence";
 import { EmptyState } from "../../components/ui/EmptyState";
+import { TAB_BAR_CLEARANCE, FAB_BOTTOM_OFFSET } from "../../theme/tabBar";
 
 export default function CategoriesScreen() {
   const [kind, setKind] = useState<CategoryKind>("expense");
@@ -91,7 +92,7 @@ export default function CategoriesScreen() {
       <FlatList
         data={categories ?? []}
         keyExtractor={(item) => String(item.id)}
-        contentContainerStyle={{ padding: 16, gap: 8 }}
+        contentContainerStyle={{ padding: 16, paddingBottom: TAB_BAR_CLEARANCE, gap: 8 }}
         ListEmptyComponent={<EmptyState message="No categories yet." />}
         renderItem={({ item }) => {
           const spentMinor = spentByCategoryMinor.get(item.id) ?? 0;
@@ -135,7 +136,10 @@ export default function CategoriesScreen() {
       />
 
       <Link href={`/category/new?kind=${kind}`} asChild>
-        <Pressable className="absolute bottom-6 right-6 h-14 w-14 items-center justify-center rounded-full bg-accent">
+        <Pressable
+          className="absolute right-6 h-14 w-14 items-center justify-center rounded-full bg-accent"
+          style={{ bottom: FAB_BOTTOM_OFFSET }}
+        >
           <Text className="text-2xl text-white">+</Text>
         </Pressable>
       </Link>
