@@ -38,7 +38,7 @@ pushed to a later phase) · ❌ Dropped (cut from scope).
 | §5.16 | Commitments | ✅ Built & Verified | New tab, monthly-normalized recurring rules, % of recurring income committed. UAT checklist §7 confirms the sections and monthly-equivalent math (verified correct, not a bug — average-month normalization). Complex recurrence patterns (nth-weekday-of-month etc.) were requested then **withdrawn by the user 2026-08-21** ("it can be ignored") — not building. The "% of recurring income" line was explained to the user but never independently re-confirmed against their own live data — low-stakes, worth a glance next time it's relevant. |
 | §5.17 | Goals | ✅ Built & Verified | Goal CRUD, trailing-6-month pace projection, behind-pace flag, Dashboard card. UAT checklist §8 confirms creation, progress bar, projection text, and behind-pace warning — all pass. |
 | §5.18 | Design Refresh — "Erebor" | ✅ Built & Verified | **New, 2026-08-28.** Complete visual redesign sourced from a separate Claude Design project the user built ("Erebor Wealth App Design System," dark glassy-neon fintech language), applied as a presentational-only pass on the `design-refresh` branch and merged to `master` the same day. See the full write-up below (§5.18) for what shipped, what was explicitly decided, and the one behavior change (AccountForm's icon became user-selectable, at the user's explicit request). Verified via multiple rounds of on-device testing on the user's Pixel 10, including native rebuilds for the new `expo-linear-gradient`/`expo-font` dependencies. |
-| §3 | Dropbox Backup/Restore | ⏸️ Deferred | Not started. |
+| §3 | Dropbox Backup/Restore | 🚧 In Progress | **Code-complete 2026-08-28.** PKCE OAuth connect flow (`services/dropbox.ts`, `expo-auth-session`+`expo-web-browser`, App-folder-scoped access), tokens in `expo-secure-store` (never the unencrypted `settings` table), `VACUUM INTO`-based consistent snapshot backup (not a raw file copy or JSON export), check-on-app-open "automatic daily" backup (a true OS background task is unreliable on mobile — see the feature's own write-up below), manual backup, and a restore picker (`app/backup/restore.tsx`) that replaces the local DB file and prompts a manual app restart. Blocked on the user creating a Dropbox App Console app and providing the App Key (`app.json`'s `extra.dropboxAppKey` is currently a placeholder) before the real OAuth flow, upload/download, and restore can be verified on-device. |
 
 **Remaining known gaps** (everything else above is fully verified):
 Safe-to-spend/day and the debt-payoff-projection line (§5.1) never got
@@ -116,6 +116,59 @@ core idea as the original web app, rebuilt as a standalone, sellable,
   relay, not a database — it never stores or has persistent access to
   any user's financial data, and is a separate concern from the "who
   hosts user data" question above
+
+**Dropbox backup implementation, code-complete 2026-08-28** (🚧 In
+Progress in the Status Dashboard — blocked on the user's own Dropbox
+App Console setup for on-device verification, see below):
+- **OAuth: PKCE flow via `expo-auth-session`/`expo-web-browser`**, App-
+  folder-scoped access (Dropbox's least-privilege option — the app can
+  only see its own sandboxed folder in the user's Dropbox, never the
+  rest of it), requesting `token_access_type: offline` to get a refresh
+  token so daily automatic backups never need the user to re-auth.
+- **Tokens live in `expo-secure-store`, never in this app's own SQLite
+  `settings` table** (which isn't encrypted) — only non-sensitive
+  metadata (the connected account's email, doubling as the "connected"
+  signal; the last automatic-backup date) is a `settings` column.
+- **Backup format: a consistent snapshot via SQLite's own `VACUUM
+  INTO`**, not a raw file copy (which could miss data still sitting in
+  a `-wal` journal file) and not a JSON export — restoring is just
+  swapping the live database file for the downloaded one.
+- **"Automatic daily backup" is a check-on-app-open, not a true OS
+  background task.** Real background execution on mobile is
+  opportunistic (the OS decides if/when it actually runs, with no
+  reliable daily guarantee, especially on iOS) — decided 2026-08-28
+  that for an app the user opens regularly anyway, silently backing up
+  once per day on foreground is the honest, reliable version of
+  "automatic," not worth a new background-task dependency for a
+  guarantee mobile OSes don't actually provide.
+- **Restore replaces the local database file, then prompts a manual
+  app restart** — deliberately not attempting to hot-swap the live
+  `expo-sqlite` connection in place, and not pulling in `expo-updates`
+  just for an automatic reload. Safer, at the cost of one manual
+  restart step for the user.
+- **No backup retention/pruning in v1** — backups accumulate in the
+  user's own Dropbox indefinitely; explicitly scoped out as their own
+  storage to manage, not silently forgotten.
+- Filenames distinguish auto vs. manual for the restore picker per the
+  design above: `backup-auto-YYYY-MM-DD.db` /
+  `backup-manual-YYYY-MM-DDTHHmmss.db`.
+- **Blocked on the user creating a Dropbox App Console app** (Scoped
+  access → App folder, redirect URI `spendingtracker://dropbox-auth`,
+  permissions `files.content.write`/`files.content.read`/
+  `files.metadata.read`/`account_info.read`) and providing the App Key
+  — `app.json`'s `extra.dropboxAppKey` is a placeholder until then. A
+  newly-created Dropbox app also starts capped at 50 linked accounts
+  until Dropbox approves it for Production — worth starting that
+  approval in parallel with other publishing prep, same lead-time
+  lesson as §9's Play Store closed testing.
+- Files: `services/dropbox.ts` (OAuth/API/backup/restore),
+  `services/dropboxBackupNaming.ts` (pure filename generation/parsing,
+  split out so it's unit-testable without pulling in native-only
+  imports — 8 tests), `components/DropboxBackupCard.tsx` (Profile's
+  card, replacing the old static placeholder), `app/backup/restore.tsx`
+  (the restore picker, registered as a modal in `app/_layout.tsx`), a
+  new `settings.dropboxAccountEmail`/`settings.lastAutoBackupDate`
+  migration (`drizzle/0006_overconfident_shriek.sql`).
 
 ## 4. Logging in
 
@@ -867,17 +920,20 @@ Claude smart features, analytics, IAP)._
       stay public forever and renders inside GitHub's code viewer
       rather than as a page) — likely a small dedicated public repo
       just for the policy page, keeping the main app repo private.
-      **Content drafted 2026-08-28** (`privacy-policy.md`) — accurately
-      reflects today's actual network surface (Frankfurter currency
-      API only, no analytics/ads/tracking); has a placeholder section
-      for Dropbox backup to fill in once §3 is built, and still needs
+      **Content drafted 2026-08-28** (`privacy-policy.md`), including
+      the Dropbox backup section now that §3 is code-complete —
+      accurately describes App-folder-scoped access, on-device secure
+      token storage, and that we never see backup content. Still needs
       a contact email and the actual GitHub Pages hosting step.
-- [ ] **Data Safety form.** Today's real network surface is narrow —
-      `services/currency.ts` calls the Frankfurter exchange-rate API
-      with only currency codes, no personal data — so the form should
-      be simple to fill honestly right now. Must be revisited the
-      moment Dropbox backup, analytics, or crash reporting is added; a
-      stale form is one of the most common suspension/rejection causes.
+- [ ] **Data Safety form.** Was narrow (Frankfurter currency API only,
+      no personal data) — **now that Dropbox backup (§3) is
+      code-complete, this form needs to account for it before
+      submission**: declare the OAuth data collected (Dropbox account
+      email), that backup files are user-controlled data in transit to
+      a third party (Dropbox) the user explicitly connects, and that
+      none of it is retained by this app's developer. Not yet filled
+      out in Play Console (no code dependency, but blocked on the
+      Developer account existing first).
 
 ### Monetization
 - [ ] §7 already flags "one-time purchase" as confirmed but unscoped

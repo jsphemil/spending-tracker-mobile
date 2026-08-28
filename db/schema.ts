@@ -217,6 +217,16 @@ export const settings = sqliteTable("settings", {
     () => accounts.id,
     { onDelete: "set null" },
   ),
+  // Dropbox backup (spec.md §3). Doubles as the "connected" signal —
+  // non-null means connected — so there's no separate boolean column.
+  // The actual OAuth access/refresh tokens are never stored here (this
+  // table isn't encrypted); they live in expo-secure-store, see
+  // services/dropbox.ts.
+  dropboxAccountEmail: text("dropbox_account_email"),
+  // "YYYY-MM-DD" of the last automatic backup — the check-on-app-open
+  // gate that stands in for a true OS background schedule (unreliable
+  // on mobile). Manual backups don't touch this field.
+  lastAutoBackupDate: text("last_auto_backup_date"),
 });
 
 export const exchangeRateCache = sqliteTable(

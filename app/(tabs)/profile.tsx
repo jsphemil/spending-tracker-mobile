@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { Pressable, ScrollView, Switch, Text, View } from "react-native";
+import { ScrollView, Switch, Text, View } from "react-native";
 import { Input } from "../../components/ui/Input";
 
 import { CurrencyPicker } from "../../components/CurrencyPicker";
+import { DropboxBackupCard } from "../../components/DropboxBackupCard";
 import { ExportTransactionsForm } from "../../components/ExportTransactionsForm";
 import { updateSettings } from "../../db/actions/settings";
 import { useSettings } from "../../db/queries/settings";
@@ -82,15 +83,11 @@ export default function ProfileScreen() {
 
       <ExportTransactionsForm />
 
-      <View className="gap-2 rounded-lg border border-glass-border bg-glass p-4">
-        <Text className="text-base font-display text-fg">Dropbox Backup</Text>
-        <Text className="text-sm text-fg-muted">
-          Not connected. Automatic and manual backups are coming in a future update.
-        </Text>
-        <Pressable disabled className="items-center rounded-lg bg-surface-2 py-3">
-          <Text className="text-fg-subtle">Connect Dropbox</Text>
-        </Pressable>
-      </View>
+      <DropboxBackupCard
+        settingsId={settings.id}
+        dropboxAccountEmail={settings.dropboxAccountEmail}
+        lastAutoBackupDate={settings.lastAutoBackupDate}
+      />
     </ScrollView>
   );
 }

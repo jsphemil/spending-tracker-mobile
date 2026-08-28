@@ -16,6 +16,7 @@ import { OnboardingFlow } from "../components/OnboardingFlow";
 import { db } from "../db/client";
 import { useSettings } from "../db/queries/settings";
 import { ensureSeeded } from "../db/seed";
+import { runAutoBackupIfDue } from "../services/dropbox";
 import { cssVars, useResolvedTheme, useThemeColors } from "../theme/palette";
 import migrations from "../drizzle/migrations";
 
@@ -37,6 +38,18 @@ export default function RootLayout() {
   useEffect(() => {
     if (success) ensureSeeded(db);
   }, [success]);
+
+  // "Automatic daily backup" (spec.md §3) — a true OS background task is
+  // unreliable on mobile (opportunistic scheduling, no guaranteed daily
+  // run, especially on iOS), so this app checks on every foreground
+  // instead: if connected and no backup has run yet today, fire one off
+  // silently. Fire-and-forget — never blocks render, never surfaces an
+  // error the user didn't ask for (see runAutoBackupIfDue's own comment).
+  useEffect(() => {
+    if (settings?.dropboxAccountEmail) {
+      runAutoBackupIfDue(settings.id, settings.lastAutoBackupDate);
+    }
+  }, [settings?.id, settings?.dropboxAccountEmail, settings?.lastAutoBackupDate]);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -113,6 +126,10 @@ export default function RootLayout() {
             <Stack.Screen
               name="tag/[name]"
               options={{ headerShown: true, title: "Tag" }}
+            />
+            <Stack.Screen
+              name="backup/restore"
+              options={{ presentation: "modal", headerShown: true, title: "Restore Backup" }}
             />
           </Stack>
         )}

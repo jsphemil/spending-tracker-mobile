@@ -12,6 +12,8 @@ export function updateSettings(
     baseCurrency: string;
     themePreference: ThemePreference;
     onboardingCompleted: boolean;
+    dropboxAccountEmail: string | null;
+    lastAutoBackupDate: string | null;
   }>,
 ): void {
   db.update(settings).set(patch).where(eq(settings.id, id)).run();

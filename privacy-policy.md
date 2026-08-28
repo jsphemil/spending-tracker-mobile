@@ -43,13 +43,21 @@ not know who you are — there is no login or account system at all.
 
 ## Cloud backup (Dropbox)
 
-[TO FILL IN once Dropbox backup ships per spec.md §3 — the intended
-design: backups go directly from your device to a folder in **your
-own** Dropbox account, authorized via Dropbox's own login. We never
-see, store, or have access to your backup files or your Dropbox
-account — the connection is between your device and Dropbox directly.
-This section must be completed, and the Data Safety Play Console form
-updated, before that feature ships to production.]
+If you choose to connect Dropbox (Profile → Dropbox Backup), the app
+can back up your data — automatically once a day, and manually
+whenever you ask — directly to a dedicated folder in **your own**
+Dropbox account. We never see, store, or have access to your backup
+files or your Dropbox account: the app is only ever granted access to
+that one sandboxed folder (not your whole Dropbox), and every backup
+and restore happens directly between your device and Dropbox's
+servers.
+
+Connecting Dropbox uses Dropbox's own login and consent screen — we
+never see your Dropbox password. We store the resulting connection
+token securely on your device (in the OS's encrypted keychain/
+keystore, not in the app's regular data) so the app can back up on
+your behalf without asking you to log in every time; disconnecting
+Dropbox from Profile deletes that token from your device immediately.
 
 ## Children's privacy
 

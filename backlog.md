@@ -66,7 +66,7 @@
 - **In-app Info/Tips reference page** (Profile) — a fuller explainer than the one-time onboarding intro above. User explicitly said "later" — deferred, no phase assigned. Accepted into current work (deferred) — spec.md §5.15.
 
 ## In Progress
-_(empty — everything below graduated to Done 2026-08-28 once the full UAT checklist confirmed each one working on-device; see spec.md's Status Dashboard for the authoritative per-feature status.)_
+- **Dropbox Backup/Restore** (spec.md §3, new 2026-08-28) — code-complete: PKCE OAuth connect flow (`services/dropbox.ts`, App-folder-scoped access), tokens in `expo-secure-store`, `VACUUM INTO`-based consistent backup snapshots, check-on-app-open automatic daily backup, manual backup, a restore picker (`app/backup/restore.tsx`) that replaces the local DB and prompts a manual restart, `settings.dropboxAccountEmail`/`settings.lastAutoBackupDate` migration (`0006_overconfident_shriek`). 8 new unit tests for the pure filename logic (`services/dropboxBackupNaming.ts`), `tsc`/`jest` (53/53) clean. **Blocked on the user creating a Dropbox App Console app and providing the App Key** (`app.json`'s `extra.dropboxAppKey` is a placeholder) before the real OAuth flow, upload/download, and restore can be exercised and verified on-device — see spec.md §3's full write-up for the Dropbox app setup steps.
 
 ## Done
 - **Visual design system port** (spec.md §5.12, superseded 2026-08-28 by the Erebor redesign below) — full token-based theming (light/dark), system-monospace money figures, Card/Button/EmptyState primitives, FAB coordinate audit. Verified via UAT checklist §15 (2026-08-20/21).

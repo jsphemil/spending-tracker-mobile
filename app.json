@@ -31,13 +31,16 @@
       "expo-sqlite",
       "@react-native-community/datetimepicker",
       "expo-sharing",
-      "expo-font"
+      "expo-font",
+      "expo-web-browser",
+      "expo-secure-store"
     ],
     "extra": {
       "router": {},
       "eas": {
         "projectId": "05d13497-4b5e-4488-b669-361a3769283f"
-      }
+      },
+      "dropboxAppKey": "REPLACE_WITH_DROPBOX_APP_KEY"
     },
     "owner": "jsphemil"
   }
