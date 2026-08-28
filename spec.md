@@ -930,19 +930,16 @@ Claude smart features, analytics, IAP)._
       no code dependency).
 
 ### Privacy & data
-- [ ] **Privacy policy hosted at a public URL.** Required — this is a
-      finance app storing transaction/account/balance data, and
-      becomes mandatory the moment Dropbox backup (§3) ships. Decided
-      2026-08-12: host via GitHub Pages, not a raw
-      `github.com/.../blob/main/*.md` link (which needs the repo to
-      stay public forever and renders inside GitHub's code viewer
-      rather than as a page) — likely a small dedicated public repo
-      just for the policy page, keeping the main app repo private.
-      **Content drafted 2026-08-28** (`privacy-policy.md`), including
-      the Dropbox backup section now that §3 is code-complete —
-      accurately describes App-folder-scoped access, on-device secure
-      token storage, and that we never see backup content. Still needs
-      a contact email and the actual GitHub Pages hosting step.
+- [x] **Privacy policy hosted at a public URL — live 2026-08-28:**
+      https://meliordevelopments.github.io/erebor-wealth-management-pp/
+      Hosted via GitHub Pages from a dedicated public repo
+      (`meliordevelopments/erebor-wealth-management-pp`), not a raw
+      `github.com/.../blob/main/*.md` link, per the 2026-08-12
+      decision — keeps the main app repo private. Content
+      (`privacy-policy.md`) covers the Frankfurter currency API and
+      the Dropbox backup section (App-folder-scoped access, on-device
+      secure token storage, never seeing backup content), and lists
+      meliordevelopments@gmail.com as the contact email.
 - [ ] **Data Safety form.** Was narrow (Frankfurter currency API only,
       no personal data) — **now that Dropbox backup (§3) is
       code-complete, this form needs to account for it before

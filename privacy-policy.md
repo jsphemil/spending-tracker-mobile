@@ -1,12 +1,13 @@
 # Privacy Policy
 
-**Draft — not yet published or legally reviewed.** Per `spec.md` §9,
-this needs to be hosted at a public URL (decided: a dedicated small
-public repo + GitHub Pages, not a raw GitHub blob link) before this
-app can be submitted to the Play Store or App Store. This file is the
-content draft; it is not yet live anywhere.
+**Live at: https://meliordevelopments.github.io/erebor-wealth-management-pp/**
+(published 2026-08-28, dedicated public repo
+`meliordevelopments/erebor-wealth-management-pp` + GitHub Pages, per
+spec.md §9's decision not to use a raw GitHub blob link). This file is
+the content source — keep it in sync with the live page whenever this
+policy changes.
 
-_Last updated: [DATE — fill in when published]_
+_Last updated: August 28, 2026_
 
 ## Summary
 
@@ -73,5 +74,4 @@ above and, for any material change, note what changed.
 
 ## Contact
 
-[TO FILL IN — an email address or contact method for privacy
-questions; required for both Play Store and App Store submission.]
+For privacy questions, contact meliordevelopments@gmail.com.
