@@ -848,8 +848,11 @@ Claude smart features, analytics, IAP)._
       screenshots — none exist yet. `assets/` currently only has the
       in-app-bundle icon set (adaptive icon layers, splash, favicon),
       not dedicated store-listing assets.
-- [ ] Title (≤30 chars) / short description (≤80 chars) / full
-      description (≤4,000 chars) — not drafted.
+- [x] Title (≤30 chars) / short description (≤80 chars) / full
+      description (≤4,000 chars) — **drafted 2026-08-28**, see
+      `store-listing.md`. Uses "Spending Tracker" as a placeholder
+      name — `app.json`'s name/slug are still the generic project
+      name, a real product name hasn't been chosen yet.
 - [ ] Content Rating questionnaire — not started (Play Console step,
       no code dependency).
 - [ ] Target Audience declaration — not started (Play Console step,
@@ -864,6 +867,11 @@ Claude smart features, analytics, IAP)._
       stay public forever and renders inside GitHub's code viewer
       rather than as a page) — likely a small dedicated public repo
       just for the policy page, keeping the main app repo private.
+      **Content drafted 2026-08-28** (`privacy-policy.md`) — accurately
+      reflects today's actual network surface (Frankfurter currency
+      API only, no analytics/ads/tracking); has a placeholder section
+      for Dropbox backup to fill in once §3 is built, and still needs
+      a contact email and the actual GitHub Pages hosting step.
 - [ ] **Data Safety form.** Today's real network surface is narrow —
       `services/currency.ts` calls the Frankfurter exchange-rate API
       with only currency codes, no personal data — so the form should
