@@ -2,6 +2,7 @@ import { and, count, eq } from "drizzle-orm";
 
 import { db } from "../client";
 import { accounts, recurringRules, transactions, type AccountType } from "../schema";
+import { refreshAccountsWidget } from "../../widgets/refresh";
 
 export interface AccountInput {
   name: string;
@@ -22,7 +23,7 @@ export interface AccountInput {
 // zero-amount "Opening balance" line is meaningless clutter in the ledger,
 // and skipping it here mirrors the real source app's syncOpeningBalanceTransaction.
 export function createAccount(input: AccountInput): number {
-  return db.transaction((tx) => {
+  const newId = db.transaction((tx) => {
     const [account] = tx
       .insert(accounts)
       .values({
@@ -51,6 +52,8 @@ export function createAccount(input: AccountInput): number {
 
     return account.id;
   });
+  refreshAccountsWidget();
+  return newId;
 }
 
 export interface AccountUpdateInput {
@@ -125,6 +128,7 @@ export function updateAccount(id: number, input: AccountUpdateInput): void {
 
     syncOpeningBalanceTransaction(tx, id, input.openingBalanceMinor, input.openingDate);
   });
+  refreshAccountsWidget();
 }
 
 // Real (non-opening-balance) transactions referencing this account, as
@@ -186,4 +190,5 @@ export function deleteAccount(id: number): void {
       .run();
     tx.delete(accounts).where(eq(accounts.id, id)).run();
   });
+  refreshAccountsWidget();
 }

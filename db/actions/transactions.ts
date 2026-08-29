@@ -2,6 +2,7 @@ import { and, eq } from "drizzle-orm";
 
 import { db } from "../client";
 import { transactionTags, transactions, type TransactionType } from "../schema";
+import { refreshAccountsWidget } from "../../widgets/refresh";
 
 export interface TransactionInput {
   type: TransactionType;
@@ -15,7 +16,7 @@ export interface TransactionInput {
 }
 
 export function createTransaction(input: TransactionInput): number {
-  return db.transaction((tx) => {
+  const newId = db.transaction((tx) => {
     const [row] = tx
       .insert(transactions)
       .values({
@@ -36,6 +37,8 @@ export function createTransaction(input: TransactionInput): number {
 
     return row.id;
   });
+  refreshAccountsWidget();
+  return newId;
 }
 
 // Kept in sync with the account's own opening-balance fields (see
@@ -79,10 +82,12 @@ export function updateTransaction(id: number, input: TransactionInput): void {
       tx.insert(transactionTags).values({ transactionId: id, tagId }).run();
     }
   });
+  refreshAccountsWidget();
 }
 
 export function deleteTransaction(id: number): void {
   db.delete(transactions)
     .where(and(eq(transactions.id, id), eq(transactions.isOpeningBalance, false)))
     .run();
+  refreshAccountsWidget();
 }

@@ -229,6 +229,16 @@ export const settings = sqliteTable("settings", {
   lastAutoBackupDate: text("last_auto_backup_date"),
 });
 
+// Home Screen Widget (spec.md §5.11) — which accounts the "Accounts &
+// Quick Add" widget shows, one row per widget instance (a device can
+// have multiple copies of the same widget, each configured separately).
+// Read directly by the widget's headless JS task handler, not through
+// the normal React Query/hook layer.
+export const widgetAccountSelections = sqliteTable("widget_account_selections", {
+  widgetId: integer("widget_id").primaryKey(),
+  accountIdsJson: text("account_ids_json").notNull(),
+});
+
 export const exchangeRateCache = sqliteTable(
   "exchange_rate_cache",
   {

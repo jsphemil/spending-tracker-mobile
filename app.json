@@ -39,12 +39,15 @@
         {
           "widgets": [
             {
-              "name": "Hello",
-              "label": "Widget Spike Test",
-              "description": "Compatibility spike — not a real feature",
-              "minWidth": "180dp",
-              "minHeight": "110dp",
-              "updatePeriodMillis": 0
+              "name": "Accounts",
+              "label": "Erebor Accounts",
+              "description": "Selected accounts' balances, plus quick-add buttons",
+              "minWidth": "250dp",
+              "minHeight": "250dp",
+              "targetCellWidth": 4,
+              "targetCellHeight": 4,
+              "widgetFeatures": "reconfigurable",
+              "updatePeriodMillis": 1800000
             }
           ]
         }
