@@ -1,17 +1,19 @@
 import React from "react";
 import type { WidgetRepresentation, WidgetTaskHandlerProps } from "react-native-android-widget";
 
-import { deleteWidgetAccountSelection, getWidgetAccountSelection } from "../db/actions/widgetConfig";
+import { deleteWidgetAccountSelection, getWidgetAccountConfig } from "../db/actions/widgetConfig";
+import { currentMonthPeriod, monthLabel } from "../services/period";
 import { AccountsWidget } from "./AccountsWidget";
 import { getAccountsWidgetData } from "./data";
-import { WIDGET_DARK, WIDGET_LIGHT } from "./theme";
+import { getWidgetColors } from "./theme";
 
 export function buildAccountsWidget(widgetId: number): WidgetRepresentation {
-  const accountIds = getWidgetAccountSelection(widgetId);
+  const { accountIds, opacityPct } = getWidgetAccountConfig(widgetId);
   const accounts = getAccountsWidgetData(accountIds);
+  const label = monthLabel(currentMonthPeriod());
   return {
-    light: <AccountsWidget accounts={accounts} colors={WIDGET_LIGHT} />,
-    dark: <AccountsWidget accounts={accounts} colors={WIDGET_DARK} />,
+    light: <AccountsWidget accounts={accounts} colors={getWidgetColors(false, opacityPct)} monthLabel={label} />,
+    dark: <AccountsWidget accounts={accounts} colors={getWidgetColors(true, opacityPct)} monthLabel={label} />,
   };
 }
 

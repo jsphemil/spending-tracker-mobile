@@ -43,9 +43,11 @@
               "label": "Erebor Accounts",
               "description": "Selected accounts' balances, plus quick-add buttons",
               "minWidth": "250dp",
-              "minHeight": "250dp",
+              "minHeight": "110dp",
               "targetCellWidth": 4,
-              "targetCellHeight": 4,
+              "targetCellHeight": 2,
+              "maxResizeHeight": "500dp",
+              "resizeMode": "horizontal|vertical",
               "widgetFeatures": "reconfigurable",
               "updatePeriodMillis": 1800000
             }

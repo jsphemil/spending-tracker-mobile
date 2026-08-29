@@ -22,21 +22,39 @@ export interface WidgetColors {
   textSecondary: HexColor;
 }
 
-export const WIDGET_LIGHT: WidgetColors = {
-  cardBg: "rgba(255, 255, 255, 0.88)",
-  border: "#e4e8f0",
-  dividerStrong: "#d7dce6",
-  textPrimary: "#12172a",
-  textSecondary: "#5b6478",
-};
+const LIGHT_CARD_RGB = "255, 255, 255";
+const DARK_CARD_RGB = "12, 17, 32";
 
-export const WIDGET_DARK: WidgetColors = {
-  cardBg: "rgba(12, 17, 32, 0.82)",
-  border: "#1f2432",
-  dividerStrong: "#2e323f",
-  textPrimary: "#f6f8fc",
-  textSecondary: "#97a1bc",
-};
+// User-adjustable transparency (widget_account_selections.opacityPct,
+// set via a 0-100 slider on the configuration screen) — clamped
+// defensively in case a stale/corrupt value ever ends up outside range.
+function clampOpacityPct(opacityPct: number): number {
+  return Math.min(100, Math.max(0, opacityPct));
+}
+
+export function getWidgetColors(isDark: boolean, opacityPct: number): WidgetColors {
+  const alpha = clampOpacityPct(opacityPct) / 100;
+  // Cast: the interpolated string genuinely matches ColorProp's
+  // `rgba(${number}, ${number}, ${number}, ${number})` template shape at
+  // runtime — TS can't verify that for a dynamically-built string.
+  const cardBg = `rgba(${isDark ? DARK_CARD_RGB : LIGHT_CARD_RGB}, ${alpha})` as ColorProp;
+  if (isDark) {
+    return {
+      cardBg,
+      border: "#1f2432",
+      dividerStrong: "#2e323f",
+      textPrimary: "#f6f8fc",
+      textSecondary: "#97a1bc",
+    };
+  }
+  return {
+    cardBg,
+    border: "#e4e8f0",
+    dividerStrong: "#d7dce6",
+    textPrimary: "#12172a",
+    textSecondary: "#5b6478",
+  };
+}
 
 // Fixed brand accents — same in both themes, matching
 // theme/gradients.ts's GRADIENTS.brand stops and the confirmed mockup's

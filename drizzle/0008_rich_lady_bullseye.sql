@@ -1,0 +1,1 @@
+ALTER TABLE `widget_account_selections` ADD `opacity_pct` integer DEFAULT 85 NOT NULL;

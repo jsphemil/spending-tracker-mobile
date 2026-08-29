@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
+import Slider from "@react-native-community/slider";
 import type { WidgetConfigurationScreenProps } from "react-native-android-widget";
 
-import { saveWidgetAccountSelection } from "../db/actions/widgetConfig";
+import { getWidgetAccountConfig, saveWidgetAccountSelection } from "../db/actions/widgetConfig";
 import { useAccounts } from "../db/queries/accounts";
 import { getAccountBalanceMinor } from "../services/balance";
 import { formatMoney } from "../services/format";
@@ -10,11 +11,12 @@ import { db } from "../db/client";
 import { buildAccountsWidget } from "./widget-task-handler";
 
 // Rendered by react-native-android-widget in its own Activity when the
-// widget is first added (widgetFeatures: "reconfigurable" in app.json) —
-// a separate React root from the main app's, so this deliberately uses
-// plain React Native components + inline styles instead of NativeWind
-// (which needs the CSS-variable context app/_layout.tsx sets up, not
-// present here) or the app's own theme/palette.ts hooks.
+// widget is first added, or reopened via long-press → Settings
+// (widgetFeatures: "reconfigurable" in app.json) — a separate React
+// root from the main app's, so this deliberately uses plain React
+// Native components + inline styles instead of NativeWind (which needs
+// the CSS-variable context app/_layout.tsx sets up, not present here)
+// or the app's own theme/palette.ts hooks.
 const COLORS = {
   bg: "#0c1120",
   surface: "#131a2c",
@@ -27,7 +29,12 @@ const COLORS = {
 
 export function AccountsWidgetConfigScreen({ widgetInfo, renderWidget, setResult }: WidgetConfigurationScreenProps) {
   const { data: accounts } = useAccounts();
-  const [selected, setSelected] = useState<Set<number>>(new Set());
+  // Preloads whatever was saved before (e.g. reopened via long-press →
+  // Settings) — reading once on mount is fine here, this screen doesn't
+  // need to react to the config changing from elsewhere while it's open.
+  const [initialConfig] = useState(() => getWidgetAccountConfig(widgetInfo.widgetId));
+  const [selected, setSelected] = useState<Set<number>>(() => new Set(initialConfig.accountIds));
+  const [opacityPct, setOpacityPct] = useState(initialConfig.opacityPct);
 
   function toggle(id: number) {
     setSelected((prev) => {
@@ -40,7 +47,7 @@ export function AccountsWidgetConfigScreen({ widgetInfo, renderWidget, setResult
 
   function handleSave() {
     const ids = Array.from(selected);
-    saveWidgetAccountSelection(widgetInfo.widgetId, ids);
+    saveWidgetAccountSelection(widgetInfo.widgetId, ids, opacityPct);
     renderWidget(buildAccountsWidget(widgetInfo.widgetId));
     setResult("ok");
   }
@@ -94,6 +101,23 @@ export function AccountsWidgetConfigScreen({ widgetInfo, renderWidget, setResult
           );
         })}
       </ScrollView>
+
+      <View style={{ paddingHorizontal: 20, paddingTop: 16 }}>
+        <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 4 }}>
+          <Text style={{ color: COLORS.fg, fontSize: 15, fontWeight: "600" }}>Widget transparency</Text>
+          <Text style={{ color: COLORS.fgMuted, fontSize: 14, fontWeight: "600" }}>{opacityPct}%</Text>
+        </View>
+        <Slider
+          minimumValue={0}
+          maximumValue={100}
+          step={1}
+          value={opacityPct}
+          onValueChange={setOpacityPct}
+          minimumTrackTintColor={COLORS.accent}
+          maximumTrackTintColor={COLORS.border}
+          thumbTintColor={COLORS.accent}
+        />
+      </View>
 
       <View style={{ padding: 20 }}>
         <Pressable

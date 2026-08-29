@@ -237,6 +237,9 @@ export const settings = sqliteTable("settings", {
 export const widgetAccountSelections = sqliteTable("widget_account_selections", {
   widgetId: integer("widget_id").primaryKey(),
   accountIdsJson: text("account_ids_json").notNull(),
+  // Card background opacity, 0-100 — user-adjustable in the widget's
+  // configuration screen so it can blend with any wallpaper.
+  opacityPct: integer("opacity_pct").notNull().default(85),
 });
 
 export const exchangeRateCache = sqliteTable(

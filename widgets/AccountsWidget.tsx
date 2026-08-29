@@ -1,5 +1,5 @@
 import React from "react";
-import { FlexWidget, TextWidget } from "react-native-android-widget";
+import { FlexWidget, ImageWidget, TextWidget } from "react-native-android-widget";
 import type { HexColor } from "react-native-android-widget";
 
 import { WIDGET_ACCENT, WIDGET_ICON_STROKE, type WidgetColors } from "./theme";
@@ -13,6 +13,7 @@ export interface AccountsWidgetAccount {
 export interface AccountsWidgetProps {
   accounts: AccountsWidgetAccount[];
   colors: WidgetColors;
+  monthLabel: string;
 }
 
 const DEEP_LINK_BASE = "spendingtracker://transaction/new";
@@ -55,7 +56,7 @@ function EmptyState({ colors }: { colors: WidgetColors }) {
   );
 }
 
-export function AccountsWidget({ accounts, colors }: AccountsWidgetProps) {
+export function AccountsWidget({ accounts, colors, monthLabel }: AccountsWidgetProps) {
   return (
     <FlexWidget
       clickAction={accounts.length === 0 ? "OPEN_APP" : undefined}
@@ -68,6 +69,28 @@ export function AccountsWidget({ accounts, colors }: AccountsWidgetProps) {
         flexDirection: "column",
       }}
     >
+      <FlexWidget
+        style={{
+          width: "match_parent",
+          flexDirection: "row",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 10,
+        }}
+      >
+        <TextWidget
+          text={monthLabel}
+          style={{ fontSize: 12, fontWeight: "600", color: colors.textSecondary, letterSpacing: 0.3 }}
+        />
+        <ImageWidget
+          image={require("../assets/icon.png")}
+          imageWidth={26}
+          imageHeight={26}
+          radius={8}
+          clickAction="OPEN_APP"
+        />
+      </FlexWidget>
+
       {accounts.length === 0 ? (
         <EmptyState colors={colors} />
       ) : (

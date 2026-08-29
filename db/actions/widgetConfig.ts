@@ -3,29 +3,37 @@ import { eq } from "drizzle-orm";
 import { db } from "../client";
 import { widgetAccountSelections } from "../schema";
 
-export function saveWidgetAccountSelection(widgetId: number, accountIds: number[]): void {
+export interface WidgetAccountConfig {
+  accountIds: number[];
+  opacityPct: number;
+}
+
+export function saveWidgetAccountSelection(widgetId: number, accountIds: number[], opacityPct: number): void {
   db.insert(widgetAccountSelections)
-    .values({ widgetId, accountIdsJson: JSON.stringify(accountIds) })
+    .values({ widgetId, accountIdsJson: JSON.stringify(accountIds), opacityPct })
     .onConflictDoUpdate({
       target: widgetAccountSelections.widgetId,
-      set: { accountIdsJson: JSON.stringify(accountIds) },
+      set: { accountIdsJson: JSON.stringify(accountIds), opacityPct },
     })
     .run();
 }
 
-export function getWidgetAccountSelection(widgetId: number): number[] {
+export function getWidgetAccountConfig(widgetId: number): WidgetAccountConfig {
   const row = db
     .select()
     .from(widgetAccountSelections)
     .where(eq(widgetAccountSelections.widgetId, widgetId))
     .get();
-  if (!row) return [];
+  if (!row) return { accountIds: [], opacityPct: 85 };
+
+  let accountIds: number[] = [];
   try {
     const parsed = JSON.parse(row.accountIdsJson);
-    return Array.isArray(parsed) ? parsed.filter((v) => typeof v === "number") : [];
+    accountIds = Array.isArray(parsed) ? parsed.filter((v) => typeof v === "number") : [];
   } catch {
-    return [];
+    accountIds = [];
   }
+  return { accountIds, opacityPct: row.opacityPct };
 }
 
 export function deleteWidgetAccountSelection(widgetId: number): void {
