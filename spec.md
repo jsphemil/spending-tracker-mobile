@@ -30,7 +30,7 @@ pushed to a later phase) · ❌ Dropped (cut from scope).
 | §5.8 | Dashboard | ✅ Built & Verified | Full rebuild (net worth gauge, trend chart, asset allocation donut, over-budget banner, embedded calendar, Accounts/Goals/Recent Transactions/Tags cards) + UAT fixes (icon-as-text banner bug, Show-Future-Transactions wiring). UAT checklist §9 confirms the gauge, trend chart, donut, stat row, calendar, and cards all pass. The over-budget banner itself only got a partial re-check ("please push a category over budget and confirm the banner text is clean") — worth one more explicit look, though the underlying bug (icon-as-text) is fixed and visually reconfirmed since. |
 | §5.9 | Navigation | ✅ Built & Verified | 6 tabs (Dashboard, Accounts, Transactions, Commitments, Categories, Profile) with icons — UAT checklist §14 confirms, and every screenshot from the 2026-08-28 design-refresh session shows tab icons rendering correctly (now Lucide icons, see §5.18). |
 | §5.10 | Profile Page | ✅ Built & Verified | Display name, Budget Mode/Show Future Transactions global switches, Base Currency all confirmed via UAT checklist §13. Dropbox section (connect/backup/restore) shipped and was verified on-device 2026-08-28 — see §3. The Light/Dark/System theme toggle described in the original spec text was **removed 2026-08-28** as part of §5.18's dark-only redesign — see that section. |
-| §5.11 | Home Screen Widget | 🚧 In Progress | **Scope expanded 2026-08-28** — two separate selectable widgets: (1) Accounts & Quick Add (any number of selected accounts' balances + Income/Expense/Transfer quick-add icons), (2) Portfolio Rings & Allocation (a ring gauge + asset allocation donut). Android-only for now, matching the iOS-deferred decision. **Library compatibility spike passed 2026-08-28** (`widget-spike` branch) — `react-native-android-widget` v0.22.1 confirmed working against this project's Expo SDK 57/RN 0.86.2, including a `SvgWidget` component that accepts a raw SVG string directly (simplifies Widget 2 — no bitmap-screenshot pipeline needed). **Claude Design mockups for both widgets received and confirmed 2026-08-28** — full layout spec in `homescreen-widget-guide.md`. One design decision confirmed: Widget 2's ring shows **% of net worth invested vs. liquid**, a new metric specific to this widget, not the Dashboard's income/expense capacity gauge. Not yet built: both real widgets, still just the spike scaffold. |
+| §5.11 | Home Screen Widget | 🚧 In Progress | Two separate selectable widgets, Android-only, matching the iOS-deferred decision. **Widget 1 (Accounts & Quick Add) built & verified 2026-08-29** — rewritten natively as Kotlin + Jetpack Glance (`modules/widget-bridge/`), replacing an earlier `react-native-android-widget` JS-library implementation entirely (that library turned out to be a classic bitmap-swap `AppWidgetProvider`, not real Glance). Selected accounts' balances + Income/Expense/Transfer quick-add pills, matching the app's real dark palette and semantic success/danger/transfer colors. **Widget 2 (Portfolio Rings & Allocation) still 📋 Planned, not started.** |
 | §5.12 | Visual Design System (superseded) | ✅ Built & Verified | The dark-first token theme / monospace-tabular / gauge-over-pie system described here shipped and was verified (Phases 1-3, UAT checklist §15). **Superseded 2026-08-28 by §5.18** — the token *values*, glass-card ask from UAT §15 ("a glass effect would be nice"), and the whole visual language were replaced wholesale by the Erebor redesign. Kept here for history; §5.18 is now the authoritative visual-design status. |
 | §5.13 | First-Run Onboarding & Base Currency | ✅ Built & Verified | Onboarding flow + gate, live per-install base currency (not hardcoded INR), searchable ~170-currency picker. UAT checklist §1 confirms every step, the currency-picker search, and base-currency-change recalculation across the whole app — all pass (including the 2026-08-21 SafeAreaView fix for the onboarding-flush-to-top bug). |
 | §5.14 | CSV Export | ✅ Built & Verified | Matches the web app's account/date-filtered CSV export; required a native rebuild for `expo-file-system`/`expo-sharing` — verified on-device 2026-08-12, and re-confirmed working after all the base-currency changes (UAT checklist §12). |
@@ -533,37 +533,63 @@ now stale and kept only for history.
 ### 5.11 Mobile Home Screen Widget 🚧 In Progress
 
 **Scope expanded 2026-08-28 to two separate, independently-selectable
-widgets** (superseding the single-widget description originally
-below, kept struck-through for history) — full build plan lives in
-`homescreen-widget-guide.md`, not duplicated here:
+widgets** — full original build plan lived in `homescreen-widget-guide.md`;
+that guide is now partially superseded by the native rewrite below.
 
-1. **Accounts & Quick Add** — any number of selected accounts' current
-   balances, plus Income/Expense/Transfer quick-add icon buttons that
-   deep-link into the existing transaction form pre-filled.
-2. **Portfolio Rings & Allocation** — a miniature version of the
-   Dashboard's net worth gauge + asset allocation donut, rendered as a
-   refreshing bitmap image (Android widgets can't embed the app's live
-   SVG chart components directly).
+1. **Accounts & Quick Add** ✅ Built & Verified 2026-08-29 — any number
+   of selected accounts' current balances, plus Income/Expense/Transfer
+   quick-add pill buttons that deep-link into the existing transaction
+   form pre-filled with the right type.
+2. **Portfolio Rings & Allocation** 📋 Planned, not started — a
+   miniature version of the Dashboard's net worth gauge + asset
+   allocation donut.
 
-Both must adapt to the device's system light/dark theme (shipped as
-two explicit widget appearances, not one CSS-adaptive theme) and are
-**Android-only for now**, matching the iOS-deferred decision (§2).
-Not started — first step is verifying `react-native-android-widget`'s
-compatibility with this project's Expo SDK 57.
+Both are **Android-only for now**, matching the iOS-deferred decision (§2).
 
-~~Since this app is native mobile from day one (not a wrapped web app),
-the home-screen widget is core v1, not a later phase~~
-- ~~Setting up the widget: when adding the widget to the home screen,
-  you're asked to pick which account it should track (so you can pin
-  your most-used account, e.g. your daily spending account)~~
-- ~~Shows: the selected account's name and current balance~~
-- ~~Two quick-action buttons right on the widget: + Expense and
-  + Income, so a transaction can be logged in a couple of taps from
-  the phone's home screen~~
-- ~~Changing the account at entry time: tapping + Expense or + Income
-  opens the transaction entry screen pre-filled with the widget's
-  account, but that account can still be changed there before the
-  transaction is confirmed — the widget's account is a default, not a lock~~
+**Rewritten natively 2026-08-29** (superseding the original
+`react-native-android-widget` JS-library implementation): Widget 1 is
+now real **Kotlin + Jetpack Glance** code living in `modules/widget-bridge/`
+(a local Expo module), not the JS library — the library turned out to be
+a classic `AppWidgetProvider`/bitmap-swap wrapper rather than an actual
+Glance implementation, so it was replaced entirely rather than papered
+over. `react-native-android-widget` and `@react-native-community/slider`
+were uninstalled; the JS-side widget files (`AccountsWidget.tsx`,
+`AccountsWidgetConfigScreen.tsx`, `widget-task-handler.tsx`, `data.ts`,
+`theme.ts`, `db/actions/widgetConfig.ts`) were deleted. `widgets/refresh.ts`
+now calls the new module's `refreshAccountsWidget()` bridge function
+(→ `AccountsGlanceWidget().updateAll(context)`) instead of the old
+library's `requestWidgetUpdate`; the 6 call sites in
+`db/actions/{accounts,transactions}.ts` are unchanged. The
+`widget_account_selections` table is unchanged in shape but is now
+natively owned — Kotlin reads/writes it directly via `SQLiteDatabase`
+against `${context.filesDir}/SQLite/spending-tracker.db` (confirmed
+read-only-safe alongside the app's own live `expo-sqlite` connection).
+
+Verified on-device: widget add + configure (account multi-select +
+0-100% opacity slider, both Compose UI, matching the app's real dark
+palette and `components/ui/Button.tsx`'s brand-gradient primary button
+style — not the widget's own accent colors); correct balances for
+multiple accounts; dark-only theming (the widget always renders the
+app's dark palette regardless of system light/dark, matching
+`useResolvedTheme()` always resolving `"dark"` — adapting to system
+theme was tried first and rejected, since it produced a light card the
+app itself never has); Income/Expense/Transfer pills colored to match
+the real app's semantic `bg-success`/`bg-danger`/`bg-transfer` (not the
+brand gradient); deep links opening the transaction form pre-filled;
+resize behavior (`fillMaxSize` + a weighted middle section keeps the
+header pinned to the top and the pills pinned to the bottom at any
+allocated height, instead of leaving dead space or clipping the pills).
+Not independently re-verified after this rewrite: the instant-refresh-
+after-transaction path (`refreshAccountsWidget()` → `updateAll()`) —
+the hook points in `db/actions/*.ts` are untouched, and the same
+`updateAll`/`update` mechanism was exercised successfully by the config
+screen's own save flow, but a live add-transaction-and-watch check
+wasn't completed on-device (blocked by unrelated Metro/ADB flakiness,
+not a code change) and would be worth a real click-through.
+
+Widget 2 (Portfolio Rings & Allocation) is deferred — out of scope for
+this pass, follows the same native Glance pattern later as a second
+`GlanceAppWidget` in the same module.
 
 ### 5.13 First-Run Onboarding & Base Currency ✅ Built & Verified
 - **Decided 2026-08-12.** The real web app hardcodes `INR` as the base
