@@ -108,13 +108,12 @@ class AccountsGlanceWidget : GlanceAppWidget() {
     val openApp = openAppIntent(context)
 
     provideContent {
-      Content(context, accounts, colors, monthLabel, iconBitmap, openApp)
+      Content(accounts, colors, monthLabel, iconBitmap, openApp)
     }
   }
 
   @Composable
   private fun Content(
-    context: Context,
     accounts: List<WidgetAccountBalance>,
     colors: WidgetColors,
     monthLabel: String,

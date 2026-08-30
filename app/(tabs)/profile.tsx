@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { ScrollView, Switch, Text, View } from "react-native";
+import { Linking, Pressable, ScrollView, Switch, Text, View } from "react-native";
+import Constants from "expo-constants";
 import { Input } from "../../components/ui/Input";
 
 import { CurrencyPicker } from "../../components/CurrencyPicker";
@@ -9,6 +10,8 @@ import { updateSettings } from "../../db/actions/settings";
 import { useSettings } from "../../db/queries/settings";
 import { TAB_BAR_CLEARANCE } from "../../theme/tabBar";
 import { useThemeColors } from "../../theme/palette";
+
+const PRIVACY_POLICY_URL = "https://meliordevelopments.github.io/erebor-wealth-management-pp/";
 
 export default function ProfileScreen() {
   const { settings } = useSettings();
@@ -88,6 +91,15 @@ export default function ProfileScreen() {
         dropboxAccountEmail={settings.dropboxAccountEmail}
         lastAutoBackupDate={settings.lastAutoBackupDate}
       />
+
+      <View className="items-center gap-1 pt-4">
+        <Pressable onPress={() => Linking.openURL(PRIVACY_POLICY_URL)}>
+          <Text className="text-sm font-medium text-accent">Privacy Policy</Text>
+        </Pressable>
+        <Text className="text-xs text-fg-subtle">
+          Erebor Wealth Management · v{Constants.expoConfig?.version ?? "1.0.0"}
+        </Text>
+      </View>
     </ScrollView>
   );
 }
