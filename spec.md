@@ -930,12 +930,13 @@ Readiness)** — not app code:
 
 ## 9. Play Store Launch Readiness
 
-_Last updated: 2026-08-12. Tracked separately from the Status Dashboard
+_Last updated: 2026-08-29. Tracked separately from the Status Dashboard
 above since these are Play Console/submission requirements, not app
 features — reviewed against Google's Play Store requirements
-2026-08-12. Re-check the "Privacy & data" items every time a feature
-that talks to the network or a third party lands (Dropbox backup,
-Claude smart features, analytics, IAP)._
+2026-08-12, code re-reviewed end-to-end 2026-08-29. Re-check the
+"Privacy & data" items every time a feature that talks to the network
+or a third party lands (Dropbox backup, Claude smart features,
+analytics, IAP)._
 
 ### Technical / build
 - [x] Production build outputs a signed `.aab`, not `.apk` —
@@ -947,11 +948,41 @@ Claude smart features, analytics, IAP)._
 - [x] Minimal, justified permissions — no `expo-location`/
       `expo-camera`/`expo-notifications`/`expo-media-library` in
       `package.json`, no explicit `android.permissions` block in
-      `app.json`.
-- [ ] Confirm the actual EAS build targets API 36 (Android 16) and,
-      if any native `.so` libs end up in the build, that they're
-      16KB-page-aligned — not independently verifiable from source;
-      check the EAS build output once a production build is run.
+      `app.json`. `AndroidManifest.xml`'s `SYSTEM_ALERT_WINDOW` entry
+      traced to `react-native`'s own `debug`-variant manifest
+      (`ReactAndroid/src/debug/AndroidManifest.xml`) — merged into
+      debug builds only, absent from release/AAB.
+- [x] Target/compile SDK — confirmed via `react-native@0.86.3`'s
+      bundled version catalog (`node_modules/react-native/gradle/libs.versions.toml`):
+      `targetSdk = 36`, `compileSdk = 36`, `minSdk = 24`, satisfying
+      Play's current minimum (targetSdk 35). Not independently
+      verifiable whether any vendored `.so` is 16KB-page-aligned from
+      source — still worth a glance at the next EAS build log.
+- [x] **Dependency drift fixed 2026-08-29** — `npx expo-doctor` was
+      20/21 (patch-version mismatches on `expo`, `expo-constants`,
+      `expo-dev-client`, `expo-file-system`, `expo-font`,
+      `expo-router`, `expo-sharing`, `expo-sqlite`, `react-native`
+      against what SDK 57.0.18 expects). Ran `npx expo install --fix`;
+      now 21/21. `npx tsc --noEmit` and `npx jest` (53 tests) stay
+      clean after the bump.
+- [x] **Splash screen white-flash on cold launch fixed 2026-08-29** —
+      root cause: `app.json` had no splash config at all (defaulted to
+      white) and `userInterfaceStyle` was `"light"` on a dark-only app.
+      Fixed via the `expo-splash-screen` config plugin
+      (`backgroundColor: "#0c1120"`, using the real app icon) plus
+      `userInterfaceStyle: "dark"` + `expo-system-ui` (required for
+      that setting to take effect on Android). Confirmed via live SDK
+      57 docs that the legacy top-level `"splash"` key no longer
+      exists.
+- [x] **Fresh production AAB built 2026-08-29** (versionCode 3,
+      auto-incremented from 2), including all of today's fixes above —
+      splash/theme config, in-app privacy policy link, and the
+      dependency-alignment bump: `eas build --platform android --profile production`
+      https://expo.dev/artifacts/eas/i2-lEOzak6-uE2IZ69iaMY3j2z-gQZd5iyUlQwEBSlw.aab
+      (build logs: https://expo.dev/accounts/jsphemil/projects/spending-tracker-mobile/builds/c175a84b-51a0-4d78-87ec-066e8880b362).
+      Signed with the existing EAS-managed remote keystore (Build
+      Credentials `uwbFl8AYVm`) — confirms release builds never touch
+      the local debug keystore.
 
 ### Legal
 - [x] **License decided 2026-08-28: All Rights Reserved / proprietary**
@@ -1021,6 +1052,10 @@ Claude smart features, analytics, IAP)._
       the Dropbox backup section (App-folder-scoped access, on-device
       secure token storage, never seeing backup content), and lists
       meliordevelopments@gmail.com as the contact email.
+- [x] **In-app link added 2026-08-29** — Profile screen footer now
+      links to the hosted policy above and shows the app version
+      (`app/(tabs)/profile.tsx`), so the policy isn't reachable only
+      from the Play Store listing page.
 - [ ] **Data Safety form.** Was narrow (Frankfurter currency API only,
       no personal data) — **now that Dropbox backup (§3) is
       code-complete, this form needs to account for it before
@@ -1046,9 +1081,10 @@ Claude smart features, analytics, IAP)._
       — see the Payments Merchant item below.
 
 ### Accounts & process
-- [ ] Google Play Developer account ($25, individual, government-ID
-      verification, few days to a week) — **in progress 2026-08-28**,
-      user has started sign-up; step-by-step in `closed-testing-guide.md`.
+- [x] Google Play Developer account — **confirmed ready 2026-08-29**
+      by the user ("ready with the google account and everything").
+      Not independently re-verified in Play Console this session; if
+      closed testing hasn't actually started yet, see the item below.
 - [ ] **Google Payments Merchant account — not needed yet, revisited
       2026-08-28.** The user had started this (Play Console prompted
       for it while poking at payments setup) and hit BillDesk's KYC
@@ -1069,10 +1105,10 @@ Claude smart features, analytics, IAP)._
       2023, and the single longest lead-time item in the whole
       process. **Started 2026-08-28** — see `closed-testing-guide.md`
       for the full walkthrough. First production AAB built 2026-08-28
-      via `eas build --platform android --profile production`
-      (versionCode 2), ready to upload the moment a Play Console app
-      exists: https://expo.dev/artifacts/eas/a-XWPkXk4p5iYVT7JamaajK7gMVl1vP_vBU9ALhJEO0.aab
-      (build logs: https://expo.dev/accounts/jsphemil/projects/spending-tracker-mobile/builds/a58ff3f9-d2fc-4227-957e-53e50266008e).
+      (versionCode 2); **superseded 2026-08-29 by versionCode 3** (see
+      "Technical / build" above) — use that one to upload, it carries
+      the splash-screen, privacy-link, and dependency-alignment fixes
+      the versionCode-2 build predates.
 
 ---
 *Once this file reflects what you want, the next step is setting up a
