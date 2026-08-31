@@ -995,7 +995,7 @@ analytics, IAP)._
       glassy-neon mountain-peak glyph on the brand gradient, per
       `store-assets-guide.md`), exported text-free after an initial
       version with a wordmark was rejected for illegibility at small
-      sizes. Play Store listing icon at `assets/store/icon-512.png`
+      sizes. Play Store listing icon at `project-docs/store/assets/icon-512.png`
       (512×512, RGBA PNG). Also regenerated the in-app icon set from
       it: `assets/icon.png` (1024×1024, iOS/general), Android adaptive
       icon layers (`assets/android-icon-foreground.png`,
@@ -1007,14 +1007,14 @@ analytics, IAP)._
       clipping). `app.json`'s `adaptiveIcon.backgroundColor` updated
       to `#4c7dff` to match. Native rebuild done same day — new icon
       confirmed live on the user's device.
-- [x] **Feature graphic — done 2026-08-28.** `assets/store/feature-graphic.png`
+- [x] **Feature graphic — done 2026-08-28.** `project-docs/store/assets/feature-graphic.png`
       (1024×500, RGB, no alpha). First draft used an unrelated orange
       dot-pyramid mark that didn't match the real app icon — caught in
       review, regenerated in Claude Design using the actual icon file
       as reference; now uses the same chevron glyph and brand
       gradient as `assets/icon.png`.
 - [x] **Screenshots — done 2026-08-28.** 7 phone screenshots at
-      `assets/store/screenshots/` (1080×2340, RGB, no alpha), covering
+      `project-docs/store/assets/screenshots/` (1080×2340, RGB, no alpha), covering
       Dashboard (net worth, asset allocation, accounts card),
       Accounts, Transactions, Categories, and Profile — each a real
       screenshot in a device frame with a marketing caption, per

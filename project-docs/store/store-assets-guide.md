@@ -82,7 +82,7 @@ gradient-filled square background (Play Store icons shouldn't rely on
 transparency for the main shape).
 ```
 
-**After exporting:** save it as `assets/store/icon-512.png` in the
+**After exporting:** save it as `project-docs/store/assets/icon-512.png` in the
 repo and tell me — I'll generate the adaptive-icon layers (foreground/
 background/monochrome) it needs for the in-app Android icon and wire
 up `app.json`, since that's a native-asset-slicing step, not something
@@ -107,7 +107,7 @@ side. Keep it clean and readable at a glance — this is marketing, not
 a screenshot. No transparency in the export.
 ```
 
-**After exporting:** save as `assets/store/feature-graphic.png` (or
+**After exporting:** save as `project-docs/store/assets/feature-graphic.png` (or
 `.jpg`).
 
 ---
@@ -150,7 +150,7 @@ redraw the UI itself. Change the account and transactions details such as names,
 Repeat per screenshot, swapping the caption for something specific to
 that screen.
 
-**After exporting:** save as `assets/store/screenshot-1.png` through
+**After exporting:** save as `project-docs/store/assets/screenshot-1.png` through
 `screenshot-N.png` (matching the order above).
 
 ---
@@ -158,7 +158,7 @@ that screen.
 ## When you're done
 
 Send me the exported files (or tell me they're saved under
-`assets/store/`) and I'll:
+`project-docs/store/assets/`) and I'll:
 - Slice the icon into Android adaptive-icon layers and update
   `app.json`
 - Update `spec.md`'s Store Listing checklist row to ✅

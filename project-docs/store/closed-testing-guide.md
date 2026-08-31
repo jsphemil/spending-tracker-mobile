@@ -115,7 +115,7 @@ sheet (exempt as user-directed sharing).
 - **Store listing text** (title, short + full description) — copied
   directly from `store-listing.md`, already drafted.
 - **Graphics** — icon, feature graphic, 7 screenshots, all in
-  `assets/store/`.
+  `project-docs/store/assets/`.
 
 ---
 
