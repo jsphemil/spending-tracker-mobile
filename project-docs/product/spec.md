@@ -581,11 +581,35 @@ header pinned to the top and the pills pinned to the bottom at any
 allocated height, instead of leaving dead space or clipping the pills).
 Not independently re-verified after this rewrite: the instant-refresh-
 after-transaction path (`refreshAccountsWidget()` → `updateAll()`) —
-the hook points in `db/actions/*.ts` are untouched, and the same
-`updateAll`/`update` mechanism was exercised successfully by the config
-screen's own save flow, but a live add-transaction-and-watch check
-wasn't completed on-device (blocked by unrelated Metro/ADB flakiness,
-not a code change) and would be worth a real click-through.
+the hook points in `db/actions/*.ts` are untouched, but a live
+add-transaction-and-watch check wasn't completed on-device (blocked by
+unrelated Metro/ADB flakiness, not a code change) and would be worth a
+real click-through.
+
+**Bug found and fixed 2026-08-31**, via the real Play Store closed
+testing install (versionCode 4) — the first genuine on-device test of
+this rewrite: after adding the widget and selecting accounts in the
+config screen, it stayed on the "Tap to choose accounts" empty state
+instead of showing the selection, only self-correcting after the next
+scheduled 30-minute update. Root cause: `AccountsWidgetConfigActivity`'s
+`saveAndFinish()` resolved a `GlanceId` via
+`GlanceAppWidgetManager.getGlanceIdBy(appWidgetId)` and called
+`update()` on that single id — right after a widget's very first bind,
+Glance's internal id registry hasn't necessarily processed the new
+appWidgetId yet, so the lookup can silently miss with no crash and no
+error, making the refresh a no-op. (The previous note above, that this
+exact mechanism "was exercised successfully by the config screen's own
+save flow," was a false positive from earlier dev-build testing —
+correcting the record here.) Confirmed via on-device repro + `adb
+logcat` (save completes cleanly, no exceptions; reconfiguring showed
+the saved selection correctly, ruling out the config read/write cycle
+itself) before diagnosing the stale-GlanceId cause. Fixed by switching
+to `updateAll()` — the same call `refreshAccountsWidget()` already uses
+— which refreshes every placed instance without resolving a specific
+id. Fix compiles clean (`gradlew :widget-bridge:compileDebugKotlin`);
+**on-device re-verification is pending the next build** (queued as
+versionCode 5, doubling as the first of the 3 closed-testing updates
+planned in `closed-testing-guide.md` §8).
 
 Widget 2 (Portfolio Rings & Allocation) is deferred — out of scope for
 this pass, follows the same native Glance pattern later as a second
