@@ -611,6 +611,22 @@ id. Fix compiles clean (`gradlew :widget-bridge:compileDebugKotlin`);
 versionCode 5, doubling as the first of the 3 closed-testing updates
 planned in `closed-testing-guide.md` §8).
 
+**Layout issue found and fixed 2026-08-31**, from the same on-device
+session: the account rows lived in a plain `Column` with
+`verticalAlignment = CenterVertically` inside the header/footer's
+`defaultWeight()` middle section, so any extra height the launcher
+allocated beyond what the selected accounts needed showed up as
+padding split above *and* below the list — and a widget resized taller
+than its content, or with more accounts than fit the allocated height,
+had no way to reach the rest. Fixed by switching that section to
+Glance's `LazyColumn` (`androidx.glance.appwidget.lazy`): content
+renders top-down so leftover space collects in one gap below the last
+row instead of being split, and the list scrolls once it overflows the
+allocated height instead of clipping. The empty-state placeholder keeps
+its own centered `Column`. Compiles clean; **on-device verification
+pending**, bundled into the same versionCode 5 build as the refresh fix
+above.
+
 Widget 2 (Portfolio Rings & Allocation) is deferred — out of scope for
 this pass, follows the same native Glance pattern later as a second
 `GlanceAppWidget` in the same module.
