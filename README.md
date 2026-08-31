@@ -11,8 +11,8 @@ This is a from-scratch mobile rebuild of an existing web app
 carrying over its feature set and lessons learned but built
 mobile-only and local-first, for distribution through the App Store
 and Play Store as a standalone, sellable product. See
-[`spec.md`](spec.md) for the full product spec and current build
-status, and [`backlog.md`](backlog.md) for the detailed change/bugfix
+[`spec.md`](project-docs/product/spec.md) for the full product spec and current build
+status, and [`backlog.md`](project-docs/product/backlog.md) for the detailed change/bugfix
 history.
 
 ## Status
@@ -61,8 +61,11 @@ npx jest           # run the test suite
 - `services/` — business logic (balances, recurrence, currency
   conversion, CSV export, etc.), covered by the Jest suite
 - `theme/` — design tokens, palette, icon mapping
-- `spec.md` / `backlog.md` — living product spec and change log;
-  check these before making product decisions
+- `project-docs/` — human-facing reference docs: `product/` (spec.md,
+  backlog.md — check these before making product decisions),
+  `store/` (Play Store listing, assets, privacy policy, closed
+  testing guide), `engineering/` (widget build guide),
+  `design-reference/` (design mockup exports)
 
 ## License
 

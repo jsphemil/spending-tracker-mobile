@@ -2,6 +2,9 @@
 
 ## Idea Backlog Protocol
 
+`backlog.md` and `spec.md` referenced below live at
+`project-docs/product/backlog.md` and `project-docs/product/spec.md`.
+
 At the start of every new task or session, before continuing planned work:
 
 - Check `backlog.md`'s **Inbox** for unreviewed entries.
