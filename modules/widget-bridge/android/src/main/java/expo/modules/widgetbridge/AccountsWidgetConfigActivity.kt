@@ -39,7 +39,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.glance.appwidget.GlanceAppWidgetManager
+import androidx.glance.appwidget.updateAll
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 
@@ -91,8 +91,14 @@ class AccountsWidgetConfigActivity : ComponentActivity() {
     saveWidgetConfig(this, appWidgetId, selectedIds, opacityPct)
 
     lifecycleScope.launch {
-      val glanceId = GlanceAppWidgetManager(this@AccountsWidgetConfigActivity).getGlanceIdBy(appWidgetId)
-      AccountsGlanceWidget().update(this@AccountsWidgetConfigActivity, glanceId)
+      // updateAll(), not update(context, getGlanceIdBy(appWidgetId)) — right after
+      // a widget's very first bind, Glance's internal GlanceId registry hasn't
+      // necessarily processed this appWidgetId yet, making getGlanceIdBy
+      // silently miss (no crash, just a no-op refresh). updateAll() refreshes
+      // every placed instance without needing to resolve a specific id, so the
+      // freshly-saved selection renders immediately instead of waiting for the
+      // next scheduled 30-minute update.
+      AccountsGlanceWidget().updateAll(this@AccountsWidgetConfigActivity)
 
       setResult(Activity.RESULT_OK, Intent().putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId))
       finish()
