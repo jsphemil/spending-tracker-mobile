@@ -18,6 +18,8 @@ import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.action.actionStartActivity
 import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.glance.appwidget.cornerRadius
+import androidx.glance.appwidget.lazy.LazyColumn
+import androidx.glance.appwidget.lazy.itemsIndexed
 import androidx.glance.appwidget.provideContent
 import androidx.glance.background
 import androidx.glance.layout.Alignment
@@ -153,36 +155,45 @@ class AccountsGlanceWidget : GlanceAppWidget() {
         // defaultWeight() so this section absorbs any extra/deficit height
         // the launcher allocates beyond the natural content size — keeps
         // the header pinned to the top and the action pills pinned to the
-        // bottom at every resize step, instead of leaving dead space below
-        // the pills (taller) or letting the pills get pushed off (shorter).
-        Column(
-          modifier = GlanceModifier.fillMaxWidth().defaultWeight(),
-          verticalAlignment = Alignment.Vertical.CenterVertically,
-        ) {
-          if (accounts.isEmpty()) {
+        // bottom at every resize step. The empty-state placeholder stays
+        // centered (a single short line looks odd pinned to the top), but
+        // a real account list renders top-aligned via LazyColumn instead of
+        // a plain Column — so any extra allocated height shows up as one
+        // gap below the last row rather than padding split above and below
+        // it, and a widget resized tall with many accounts scrolls instead
+        // of overflowing or clipping.
+        if (accounts.isEmpty()) {
+          Column(
+            modifier = GlanceModifier.fillMaxWidth().defaultWeight(),
+            verticalAlignment = Alignment.Vertical.CenterVertically,
+          ) {
             Text(
               text = "Tap to choose accounts",
               style = TextStyle(fontSize = 13.sp, color = ColorProvider(colors.textSecondary)),
             )
-          } else {
-            accounts.forEachIndexed { index, acct ->
-              if (index > 0) {
-                Box(modifier = GlanceModifier.fillMaxWidth().height(1.dp).background(colors.border)) {}
-              }
-              Row(
-                modifier = GlanceModifier.fillMaxWidth().padding(vertical = 7.dp),
-                verticalAlignment = Alignment.Vertical.CenterVertically,
-              ) {
-                Text(
-                  text = acct.name,
-                  maxLines = 1,
-                  style = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.Medium, color = ColorProvider(colors.textPrimary)),
-                  modifier = GlanceModifier.defaultWeight(),
-                )
-                Text(
-                  text = formatMoney(acct.balanceMinor, acct.currency),
-                  style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Bold, color = ColorProvider(WIDGET_ACCENT_CYAN)),
-                )
+          }
+        } else {
+          LazyColumn(modifier = GlanceModifier.fillMaxWidth().defaultWeight()) {
+            itemsIndexed(accounts, itemId = { _, acct -> acct.id }) { index, acct ->
+              Column {
+                if (index > 0) {
+                  Box(modifier = GlanceModifier.fillMaxWidth().height(1.dp).background(colors.border)) {}
+                }
+                Row(
+                  modifier = GlanceModifier.fillMaxWidth().padding(vertical = 7.dp),
+                  verticalAlignment = Alignment.Vertical.CenterVertically,
+                ) {
+                  Text(
+                    text = acct.name,
+                    maxLines = 1,
+                    style = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.Medium, color = ColorProvider(colors.textPrimary)),
+                    modifier = GlanceModifier.defaultWeight(),
+                  )
+                  Text(
+                    text = formatMoney(acct.balanceMinor, acct.currency),
+                    style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Bold, color = ColorProvider(WIDGET_ACCENT_CYAN)),
+                  )
+                }
               }
             }
           }
