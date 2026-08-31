@@ -13,7 +13,6 @@
     },
     "android": {
       "package": "com.jsphemil.spendingtracker",
-      "versionCode": 5,
       "adaptiveIcon": {
         "backgroundColor": "#4c7dff",
         "foregroundImage": "./assets/android-icon-foreground.png",

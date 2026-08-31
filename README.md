@@ -53,22 +53,6 @@ npx tsc --noEmit   # type-check
 npx jest           # run the test suite
 ```
 
-### Opening in Android Studio
-
-`android/` is generated (gitignored) — regenerated from `app.json`
-and `modules/widget-bridge` by `expo prebuild`, never hand-edited.
-Point Android Studio at the **`android/` subfolder itself**, not the
-repo root — the repo root is an Expo/Metro project, not a Gradle
-project, so opening it directly in Android Studio won't give you
-Gradle sync or run configs.
-
-Workflow: source edits (TS/JS/Kotlin) happen outside Android Studio;
-Android Studio is for running on a device/emulator, Logcat, the
-widget host surface, and building signed release bundles locally.
-After any change to `app.json`'s native config or
-`modules/widget-bridge`, `android/` needs regenerating
-(`npx expo prebuild`) and Android Studio needs a Gradle re-sync.
-
 ## Project structure
 
 - `app/` — screens and navigation (Expo Router, file-based)
