@@ -210,10 +210,34 @@ and weak/unconvincing tester engagement evidence. Shipping a static
 build for the full 14 days — even a bug-free one — reads as
 un-maintained.
 
-**Plan for this app:** publish 3 closed-testing releases against
-versionCode 4 (the current live "EWM Alpha" release), each a real,
-user-visible change with honest release notes — not padding. Natural
-candidates already identified in this project:
+**Update 1 shipped as versionCode 9 (2026-09-01)** — the home screen
+widget not showing selected accounts until minutes after setup. Found
+by testing the actual closed-testing build, root-caused, fixed, and
+verified on-device before release. Note that versionCodes 5-8 were
+*attempts* at this same bug that did not fix it; only 9 is verified.
+That history is worth being candid about in the production-access form,
+since "we found a real bug in testing, diagnosed it properly, and
+shipped a verified fix" is exactly the kind of evidence it asks for.
+
+**How this one was verified (reusable method).** Rather than shipping a
+guess and waiting ~20 minutes per Play round trip, the fix was proven
+locally over adb:
+1. Back up real data (Dropbox), then uninstall the Play build.
+2. Build and install a debug APK of the **pre-fix** code, seed
+   throwaway accounts directly into SQLite via `run-as`, and
+   **reproduce the bug** — this validates the harness before trusting
+   any later pass.
+3. Build the fixed code and `adb install -r` it as an **upgrade**
+   (same debug key, so data and placed widgets survive) — which also
+   tests the real migration path an existing tester would hit.
+4. Run the test matrix with `adb logcat` capturing throughout.
+5. Only then ship to Play.
+Worth repeating for any future bug that survives one release attempt.
+
+**Plan for the remaining 2 updates:** publish them against the live
+"EWM Alpha" track, each a real, user-visible change with honest release
+notes — not padding. Natural candidates already identified in this
+project:
 1. A genuine small fix or polish item that comes up from tester
    feedback or normal development during the window (preferred — real
    feedback-driven change is exactly what Google wants documented).

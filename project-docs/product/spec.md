@@ -586,30 +586,68 @@ add-transaction-and-watch check wasn't completed on-device (blocked by
 unrelated Metro/ADB flakiness, not a code change) and would be worth a
 real click-through.
 
-**Bug found and fixed 2026-08-31**, via the real Play Store closed
-testing install (versionCode 4) — the first genuine on-device test of
-this rewrite: after adding the widget and selecting accounts in the
-config screen, it stayed on the "Tap to choose accounts" empty state
-instead of showing the selection, only self-correcting after the next
-scheduled 30-minute update. Root cause: `AccountsWidgetConfigActivity`'s
-`saveAndFinish()` resolved a `GlanceId` via
-`GlanceAppWidgetManager.getGlanceIdBy(appWidgetId)` and called
-`update()` on that single id — right after a widget's very first bind,
-Glance's internal id registry hasn't necessarily processed the new
-appWidgetId yet, so the lookup can silently miss with no crash and no
-error, making the refresh a no-op. (The previous note above, that this
-exact mechanism "was exercised successfully by the config screen's own
-save flow," was a false positive from earlier dev-build testing —
-correcting the record here.) Confirmed via on-device repro + `adb
-logcat` (save completes cleanly, no exceptions; reconfiguring showed
-the saved selection correctly, ruling out the config read/write cycle
-itself) before diagnosing the stale-GlanceId cause. Fixed by switching
-to `updateAll()` — the same call `refreshAccountsWidget()` already uses
-— which refreshes every placed instance without resolving a specific
-id. Fix compiles clean (`gradlew :widget-bridge:compileDebugKotlin`);
-**on-device re-verification is pending the next build** (queued as
-versionCode 5, doubling as the first of the 3 closed-testing updates
-planned in `closed-testing-guide.md` §8).
+**Refresh bug — found 2026-08-31, root-caused and fixed 2026-09-01.**
+Surfaced by the real Play Store closed testing install (versionCode 4),
+the first genuine on-device test of this rewrite: after selecting
+accounts and saving, the widget stayed on "Tap to choose accounts" and
+only showed the selection minutes later.
+
+Three releases (versionCodes 5, 6, 7) failed to fix it because all of
+them treated it as a problem of *delivering the update signal*
+(`getGlanceIdBy`+`update` → `updateAll` → polling `getGlanceIds` before
+updating). The real defect was that the data was unreachable by any
+signal.
+
+**Actual root cause**, established from the Glance 1.1.1 bytecode
+rather than inferred: `GlanceAppWidgetKt.provideContent` is declared
+`Continuation<?>` — an erased Kotlin `Nothing`, i.e. it never returns.
+`provideGlance()` therefore runs exactly **once per session** and then
+parks inside it, so anything read into a local before that call is
+captured immutably for the whole session. `AppWidgetSession` exposes
+`provideGlance()` and `updateGlance()` as separate operations, and
+`update()` routes through `getOrCreateAppWidgetSession`: with a session
+already alive it only recomposes the *already-captured* content lambda.
+The widget bound at add-time (nothing selected yet), captured an empty
+account list, and parked; saving wrote SQLite correctly but no
+`update()` could ever surface it, because SQLite is not observable
+Compose state. Only when the session eventually ended did a new one
+re-run `provideGlance` and re-read the database.
+
+Proven on-device, old build vs new, 2026-09-01 (see
+`closed-testing-guide.md` for the full test matrix). The decisive log
+line is from the *polling* build, which found the id on the first try
+and still failed:
+```
+21:35:53.589  attempt=0 knownGlanceIds=[AppWidgetId(appWidgetId=86)]
+21:35:53.589  calling updateAll() after 0 attempt(s)
+21:35:53.596  updateAll() returned          <- 7ms, no second provideGlance
+```
+
+**Fix:** per-widget configuration moved out of the app's SQLite table
+and into Glance's own per-widget state store, read in the composition
+via `currentState()`. `AppWidgetSession` holds that state in a Compose
+`MutableState` (`glanceState$delegate`) and re-reads it from its
+`ConfigManager` on update, so a state write is *guaranteed* to
+invalidate the composition — a Compose-level guarantee, not a timing
+window. Account balances stay in SQLite as their single source of
+truth, re-read via `produceState` keyed on the observable selection
+plus a data-version counter; that counter is what lets a balance-only
+change (same account ids, new transactions) invalidate, which the
+`refreshAccountsWidget()` path silently could not do before either.
+Also fixed alongside: widget ids now resolve from `AppWidgetManager`
+rather than the receiver-DataStore-backed `getGlanceIds()`; the
+provider XML had **no `android:initialLayout`** at all (confirmed on
+device as `initialLayout=#0`), so the host had nothing to draw while a
+session composed; and Loading / NotConfigured / Unavailable / Ready are
+now distinct, so a failed database read can no longer render as "no
+accounts selected".
+
+Verified on-device 2026-09-01 against a local debug build, upgrading
+in place from the pre-fix build: migration of existing widgets, fresh
+configuration, reconfiguration, zero-accounts, and balance refresh
+after a transaction all pass, with 0 crashes / 0 composition errors /
+0 ANRs across 24,398 log lines and independent state per widget
+instance. Shipped as versionCode 9.
 
 **Layout issue found and fixed 2026-08-31**, from the same on-device
 session: the account rows lived in a plain `Column` with
