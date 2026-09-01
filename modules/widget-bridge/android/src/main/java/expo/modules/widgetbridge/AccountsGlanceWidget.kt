@@ -5,8 +5,16 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.net.Uri
+import android.util.Log
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.ui.graphics.Color
+import androidx.datastore.preferences.core.Preferences
+import androidx.glance.currentState
+import androidx.glance.state.PreferencesGlanceStateDefinition
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceId
@@ -41,6 +49,7 @@ import java.util.Date
 import java.util.Locale
 
 private const val DEEP_LINK_BASE = "spendingtracker://transaction/new"
+private const val TAG = "WidgetBridge"
 
 val WIDGET_ACCENT_CYAN = Color(0xFF48E7F5)
 
@@ -99,32 +108,82 @@ private fun getAppIconBitmap(context: Context): Bitmap {
   return bitmap
 }
 
+// What the middle section of the card is showing. These are four genuinely
+// different situations and they must not collapse into one another — in
+// particular "we couldn't read the database" is not "you have no accounts".
+sealed interface AccountsUiState {
+  data object Loading : AccountsUiState
+  data object NotConfigured : AccountsUiState
+  data object Unavailable : AccountsUiState
+  data class Ready(val accounts: List<WidgetAccountBalance>) : AccountsUiState
+}
+
+private fun loadAccountsState(context: Context, accountIds: List<Long>): AccountsUiState =
+  runCatching { getAccountsForWidget(context, accountIds) }
+    .fold(
+      onSuccess = { rows -> if (rows == null) AccountsUiState.Unavailable else AccountsUiState.Ready(rows) },
+      onFailure = { error ->
+        Log.w(TAG, "Could not load widget accounts for ids=$accountIds", error)
+        AccountsUiState.Unavailable
+      },
+    )
+
 class AccountsGlanceWidget : GlanceAppWidget() {
+  // Backs currentState() below. Without a state definition there is no
+  // observable state for the composition to read, and the widget can only
+  // ever show data captured at session start.
+  override val stateDefinition = PreferencesGlanceStateDefinition
+
   override suspend fun provideGlance(context: Context, id: GlanceId) {
     val appWidgetId = GlanceAppWidgetManager(context).getAppWidgetId(id)
-    android.util.Log.d("WidgetBridge", "provideGlance: called for appWidgetId=$appWidgetId, glanceId=$id")
-    val config = getWidgetConfig(context, appWidgetId)
-    android.util.Log.d("WidgetBridge", "provideGlance: config=$config")
-    val accounts = getAccountsForWidget(context, config.accountIds)
-    android.util.Log.d("WidgetBridge", "provideGlance: resolved ${accounts.size} accounts: ${accounts.map { it.id to it.name }}")
-    val colors = widgetColors(config.opacityPct)
-    val monthLabel = currentMonthLabel()
+    migrateLegacySelectionIfNeeded(context, id, appWidgetId)
+
+    // Genuinely session-constant, so capturing these is safe: the launcher
+    // icon and the app's own launch intent cannot change while a session
+    // is alive without the process being restarted anyway.
     val iconBitmap = getAppIconBitmap(context)
     val openApp = openAppIntent(context)
 
     provideContent {
-      Content(accounts, colors, monthLabel, iconBitmap, openApp)
+      // provideContent never returns (its return type is Nothing) — this
+      // lambda is the whole session. So everything that can change while
+      // the widget is on screen has to be read HERE, as observable state,
+      // not captured above. currentState() is backed by the widget's
+      // Glance DataStore: writing it invalidates this composition, which
+      // is what makes update() actually re-render.
+      val prefs = currentState<Preferences>()
+      val selection = prefs.readSelection()
+      val dataVersion = prefs[KEY_DATA_VERSION] ?: 0
+
+      // Re-runs whenever the selection or the data version changes. The
+      // data version is what lets a balance-only change (same account ids,
+      // different transactions) invalidate and re-read SQLite.
+      val uiState by produceState<AccountsUiState>(
+        initialValue = AccountsUiState.Loading,
+        selection.configured,
+        selection.accountIds,
+        dataVersion,
+      ) {
+        value = if (!selection.configured) {
+          AccountsUiState.NotConfigured
+        } else {
+          withContext(Dispatchers.IO) { loadAccountsState(context, selection.accountIds) }
+        }
+      }
+
+      Content(uiState, widgetColors(selection.opacityPct), currentMonthLabel(), iconBitmap, openApp)
     }
   }
 
   @Composable
   private fun Content(
-    accounts: List<WidgetAccountBalance>,
+    uiState: AccountsUiState,
     colors: WidgetColors,
     monthLabel: String,
     iconBitmap: Bitmap,
     openApp: Intent,
   ) {
+    val accounts = (uiState as? AccountsUiState.Ready)?.accounts ?: emptyList()
     // fillMaxSize (not just fillMaxWidth) so the card's translucent
     // background covers the whole launcher-allocated box — otherwise the
     // resize handles trail past the visible card into dead transparent
@@ -170,10 +229,22 @@ class AccountsGlanceWidget : GlanceAppWidget() {
             modifier = GlanceModifier.fillMaxWidth().defaultWeight(),
             verticalAlignment = Alignment.Vertical.CenterVertically,
           ) {
-            Text(
-              text = "Tap to choose accounts",
-              style = TextStyle(fontSize = 13.sp, color = ColorProvider(colors.textSecondary)),
-            )
+            // Loading renders no text at all rather than a placeholder that
+            // would flash and immediately be replaced. The other three are
+            // distinct messages on purpose: a failed read must never be
+            // reported to the user as "you have not chosen any accounts".
+            val message = when (uiState) {
+              is AccountsUiState.Loading -> null
+              is AccountsUiState.NotConfigured -> "Tap to choose accounts"
+              is AccountsUiState.Unavailable -> "Balances unavailable"
+              is AccountsUiState.Ready -> "No accounts selected"
+            }
+            if (message != null) {
+              Text(
+                text = message,
+                style = TextStyle(fontSize = 13.sp, color = ColorProvider(colors.textSecondary)),
+              )
+            }
           }
         } else {
           LazyColumn(modifier = GlanceModifier.fillMaxWidth().defaultWeight()) {

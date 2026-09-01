@@ -2,6 +2,7 @@ package expo.modules.widgetbridge
 
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
+import android.util.Log
 import java.io.File
 
 data class WidgetAccountBalance(
@@ -68,10 +69,18 @@ private fun getAccountBalanceMinor(db: SQLiteDatabase, accountId: Long, nowEpoch
 
 // Preserves the order accountIds was given in (the user's picked order
 // from configuration), not whatever order the DB returns — and silently
-// drops any id whose account was since deleted, same as the JS version did.
-fun getAccountsForWidget(context: Context, accountIds: List<Long>): List<WidgetAccountBalance> {
+// drops any id whose account was since deleted, so deleting a shown
+// account degrades to one fewer row instead of crashing the widget.
+//
+// Returns null when the database itself can't be read (not yet created on
+// a fresh install, or an open/query failure). That is deliberately NOT the
+// same value as an empty list: the caller must be able to tell "we could
+// not load balances" apart from "this widget legitimately has no accounts
+// to show", because rendering the former as the latter is how a transient
+// read failure turns into a widget that looks permanently empty.
+fun getAccountsForWidget(context: Context, accountIds: List<Long>): List<WidgetAccountBalance>? {
   if (accountIds.isEmpty()) return emptyList()
-  val db = openReadOnlyDb(context) ?: return emptyList()
+  val db = openReadOnlyDb(context) ?: return null
   try {
     val nowEpochSeconds = System.currentTimeMillis() / 1000
     val placeholders = accountIds.joinToString(",") { "?" }
@@ -119,44 +128,48 @@ private fun parseIdsJson(json: String): List<Long> {
   return trimmed.split(",").mapNotNull { it.trim().toLongOrNull() }
 }
 
-fun getWidgetConfig(context: Context, appWidgetId: Int): WidgetConfig {
-  val db = openReadOnlyDb(context) ?: return WidgetConfig(emptyList(), 85)
+// Read-only, and only used to migrate installs configured before widget
+// configuration moved into Glance's per-widget state store — see
+// WidgetConfigStore.kt for why it moved. Nothing writes this table any
+// more; WidgetConfigStore is the single source of truth for selections.
+//
+// Returns null for both "no database" and "no row", which the caller
+// treats as "nothing to migrate". Neither case can be confused with a
+// real selection, because a real selection always carries configured=true
+// in Glance state.
+fun getLegacyWidgetConfig(context: Context, appWidgetId: Int): WidgetConfig? {
+  val db = openReadOnlyDb(context) ?: return null
   try {
     db.rawQuery(
       "SELECT account_ids_json, opacity_pct FROM widget_account_selections WHERE widget_id = ?",
       arrayOf(appWidgetId.toString()),
     ).use { cursor ->
-      if (!cursor.moveToFirst()) return WidgetConfig(emptyList(), 85)
+      if (!cursor.moveToFirst()) return null
       return WidgetConfig(parseIdsJson(cursor.getString(0)), cursor.getInt(1))
     }
+  } catch (error: Exception) {
+    // A legacy table that no longer exists (or any other read failure) just
+    // means there is nothing to migrate — never fail widget rendering here.
+    return null
   } finally {
     db.close()
   }
 }
 
-fun saveWidgetConfig(context: Context, appWidgetId: Int, accountIds: List<Long>, opacityPct: Int) {
-  val db = openReadWriteDb(context)
+// Removes the pre-migration row for a deleted widget. Glance deletes its
+// own per-widget state store automatically on delete, so this only cleans
+// up the legacy table. Best-effort: a widget being removed must never
+// surface an error, and there may be no row (or no table) to delete.
+fun deleteLegacyWidgetConfig(context: Context, appWidgetId: Int) {
   try {
-    val json = "[${accountIds.joinToString(",")}]"
-    db.execSQL(
-      """
-      INSERT INTO widget_account_selections (widget_id, account_ids_json, opacity_pct)
-      VALUES (?, ?, ?)
-      ON CONFLICT(widget_id) DO UPDATE SET account_ids_json = excluded.account_ids_json, opacity_pct = excluded.opacity_pct
-      """.trimIndent(),
-      arrayOf(appWidgetId, json, opacityPct),
-    )
-  } finally {
-    db.close()
-  }
-}
-
-fun deleteWidgetConfig(context: Context, appWidgetId: Int) {
-  val db = openReadWriteDb(context)
-  try {
-    db.execSQL("DELETE FROM widget_account_selections WHERE widget_id = ?", arrayOf(appWidgetId))
-  } finally {
-    db.close()
+    val db = openReadWriteDb(context)
+    try {
+      db.execSQL("DELETE FROM widget_account_selections WHERE widget_id = ?", arrayOf(appWidgetId))
+    } finally {
+      db.close()
+    }
+  } catch (error: Exception) {
+    Log.w("WidgetBridge", "Could not clean up legacy widget config for id=$appWidgetId", error)
   }
 }
 

@@ -40,11 +40,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.glance.appwidget.GlanceAppWidgetManager
-import androidx.glance.appwidget.updateAll
 import androidx.lifecycle.lifecycleScope
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 private val ColorBg = Color(0xFF0C1120)
 private val ColorSurface = Color(0xFF131A2C)
@@ -77,54 +76,63 @@ class AccountsWidgetConfigActivity : ComponentActivity() {
       return
     }
 
-    val initialConfig = getWidgetConfig(this, appWidgetId)
-    val accounts = getAllAccountsForConfig(this)
+    lifecycleScope.launch {
+      // Reconfiguring an existing widget must show its current selection.
+      // Read it from Glance state, falling back to the pre-migration SQLite
+      // row so widgets placed before the store moved still reconfigure with
+      // their real selection instead of appearing blank.
+      val glanceId = glanceIdFor(this@AccountsWidgetConfigActivity, appWidgetId)
+      val stored = readSelection(this@AccountsWidgetConfigActivity, glanceId)
+      val initial = if (stored.configured) {
+        stored
+      } else {
+        getLegacyWidgetConfig(this@AccountsWidgetConfigActivity, appWidgetId)
+          ?.let { WidgetSelection(true, it.accountIds, it.opacityPct) }
+          ?: WidgetSelection(false, emptyList(), DEFAULT_OPACITY_PCT)
+      }
+      val accounts = withContext(Dispatchers.IO) {
+        getAllAccountsForConfig(this@AccountsWidgetConfigActivity)
+      }
 
-    setContent {
-      ConfigScreen(
-        accounts = accounts,
-        initialSelected = initialConfig.accountIds.toSet(),
-        initialOpacityPct = initialConfig.opacityPct,
-        onSave = { selectedIds, opacityPct -> saveAndFinish(selectedIds, opacityPct) },
-      )
+      setContent {
+        ConfigScreen(
+          accounts = accounts,
+          initialSelected = initial.accountIds.toSet(),
+          initialOpacityPct = initial.opacityPct,
+          onSave = { selectedIds, opacityPct -> saveAndFinish(selectedIds, opacityPct) },
+        )
+      }
     }
   }
 
   private fun saveAndFinish(selectedIds: List<Long>, opacityPct: Int) {
-    Log.d(TAG, "saveAndFinish: appWidgetId=$appWidgetId selectedIds=$selectedIds opacityPct=$opacityPct")
-    saveWidgetConfig(this, appWidgetId, selectedIds, opacityPct)
-    Log.d(TAG, "saveAndFinish: saveWidgetConfig done, readback=${getWidgetConfig(this, appWidgetId)}")
-
     lifecycleScope.launch {
-      // On a widget's very first configuration, Glance's own internal
-      // registry of known instances hasn't necessarily caught up with this
-      // appWidgetId yet — confirmed on-device via logging: updateAll()
-      // called immediately here returned in ~6ms with no provideGlance()
-      // call at all, i.e. a silent no-op, not a data problem (the SQLite
-      // write/readback right above always succeeded). Poll
-      // getGlanceIds() until this widget shows up (or we give up) before
-      // calling updateAll() for real, instead of firing blind.
-      val manager = GlanceAppWidgetManager(this@AccountsWidgetConfigActivity)
-      var attempt = 0
-      while (attempt < 10) {
-        val knownIds = manager.getGlanceIds(AccountsGlanceWidget::class.java)
-        Log.d(TAG, "saveAndFinish: attempt=$attempt knownGlanceIds=$knownIds")
-        if (knownIds.any { manager.getAppWidgetId(it) == appWidgetId }) break
-        attempt++
-        delay(200)
-      }
+      val context = this@AccountsWidgetConfigActivity
+      val glanceId = glanceIdFor(context, appWidgetId)
 
-      Log.d(TAG, "saveAndFinish: calling updateAll() after $attempt attempt(s)")
-      AccountsGlanceWidget().updateAll(this@AccountsWidgetConfigActivity)
-      Log.d(TAG, "saveAndFinish: updateAll() returned")
+      // Order matters, and it is what makes this deterministic rather than
+      // timing-dependent:
+      //
+      // 1. Persist the selection to the widget's Glance state store. This
+      //    is a durable on-disk write that completes before anything else
+      //    happens, and it does not depend on this process staying alive.
+      // 2. update() renders it now if a session is live — and because the
+      //    composition reads this state via currentState(), the write in
+      //    step 1 genuinely invalidates it. That is the part that was
+      //    missing before: update() on its own only recomposes whatever
+      //    provideGlance already captured, which never changed.
+      // 3. Only then return RESULT_OK. After this the host sends its own
+      //    APPWIDGET_UPDATE, which starts a fresh session that reads the
+      //    same persisted state. So even if step 2 were skipped entirely
+      //    (process death, cancelled scope), the widget still renders the
+      //    right thing. There is no window where the state is unwritten
+      //    but the widget is considered configured.
+      saveSelection(context, glanceId, selectedIds, opacityPct)
+      AccountsGlanceWidget().update(context, glanceId)
 
       setResult(Activity.RESULT_OK, Intent().putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId))
       finish()
     }
-  }
-
-  companion object {
-    private const val TAG = "WidgetBridge"
   }
 }
 
