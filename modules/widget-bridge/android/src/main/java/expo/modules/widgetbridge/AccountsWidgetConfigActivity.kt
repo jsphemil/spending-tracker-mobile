@@ -40,8 +40,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.glance.appwidget.updateAll
 import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 private val ColorBg = Color(0xFF0C1120)
@@ -94,14 +96,25 @@ class AccountsWidgetConfigActivity : ComponentActivity() {
     Log.d(TAG, "saveAndFinish: saveWidgetConfig done, readback=${getWidgetConfig(this, appWidgetId)}")
 
     lifecycleScope.launch {
-      // updateAll(), not update(context, getGlanceIdBy(appWidgetId)) — right after
-      // a widget's very first bind, Glance's internal GlanceId registry hasn't
-      // necessarily processed this appWidgetId yet, making getGlanceIdBy
-      // silently miss (no crash, just a no-op refresh). updateAll() refreshes
-      // every placed instance without needing to resolve a specific id, so the
-      // freshly-saved selection renders immediately instead of waiting for the
-      // next scheduled 30-minute update.
-      Log.d(TAG, "saveAndFinish: calling updateAll()")
+      // On a widget's very first configuration, Glance's own internal
+      // registry of known instances hasn't necessarily caught up with this
+      // appWidgetId yet — confirmed on-device via logging: updateAll()
+      // called immediately here returned in ~6ms with no provideGlance()
+      // call at all, i.e. a silent no-op, not a data problem (the SQLite
+      // write/readback right above always succeeded). Poll
+      // getGlanceIds() until this widget shows up (or we give up) before
+      // calling updateAll() for real, instead of firing blind.
+      val manager = GlanceAppWidgetManager(this@AccountsWidgetConfigActivity)
+      var attempt = 0
+      while (attempt < 10) {
+        val knownIds = manager.getGlanceIds(AccountsGlanceWidget::class.java)
+        Log.d(TAG, "saveAndFinish: attempt=$attempt knownGlanceIds=$knownIds")
+        if (knownIds.any { manager.getAppWidgetId(it) == appWidgetId }) break
+        attempt++
+        delay(200)
+      }
+
+      Log.d(TAG, "saveAndFinish: calling updateAll() after $attempt attempt(s)")
       AccountsGlanceWidget().updateAll(this@AccountsWidgetConfigActivity)
       Log.d(TAG, "saveAndFinish: updateAll() returned")
 
