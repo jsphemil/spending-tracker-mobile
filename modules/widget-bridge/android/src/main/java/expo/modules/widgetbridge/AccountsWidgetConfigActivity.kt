@@ -4,6 +4,7 @@ import android.app.Activity
 import android.appwidget.AppWidgetManager
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
@@ -88,7 +89,9 @@ class AccountsWidgetConfigActivity : ComponentActivity() {
   }
 
   private fun saveAndFinish(selectedIds: List<Long>, opacityPct: Int) {
+    Log.d(TAG, "saveAndFinish: appWidgetId=$appWidgetId selectedIds=$selectedIds opacityPct=$opacityPct")
     saveWidgetConfig(this, appWidgetId, selectedIds, opacityPct)
+    Log.d(TAG, "saveAndFinish: saveWidgetConfig done, readback=${getWidgetConfig(this, appWidgetId)}")
 
     lifecycleScope.launch {
       // updateAll(), not update(context, getGlanceIdBy(appWidgetId)) — right after
@@ -98,11 +101,17 @@ class AccountsWidgetConfigActivity : ComponentActivity() {
       // every placed instance without needing to resolve a specific id, so the
       // freshly-saved selection renders immediately instead of waiting for the
       // next scheduled 30-minute update.
+      Log.d(TAG, "saveAndFinish: calling updateAll()")
       AccountsGlanceWidget().updateAll(this@AccountsWidgetConfigActivity)
+      Log.d(TAG, "saveAndFinish: updateAll() returned")
 
       setResult(Activity.RESULT_OK, Intent().putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId))
       finish()
     }
+  }
+
+  companion object {
+    private const val TAG = "WidgetBridge"
   }
 }
 

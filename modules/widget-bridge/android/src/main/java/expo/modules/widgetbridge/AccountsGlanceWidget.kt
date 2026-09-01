@@ -102,8 +102,11 @@ private fun getAppIconBitmap(context: Context): Bitmap {
 class AccountsGlanceWidget : GlanceAppWidget() {
   override suspend fun provideGlance(context: Context, id: GlanceId) {
     val appWidgetId = GlanceAppWidgetManager(context).getAppWidgetId(id)
+    android.util.Log.d("WidgetBridge", "provideGlance: called for appWidgetId=$appWidgetId, glanceId=$id")
     val config = getWidgetConfig(context, appWidgetId)
+    android.util.Log.d("WidgetBridge", "provideGlance: config=$config")
     val accounts = getAccountsForWidget(context, config.accountIds)
+    android.util.Log.d("WidgetBridge", "provideGlance: resolved ${accounts.size} accounts: ${accounts.map { it.id to it.name }}")
     val colors = widgetColors(config.opacityPct)
     val monthLabel = currentMonthLabel()
     val iconBitmap = getAppIconBitmap(context)
