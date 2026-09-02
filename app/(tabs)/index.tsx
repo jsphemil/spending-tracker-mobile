@@ -102,7 +102,13 @@ export default function DashboardScreen() {
   }
 
   // ---- PERFORMANCE (viewed month) ----
-  const { data: monthTransactions } = useFilteredTransactions({ range });
+  // Subscribed for its re-render, not its rows: the income/expense figures
+  // below come from getPeriodTotals, a plain synchronous read that isn't
+  // reactive on its own. The other live queries here are scoped to the
+  // *current* month, so without this one an edit made while browsing a past
+  // month wouldn't repaint and those totals would sit stale. Deliberately
+  // called for the subscription alone — don't "clean up" the bare call.
+  useFilteredTransactions({ range });
   let incomeMinor = 0;
   let expenseMinor = 0;
   let carryForwardMinor = 0;

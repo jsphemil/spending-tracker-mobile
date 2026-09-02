@@ -8,7 +8,6 @@ import { db } from "../db/client";
 import { useAccounts } from "../db/queries/accounts";
 import { buildTransactionsCsv } from "../services/export";
 import { toLocalDateString } from "../services/period";
-import { useThemeColors } from "../theme/palette";
 import { Button } from "./ui/Button";
 
 function defaultFrom(): Date {
@@ -23,7 +22,6 @@ export function ExportTransactionsForm() {
   const [showFromPicker, setShowFromPicker] = useState(false);
   const [showToPicker, setShowToPicker] = useState(false);
   const [exporting, setExporting] = useState(false);
-  const colors = useThemeColors();
 
   function toggleAccount(id: number) {
     setSelectedAccountIds((prev) => {

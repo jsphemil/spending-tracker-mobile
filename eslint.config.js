@@ -10,4 +10,13 @@ module.exports = defineConfig([
     // code nobody edits by hand and that regeneration would overwrite.
     ignores: ["dist/*", "android/*", "ios/*", "drizzle/*", ".expo/*"],
   },
+  {
+    rules: {
+      // A web rule: unescaped entities can break HTML markup. React Native
+      // <Text> children are plain strings, so there's nothing to break, and
+      // this codebase writes straight apostrophes throughout — honouring it
+      // would leave nine screens curly and every other string not.
+      "react/no-unescaped-entities": "off",
+    },
+  },
 ]);

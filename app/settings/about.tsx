@@ -1,4 +1,4 @@
-import { ScrollView, Text, View } from "react-native";
+import { ScrollView, Text } from "react-native";
 import Constants from "expo-constants";
 
 export default function AboutScreen() {

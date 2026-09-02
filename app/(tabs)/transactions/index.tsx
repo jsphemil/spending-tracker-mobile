@@ -14,7 +14,7 @@ import { useCategories } from "../../../db/queries/categories";
 import { useSettings } from "../../../db/queries/settings";
 import { useFilteredTransactions } from "../../../db/queries/transactions";
 import { useBaseConverter } from "../../../hooks/useBaseConverter";
-import { minorToMajor } from "../../../services/format";
+import { } from "../../../services/format";
 import { currentMonthPeriod, monthLabel, monthRange, shiftMonth } from "../../../services/period";
 import { ensureMaterialized } from "../../../services/recurrence";
 import { resolveAccountSettings } from "../../../services/settings";

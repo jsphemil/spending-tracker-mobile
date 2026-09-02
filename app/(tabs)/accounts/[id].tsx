@@ -17,7 +17,6 @@ import { useAccountTransactions } from "../../../db/queries/transactions";
 import { addToBucket, sortedBuckets, type Bucket } from "../../../services/breakdown";
 import {
   getAccountBalanceMinor,
-  getCreditCardOwedMinor,
   getDebtPayoffProjection,
 } from "../../../services/balance";
 import { formatMoney } from "../../../services/format";

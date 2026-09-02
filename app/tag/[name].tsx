@@ -1,7 +1,6 @@
 import { useLocalSearchParams } from "expo-router";
 import { FlatList, Text, View } from "react-native";
 
-import { db } from "../../db/client";
 import { useSettings } from "../../db/queries/settings";
 import { useTagTransactions } from "../../db/queries/tags";
 import { useBaseConverter } from "../../hooks/useBaseConverter";
