@@ -37,11 +37,15 @@ private fun openReadWriteDb(context: Context): SQLiteDatabase =
     rawQuery("PRAGMA busy_timeout = 3000;", null).close()
   }
 
-// Mirrors services/balance.ts's getAccountBalanceMinor, bounded to "now"
-// so the widget shows the same "current balance" the rest of the app
-// does — not the lifetime total, which would include already-materialized
-// future-dated recurring transactions.
-private fun getAccountBalanceMinor(db: SQLiteDatabase, accountId: Long, nowEpochSeconds: Long): Long {
+// Mirrors services/balance.ts's getAccountBalanceMinor, bounded to the
+// exclusive end of the *current calendar month* — the same asOfDate the
+// Account Detail screen passes as `range.end` for its "Balance available"
+// figure. This deliberately INCLUDES already-recorded transactions dated
+// later this month (including materialized future-dated recurring ones),
+// so the widget agrees with "Balance available" instead of quietly
+// dropping the rest of the month's known activity like a plain "now" cutoff
+// would.
+private fun getAccountBalanceMinor(db: SQLiteDatabase, accountId: Long, cutoffEpochSeconds: Long): Long {
   val outgoing = db.rawQuery(
     """
     SELECT COALESCE(SUM(CASE
@@ -52,7 +56,7 @@ private fun getAccountBalanceMinor(db: SQLiteDatabase, accountId: Long, nowEpoch
     FROM transactions
     WHERE account_id = ? AND date < ?
     """.trimIndent(),
-    arrayOf(accountId.toString(), nowEpochSeconds.toString()),
+    arrayOf(accountId.toString(), cutoffEpochSeconds.toString()),
   ).use { cursor -> if (cursor.moveToFirst()) cursor.getLong(0) else 0L }
 
   val incoming = db.rawQuery(
@@ -61,10 +65,25 @@ private fun getAccountBalanceMinor(db: SQLiteDatabase, accountId: Long, nowEpoch
     FROM transactions
     WHERE type = 'transfer' AND to_account_id = ? AND date < ?
     """.trimIndent(),
-    arrayOf(accountId.toString(), nowEpochSeconds.toString()),
+    arrayOf(accountId.toString(), cutoffEpochSeconds.toString()),
   ).use { cursor -> if (cursor.moveToFirst()) cursor.getLong(0) else 0L }
 
   return outgoing + incoming
+}
+
+// Local-calendar first-moment-of-next-month, as an exclusive upper bound —
+// the native-side equivalent of services/period.ts's
+// `monthRange(currentMonthPeriod()).end`. Day-of-month is reset to 1
+// *before* adding a month so e.g. Jan 31 doesn't overflow into March.
+private fun startOfNextMonthEpochSeconds(): Long {
+  val cal = java.util.Calendar.getInstance()
+  cal.set(java.util.Calendar.DAY_OF_MONTH, 1)
+  cal.add(java.util.Calendar.MONTH, 1)
+  cal.set(java.util.Calendar.HOUR_OF_DAY, 0)
+  cal.set(java.util.Calendar.MINUTE, 0)
+  cal.set(java.util.Calendar.SECOND, 0)
+  cal.set(java.util.Calendar.MILLISECOND, 0)
+  return cal.timeInMillis / 1000
 }
 
 // Preserves the order accountIds was given in (the user's picked order
@@ -82,7 +101,7 @@ fun getAccountsForWidget(context: Context, accountIds: List<Long>): List<WidgetA
   if (accountIds.isEmpty()) return emptyList()
   val db = openReadOnlyDb(context) ?: return null
   try {
-    val nowEpochSeconds = System.currentTimeMillis() / 1000
+    val cutoffEpochSeconds = startOfNextMonthEpochSeconds()
     val placeholders = accountIds.joinToString(",") { "?" }
     val args = accountIds.map { it.toString() }.toTypedArray()
     val byId = mutableMapOf<Long, Pair<String, String>>()
@@ -93,7 +112,7 @@ fun getAccountsForWidget(context: Context, accountIds: List<Long>): List<WidgetA
     }
     return accountIds.mapNotNull { id ->
       val (name, currency) = byId[id] ?: return@mapNotNull null
-      WidgetAccountBalance(id, name, currency, getAccountBalanceMinor(db, id, nowEpochSeconds))
+      WidgetAccountBalance(id, name, currency, getAccountBalanceMinor(db, id, cutoffEpochSeconds))
     }
   } finally {
     db.close()
@@ -103,14 +122,14 @@ fun getAccountsForWidget(context: Context, accountIds: List<Long>): List<WidgetA
 fun getAllAccountsForConfig(context: Context): List<WidgetAccountOption> {
   val db = openReadOnlyDb(context) ?: return emptyList()
   try {
-    val nowEpochSeconds = System.currentTimeMillis() / 1000
+    val cutoffEpochSeconds = startOfNextMonthEpochSeconds()
     val result = mutableListOf<WidgetAccountOption>()
     db.rawQuery("SELECT id, name, currency FROM accounts ORDER BY sort_order ASC, id ASC", null).use { cursor ->
       while (cursor.moveToNext()) {
         val id = cursor.getLong(0)
         val name = cursor.getString(1)
         val currency = cursor.getString(2)
-        result.add(WidgetAccountOption(id, name, currency, getAccountBalanceMinor(db, id, nowEpochSeconds)))
+        result.add(WidgetAccountOption(id, name, currency, getAccountBalanceMinor(db, id, cutoffEpochSeconds)))
       }
     }
     return result
