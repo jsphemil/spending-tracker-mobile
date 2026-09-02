@@ -6,6 +6,7 @@ import { Icon } from "../../../components/ui/Icon";
 import { confirmDeleteTransaction } from "../../../components/confirmDeleteTransaction";
 import { GlobalHeader } from "../../../components/GlobalHeader";
 import { SummaryBand } from "../../../components/SummaryBand";
+import { UnconvertedCurrenciesNote } from "../../../components/UnconvertedCurrenciesNote";
 import { TransactionListItem } from "../../../components/TransactionListItem";
 import { EmptyState } from "../../../components/ui/EmptyState";
 import { db } from "../../../db/client";
@@ -52,6 +53,9 @@ export default function TransactionsListScreen() {
     filterMode === "allTime" ? undefined : filterMode === "custom" ? customRangeValue : monthRangeValue;
   useEffect(() => {
     ensureMaterialized(db, range ? { through: range.end } : undefined);
+    // Deliberately the primitive, not `range`: that object is rebuilt each
+    // render, so depending on it would re-materialize on every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [range?.end]);
   const { data: rows } = useFilteredTransactions({ accountId, categoryId, range });
 
@@ -99,7 +103,9 @@ export default function TransactionsListScreen() {
     ? accounts?.find((a) => a.id === accountId)?.currency ?? baseCurrency
     : baseCurrency;
 
-  const { toBaseMinor } = useBaseConverter((accounts ?? []).map((a) => a.currency));
+  const { toBaseMinor, unconvertedCurrencies } = useBaseConverter(
+    (accounts ?? []).map((a) => a.currency),
+  );
 
   const totals = typeFilteredRows.reduce(
     (acc, t) => {
@@ -292,6 +298,12 @@ export default function TransactionsListScreen() {
           expenseMinor={totals.expenseMinor}
           currency={currency}
         />
+        {/* Only meaningful across "All Accounts": with one account selected
+            its rows already share that account's currency and nothing is
+            converted. */}
+        {!accountId && (
+          <UnconvertedCurrenciesNote currencies={unconvertedCurrencies} subject="These totals" />
+        )}
         {hiddenFutureCount > 0 && (
           <Text className="text-xs text-fg-muted">
             {hiddenFutureCount} upcoming transaction{hiddenFutureCount === 1 ? "" : "s"} hidden — Show

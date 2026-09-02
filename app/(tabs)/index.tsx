@@ -4,6 +4,7 @@ import { Pressable, ScrollView, Text, View } from "react-native";
 import { Icon } from "../../components/ui/Icon";
 
 import { GlobalHeader } from "../../components/GlobalHeader";
+import { UnconvertedCurrenciesNote } from "../../components/UnconvertedCurrenciesNote";
 import { db } from "../../db/client";
 import { useAccounts } from "../../db/queries/accounts";
 import { useCategories } from "../../db/queries/categories";
@@ -75,7 +76,9 @@ export default function DashboardScreen() {
     ensureMaterialized(db, { through: range.end });
   }, [range.end]);
 
-  const { toBaseMinor } = useBaseConverter((accounts ?? []).map((a) => a.currency));
+  const { toBaseMinor, unconvertedCurrencies } = useBaseConverter(
+    (accounts ?? []).map((a) => a.currency),
+  );
 
   // ---- POSITION (as of the viewed month) ----
   // `range.end` is required, not optional polish: getAccountBalanceMinor
@@ -223,7 +226,7 @@ export default function DashboardScreen() {
               </Text>
             </View>
           </View>
-
+          <UnconvertedCurrenciesNote currencies={unconvertedCurrencies} subject="Net worth" />
         </View>
 
         {/* ---------- PERFORMANCE: How am I doing this month? ---------- */}

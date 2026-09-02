@@ -5,6 +5,7 @@ import { Icon } from "../../components/ui/Icon";
 
 import { AssetAllocationChart } from "../../components/charts/AssetAllocationChart";
 import { NetWorthTrendChart } from "../../components/charts/NetWorthTrendChart";
+import { UnconvertedCurrenciesNote } from "../../components/UnconvertedCurrenciesNote";
 import { GlobalHeader } from "../../components/GlobalHeader";
 import { db } from "../../db/client";
 import { useAccounts } from "../../db/queries/accounts";
@@ -56,7 +57,9 @@ export default function AnalyticsScreen() {
   const { data: categories } = useCategories();
   const { data: monthTransactions } = useFilteredTransactions({ range });
 
-  const { toBaseMinor } = useBaseConverter((accounts ?? []).map((a) => a.currency));
+  const { toBaseMinor, unconvertedCurrencies } = useBaseConverter(
+    (accounts ?? []).map((a) => a.currency),
+  );
 
   const categoryInfo = (id: number | null) => categories?.find((c) => c.id === id);
 
@@ -75,6 +78,10 @@ export default function AnalyticsScreen() {
       );
     }
     return sortedBuckets(map);
+    // categoryInfo closes over `categories`, and baseCurrency only reaches
+    // this through toBaseMinor — both already listed, so the missing-deps
+    // warning here is transitively satisfied.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [monthTransactions, accounts, categories, kind, toBaseMinor]);
   const categoryTotal = byCategory.reduce((sum, b) => sum + b.totalMinor, 0);
 
@@ -129,6 +136,7 @@ export default function AnalyticsScreen() {
             </Text>
           </View>
           <NetWorthTrendChart data={trendData} currency={baseCurrency} height={180} />
+          <UnconvertedCurrenciesNote currencies={unconvertedCurrencies} subject="Net worth" />
         </View>
 
         <View className={card}>
