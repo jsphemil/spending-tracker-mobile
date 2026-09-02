@@ -100,7 +100,15 @@ export function TransactionForm({
     hasSyncedInitialAmount.current = true;
     const initialCurrency =
       accounts.find((a) => a.id === initialValues.accountId)?.currency ?? "INR";
+    // Deliberate: the amount can only be formatted once the account's
+    // currency is known, and accounts arrive asynchronously. The ref guard
+    // above means this runs at most once and never overwrites typed input,
+    // so the extra render is a one-off on open, not a cascade.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setAmountText(String(minorToMajor(initialValues.amountMinor, initialCurrency)));
+    // Runs once, guarded by the ref above; initialValues is captured on
+    // purpose so later prop churn can't clobber what the user has typed.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [accounts]);
   const [date, setDate] = useState(initialValues?.date ?? new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);

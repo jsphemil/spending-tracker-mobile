@@ -34,12 +34,12 @@ export function AssetAllocationChart({ data, currency, size = 180 }: AssetAlloca
       dasharray: `${fraction * circumference} ${circumference}`,
       dashoffset: -cumulativeFraction * circumference,
     };
-    // eslint-disable-next-line react-hooks/immutability -- a render-local
-    // running total: declared inside this component, reset on every render,
-    // and only ever advanced synchronously inside this map. It never escapes
-    // the render pass. The rule is guarding against partial memoization under
-    // React Compiler, which this project doesn't enable (reactCompiler: false
-    // in the Metro config) — revisit if that changes.
+    // A render-local running total: declared inside this component, reset on
+    // every render, and only ever advanced synchronously inside this map, so
+    // it never escapes the render pass. The rule guards against partial
+    // memoization under React Compiler, which this project doesn't enable
+    // (reactCompiler: false in the Metro config) — revisit if that changes.
+    // eslint-disable-next-line react-hooks/immutability
     cumulativeFraction += fraction;
     return segment;
   });

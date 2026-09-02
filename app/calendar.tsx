@@ -35,7 +35,14 @@ export default function CalendarScreen() {
   // per-account scoping here (this view is always all-accounts), so it's
   // the global setting alone.
   const now = new Date();
-  const todayDateOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  // Memoized so it's a stable reference the day-totals memo below can depend
+  // on directly — rebuilt per render it would invalidate that memo every
+  // time, and depending on a .getTime() call isn't allowed in a dep array.
+  // Same once-per-mount treatment the Dashboard gives its own `today`.
+  const todayDateOnly = useMemo(() => {
+    const d = new Date();
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  }, []);
   const isCurrentMonth = now.getFullYear() === period.year && now.getMonth() === period.month;
   const hidingFuture = isCurrentMonth && !(settings?.showFutureTxGlobal ?? true);
 
@@ -52,7 +59,13 @@ export default function CalendarScreen() {
       totals[day] = (totals[day] ?? 0) + row.amountMinor;
     }
     return totals;
-  }, [rows, accounts, hidingFuture]);
+    // baseCurrency is a real filter above, not incidental: without it here,
+    // changing the base currency in Settings left these day totals showing
+    // the old currency's accounts. todayDateOnly is a fresh Date object each
+    // render, so it's depended on by timestamp — same convention as
+    // db/queries/transactions.ts — otherwise this memo would rebuild on
+    // every render and stop being a memo at all.
+  }, [rows, accounts, hidingFuture, baseCurrency, todayDateOnly]);
 
   return (
     <View className="flex-1 bg-bg">

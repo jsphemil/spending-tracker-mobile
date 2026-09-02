@@ -39,6 +39,18 @@ export default function AccountsListScreen() {
   // each account's flow stays in that account's own native currency, same
   // as the real app's per-account cards.
   const flowByAccount = new Map<number, AccountFlow>();
+  // Accounts with no movement this month never get an entry, so rows read
+  // through this shared zero rather than having getFlow insert one for them:
+  // renderItem runs after the render pass, and mutating a map built during
+  // render from inside it is exactly what makes a row's output depend on
+  // which rows happened to render before it.
+  const NO_FLOW: AccountFlow = {
+    incomeMinor: 0,
+    expenseMinor: 0,
+    transferInMinor: 0,
+    transferOutMinor: 0,
+  };
+  // Only called from the aggregation loop below, during render.
   function getFlow(id: number): AccountFlow {
     let f = flowByAccount.get(id);
     if (!f) {
@@ -85,7 +97,7 @@ export default function AccountsListScreen() {
         }
         ListEmptyComponent={<EmptyState message="No accounts yet." />}
         renderItem={({ item }) => {
-          const flow = getFlow(item.id);
+          const flow = flowByAccount.get(item.id) ?? NO_FLOW;
           const netTransfer = flow.transferInMinor - flow.transferOutMinor;
           // "As of" the viewed month's end, not always today — matches
           // the Dashboard/Account Detail's period-scoped balance.

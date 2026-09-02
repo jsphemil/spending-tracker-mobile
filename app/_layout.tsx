@@ -59,6 +59,10 @@ export default function RootLayout() {
     if (settings) {
       rescheduleExpenseReminder(db, settings).catch(() => {});
     }
+    // Depends on the specific fields the reminder derives from, not the
+    // whole settings object: the live query returns a fresh object on every
+    // emission, so depending on it would reschedule constantly.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [settings?.id, settings?.expenseReminderEnabled, settings?.expenseReminderTime]);
 
   return (
