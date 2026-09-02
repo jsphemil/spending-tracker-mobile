@@ -1027,6 +1027,21 @@ gradient accents, Manrope/Inter type) — V2 restructures *where* things
 live and *how the Dashboard/onboarding/settings communicate*, not the
 financial engine or the base visual identity.
 
+**Implementation status as of 2026-09-02 (code-complete, not yet
+device-verified):** every checklist item in the master prompt's
+definition of done is implemented — 4-tab nav, global header/FAB,
+onboarding V2, Dashboard V2, Settings V2, real Light/Dark/System theme,
+expense reminders, Analytics tab, migration 0009 — and `tsc`/`jest`
+(62/62, including 9 new regression tests added before any UI work:
+transfer semantics, debt-payoff projection, and goal pace/behind-target
+math) are clean on the `redesign/erebor-v2` branch. **Two things this
+remote sandboxed session cannot do and has not claimed to do: physical
+Android device testing, and an EAS production build** (no device
+attached, no interactive EAS credentials here) — both are explicitly
+called out as outstanding in `backlog.md`. Everything above is
+therefore 🚧 In Progress, not ✅ Built & Verified, until someone runs it
+on-device.
+
 ## 6. Explicitly out of scope for v1
 
 (Move these up if you want them sooner — just say so.)
