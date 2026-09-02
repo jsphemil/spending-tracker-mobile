@@ -13,7 +13,6 @@ import { currentMonthPeriod, monthLabel, monthRange, shiftMonth } from "../../..
 import { ensureMaterialized } from "../../../services/recurrence";
 import { CurrencyAmount } from "../../../components/CurrencyAmount";
 import { EmptyState } from "../../../components/ui/EmptyState";
-import { GlobalFab } from "../../../components/GlobalFab";
 import { GlobalHeader } from "../../../components/GlobalHeader";
 import { TAB_BAR_CLEARANCE } from "../../../theme/tabBar";
 import { useThemeColors } from "../../../theme/palette";
@@ -143,7 +142,6 @@ export default function AccountsListScreen() {
           );
         }}
       />
-      <GlobalFab insideTabs />
     </View>
   );
 }

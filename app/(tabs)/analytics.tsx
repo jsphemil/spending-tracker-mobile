@@ -5,7 +5,6 @@ import { Icon } from "../../components/ui/Icon";
 
 import { AssetAllocationChart } from "../../components/charts/AssetAllocationChart";
 import { NetWorthTrendChart } from "../../components/charts/NetWorthTrendChart";
-import { GlobalFab } from "../../components/GlobalFab";
 import { GlobalHeader } from "../../components/GlobalHeader";
 import { db } from "../../db/client";
 import { useAccounts } from "../../db/queries/accounts";
@@ -220,7 +219,6 @@ export default function AnalyticsScreen() {
           </Link>
         </View>
       </ScrollView>
-      <GlobalFab insideTabs />
     </View>
   );
 }

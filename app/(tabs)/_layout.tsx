@@ -1,8 +1,7 @@
 import { Tabs } from "expo-router";
 
+import { BottomNavBar } from "../../components/BottomNavBar";
 import { Icon } from "../../components/ui/Icon";
-import { NAV_SHADOW } from "../../theme/gradients";
-import { useThemeColors } from "../../theme/palette";
 
 // Exactly 4 destinations (spec.md §5.19 "Navigation V2"): Dashboard,
 // Accounts, Transactions, Analytics. Commitments/Categories/Goals/Tags/
@@ -10,33 +9,15 @@ import { useThemeColors } from "../../theme/palette";
 // the Dashboard's shortcut row and/or the global header — never duplicated
 // here. Every tab hides its own header now; each screen renders the shared
 // GlobalHeader itself.
+//
+// The bar itself is a custom component rather than React Navigation's
+// default, because the "+" is docked into it (centred, straddling its top
+// edge) instead of floating separately — see components/BottomNavBar.tsx.
 export default function TabsLayout() {
-  const colors = useThemeColors();
-
   return (
     <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarStyle: {
-          position: "absolute",
-          left: 16,
-          right: 16,
-          bottom: 16,
-          height: 78,
-          borderRadius: 9999,
-          backgroundColor: colors.glassFillStrong,
-          borderTopWidth: 0,
-          borderWidth: 1,
-          borderColor: colors.glassBorder,
-          paddingBottom: 10,
-          paddingTop: 10,
-          ...NAV_SHADOW,
-        },
-        tabBarActiveTintColor: colors.accent,
-        tabBarInactiveTintColor: colors.fgSubtle,
-        tabBarLabelStyle: { fontFamily: "Inter_500Medium", fontSize: 10 },
-        tabBarItemStyle: { paddingVertical: 0 },
-      }}
+      tabBar={(props) => <BottomNavBar {...props} />}
+      screenOptions={{ headerShown: false }}
     >
       <Tabs.Screen
         name="index"

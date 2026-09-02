@@ -3,7 +3,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Icon } from "../components/ui/Icon";
 
 import { EmptyState } from "../components/ui/EmptyState";
-import { GlobalFab } from "../components/GlobalFab";
 import { GlobalHeader } from "../components/GlobalHeader";
 import { useAccounts } from "../db/queries/accounts";
 import { useCategories } from "../db/queries/categories";
@@ -119,7 +118,6 @@ export default function CommitmentsScreen() {
         ))
       )}
       </ScrollView>
-      <GlobalFab />
     </View>
   );
 }

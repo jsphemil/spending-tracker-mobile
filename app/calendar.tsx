@@ -5,7 +5,6 @@ import { Icon } from "../components/ui/Icon";
 
 import { CalendarMonthGrid } from "../components/CalendarMonthGrid";
 import { GlobalHeader } from "../components/GlobalHeader";
-import { GlobalFab } from "../components/GlobalFab";
 import { db } from "../db/client";
 import { useAccounts } from "../db/queries/accounts";
 import { useSettings } from "../db/queries/settings";
@@ -73,7 +72,6 @@ export default function CalendarScreen() {
         </View>
         <CalendarMonthGrid period={period} currency={baseCurrency} expenseByDay={expenseByDay} />
       </ScrollView>
-      <GlobalFab />
     </View>
   );
 }

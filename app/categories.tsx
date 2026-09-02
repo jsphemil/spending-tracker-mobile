@@ -10,7 +10,6 @@ import { useSettings } from "../db/queries/settings";
 import { useFilteredTransactions } from "../db/queries/transactions";
 import type { CategoryKind } from "../db/schema";
 import { db } from "../db/client";
-import { GlobalFab } from "../components/GlobalFab";
 import { GlobalHeader } from "../components/GlobalHeader";
 import { getRatesToBase } from "../services/currency";
 import { formatMoney, majorToMinor, minorToMajor } from "../services/format";
@@ -149,7 +148,6 @@ export default function CategoriesScreen() {
           );
         }}
       />
-      <GlobalFab />
     </View>
   );
 }

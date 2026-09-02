@@ -3,7 +3,6 @@ import { FlatList, Pressable, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { EmptyState } from "../../components/ui/EmptyState";
-import { GlobalFab } from "../../components/GlobalFab";
 import { GlobalHeader } from "../../components/GlobalHeader";
 import { useTags } from "../../db/queries/tags";
 
@@ -29,7 +28,6 @@ export default function TagsListScreen() {
           </Link>
         )}
       />
-      <GlobalFab />
     </View>
   );
 }

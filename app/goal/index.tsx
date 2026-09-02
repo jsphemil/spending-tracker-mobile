@@ -4,7 +4,6 @@ import { FlatList, Pressable, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { EmptyState } from "../../components/ui/EmptyState";
-import { GlobalFab } from "../../components/GlobalFab";
 import { GlobalHeader } from "../../components/GlobalHeader";
 import { db } from "../../db/client";
 import { useAccounts } from "../../db/queries/accounts";
@@ -151,7 +150,6 @@ export default function GoalsListScreen() {
           <Text className="text-2xl text-white">+</Text>
         </Pressable>
       </Link>
-      <GlobalFab />
     </View>
   );
 }

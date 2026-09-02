@@ -4,7 +4,6 @@ import { FlatList, Pressable, ScrollView, Text, View } from "react-native";
 import { Icon } from "../../../components/ui/Icon";
 
 import { confirmDeleteTransaction } from "../../../components/confirmDeleteTransaction";
-import { GlobalFab } from "../../../components/GlobalFab";
 import { GlobalHeader } from "../../../components/GlobalHeader";
 import { SummaryBand } from "../../../components/SummaryBand";
 import { TransactionListItem } from "../../../components/TransactionListItem";
@@ -342,7 +341,6 @@ export default function TransactionsListScreen() {
           />
         )}
       />
-      <GlobalFab insideTabs />
     </View>
   );
 }

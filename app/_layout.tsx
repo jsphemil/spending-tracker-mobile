@@ -94,8 +94,9 @@ export default function RootLayout() {
           >
             <Stack.Screen name="(tabs)" />
             {/* V2 shortcut destinations (spec.md §5.19) — moved out of the
-                tab bar, each renders its own GlobalHeader/GlobalFab instead
-                of an in-navigator header. */}
+                tab bar, each renders its own GlobalHeader instead of an
+                in-navigator header. They have no "+": that button is docked
+                into the bottom navigation bar, which only the tabs have. */}
             <Stack.Screen name="commitments" />
             <Stack.Screen name="categories" />
             <Stack.Screen name="calendar" />
