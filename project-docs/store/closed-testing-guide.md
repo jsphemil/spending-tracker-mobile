@@ -234,20 +234,44 @@ locally over adb:
 5. Only then ship to Play.
 Worth repeating for any future bug that survives one release attempt.
 
-**Plan for the remaining 2 updates:** publish them against the live
-"EWM Alpha" track, each a real, user-visible change with honest release
+**Update 2 shipped as versionCode 10 (2026-09-02)**, release name
+`Erebor_WM10(1.0.0)` — the home screen widget's balance for an account
+didn't match that account's "Balance available" on the Account Detail
+screen. Reported by the user with exact numbers (widget showed 50318,
+Account Detail showed 17261.39 for the same account, a 33057 gap
+matching that account's remaining transactions later in the month).
+Root-caused to the widget bounding its balance query to "now" instead
+of the exclusive end of the current calendar month like the app's own
+"Balance available" figure does, fixed in `WidgetSqliteReader.kt`, and
+verified on-device before release (see spec.md §5.11 for the full
+write-up). Installing the debug build for testing required uninstalling
+the Play Store copy first — even with a matching `versionCode`, Play
+App Signing re-signs the app on upload, so its signature never matches
+a local debug build. Backed up real data via Dropbox first, restored
+after testing.
+
+Release notes used (versionCode 10):
+```
+<en-GB>
+Fixed the home screen widget showing a balance that didn't match the account's Balance Available figure. The widget now correctly includes this month's already-recorded transactions (including future-dated ones), matching what you see on the account screen.
+</en-GB>
+```
+
+**Plan for the remaining 1 update:** publish it against the live
+"EWM Alpha" track, a real, user-visible change with honest release
 notes — not padding. Natural candidates already identified in this
 project:
-1. A genuine small fix or polish item that comes up from tester
-   feedback or normal development during the window (preferred — real
-   feedback-driven change is exactly what Google wants documented).
-2. The R8/ProGuard + resource-shrinking build
+1. The R8/ProGuard + resource-shrinking build
    (`expo-build-properties` already configured in `app.json`, see
    step 2 above) — **but only after it's been dedicated-tested**
    (Dropbox connect/backup/restore, the home screen widget) outside
    of closed testing first, since R8 can silently break
    reflection-based native code. Don't ship an untested R8 build to
-   real testers as one of the 3.
+   real testers as one of the 3. (Attempted once already — enabled,
+   then reverted untested per commit `ab262e4`; needs a real
+   dedicated-test pass before trying again.)
+2. Another genuine small fix or polish item that comes up from tester
+   feedback or normal development before the window closes.
 3. A third small improvement — copy fix, minor UI polish, or whatever
    is next in the backlog at the time.
 

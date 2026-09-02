@@ -30,7 +30,7 @@ pushed to a later phase) · ❌ Dropped (cut from scope).
 | §5.8 | Dashboard | ✅ Built & Verified | Full rebuild (net worth gauge, trend chart, asset allocation donut, over-budget banner, embedded calendar, Accounts/Goals/Recent Transactions/Tags cards) + UAT fixes (icon-as-text banner bug, Show-Future-Transactions wiring). UAT checklist §9 confirms the gauge, trend chart, donut, stat row, calendar, and cards all pass. The over-budget banner itself only got a partial re-check ("please push a category over budget and confirm the banner text is clean") — worth one more explicit look, though the underlying bug (icon-as-text) is fixed and visually reconfirmed since. |
 | §5.9 | Navigation | ✅ Built & Verified | 6 tabs (Dashboard, Accounts, Transactions, Commitments, Categories, Profile) with icons — UAT checklist §14 confirms, and every screenshot from the 2026-08-28 design-refresh session shows tab icons rendering correctly (now Lucide icons, see §5.18). |
 | §5.10 | Profile Page | ✅ Built & Verified | Display name, Budget Mode/Show Future Transactions global switches, Base Currency all confirmed via UAT checklist §13. Dropbox section (connect/backup/restore) shipped and was verified on-device 2026-08-28 — see §3. The Light/Dark/System theme toggle described in the original spec text was **removed 2026-08-28** as part of §5.18's dark-only redesign — see that section. |
-| §5.11 | Home Screen Widget | 🚧 In Progress | Two separate selectable widgets, Android-only, matching the iOS-deferred decision. **Widget 1 (Accounts & Quick Add) built & verified 2026-08-29** — rewritten natively as Kotlin + Jetpack Glance (`modules/widget-bridge/`), replacing an earlier `react-native-android-widget` JS-library implementation entirely (that library turned out to be a classic bitmap-swap `AppWidgetProvider`, not real Glance). Selected accounts' balances + Income/Expense/Transfer quick-add pills, matching the app's real dark palette and semantic success/danger/transfer colors. **Widget 2 (Portfolio Rings & Allocation) still 📋 Planned, not started.** |
+| §5.11 | Home Screen Widget | 🚧 In Progress | Two separate selectable widgets, Android-only, matching the iOS-deferred decision. **Widget 1 (Accounts & Quick Add) built & verified 2026-08-29** — rewritten natively as Kotlin + Jetpack Glance (`modules/widget-bridge/`), replacing an earlier `react-native-android-widget` JS-library implementation entirely (that library turned out to be a classic bitmap-swap `AppWidgetProvider`, not real Glance). Selected accounts' balances + Income/Expense/Transfer quick-add pills, matching the app's real dark palette and semantic success/danger/transfer colors. A refresh-timing bug (shipped as versionCode 9) and a balance-cutoff bug — the widget showed a "now"-only balance instead of the same "Balance available" figure the Account Detail screen shows — were found and fixed 2026-09-01/02, both verified on-device (versionCode 10). **Widget 2 (Portfolio Rings & Allocation) still 📋 Planned, not started.** |
 | §5.12 | Visual Design System (superseded) | ✅ Built & Verified | The dark-first token theme / monospace-tabular / gauge-over-pie system described here shipped and was verified (Phases 1-3, UAT checklist §15). **Superseded 2026-08-28 by §5.18** — the token *values*, glass-card ask from UAT §15 ("a glass effect would be nice"), and the whole visual language were replaced wholesale by the Erebor redesign. Kept here for history; §5.18 is now the authoritative visual-design status. |
 | §5.13 | First-Run Onboarding & Base Currency | ✅ Built & Verified | Onboarding flow + gate, live per-install base currency (not hardcoded INR), searchable ~170-currency picker. UAT checklist §1 confirms every step, the currency-picker search, and base-currency-change recalculation across the whole app — all pass (including the 2026-08-21 SafeAreaView fix for the onboarding-flush-to-top bug). |
 | §5.14 | CSV Export | ✅ Built & Verified | Matches the web app's account/date-filtered CSV export; required a native rebuild for `expo-file-system`/`expo-sharing` — verified on-device 2026-08-12, and re-confirmed working after all the base-currency changes (UAT checklist §12). |
@@ -664,6 +664,34 @@ allocated height instead of clipping. The empty-state placeholder keeps
 its own centered `Column`. Compiles clean; **on-device verification
 pending**, bundled into the same versionCode 5 build as the refresh fix
 above.
+
+**Balance-cutoff bug found and fixed 2026-09-02.** Reported by the
+user after the versionCode 9 update: the widget's balance for "HDFC
+Salary" showed 50318, but the Account Detail screen's own "Balance
+available" for the same account showed 17261.39 — a 33057 gap that
+matched exactly the sum of that account's remaining transactions dated
+later in the month (3rd-30th Sept). Root cause: `WidgetSqliteReader.kt`'s
+`getAccountBalanceMinor` summed transactions up to "now"
+(`System.currentTimeMillis()`), deliberately excluding anything dated
+later this month — but the Account Detail screen's "Balance available"
+(`services/balance.ts`'s `getAccountBalanceMinor`) uses the *exclusive
+end of the current calendar month* as its cutoff, which does include
+already-recorded transactions (including materialized recurring ones)
+dated later in the same month. The widget and the app disagreed by
+design, not by accident. Fixed by replacing the "now" cutoff with a
+native equivalent of `monthRange(currentMonthPeriod()).end` (first
+local-midnight moment of next month, via `Calendar` rather than
+`java.time` since this project's minSdk 24 predates it without core
+library desugaring) in both `getAccountsForWidget` (the widget itself)
+and `getAllAccountsForConfig` (the config screen's balance preview), so
+both now agree with the app's own "Balance available" figure. Verified
+on-device: backed up real data via Dropbox, uninstalled the Play Store
+build (required — Play App Signing re-signs the app, so a local debug
+build can never install directly over it even with a matching
+`versionCode`), installed a debug build with the fix, restored the
+backup, and confirmed the widget balance for HDFC Salary now matches
+Balance available. Shipped as versionCode 10 (release name
+`Erebor_WM10(1.0.0)`).
 
 Widget 2 (Portfolio Rings & Allocation) is deferred — out of scope for
 this pass, follows the same native Glance pattern later as a second
