@@ -13,8 +13,8 @@ import { useSettings } from "../../db/queries/settings";
 import { useFilteredTransactions } from "../../db/queries/transactions";
 import { getAccountBalanceMinor, getEarliestTransactionDate, getNetWorthSeries } from "../../services/balance";
 import { addToBucket, sortedBuckets, type Bucket } from "../../services/breakdown";
-import { getRatesToBase } from "../../services/currency";
-import { formatMoney, majorToMinor, minorToMajor } from "../../services/format";
+import { useBaseConverter } from "../../hooks/useBaseConverter";
+import { formatMoney } from "../../services/format";
 import {
   currentMonthPeriod,
   monthLabel,
@@ -56,31 +56,7 @@ export default function AnalyticsScreen() {
   const { data: categories } = useCategories();
   const { data: monthTransactions } = useFilteredTransactions({ range });
 
-  const foreignCurrencies = useMemo(() => {
-    const set = new Set<string>();
-    for (const a of accounts ?? []) {
-      if (a.currency !== baseCurrency) set.add(a.currency);
-    }
-    return Array.from(set);
-  }, [accounts, baseCurrency]);
-
-  const [rates, setRates] = useState<Record<string, number>>({});
-  useEffect(() => {
-    let cancelled = false;
-    getRatesToBase(db, foreignCurrencies, baseCurrency).then((result) => {
-      if (!cancelled) setRates(result);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [foreignCurrencies.join(","), baseCurrency]);
-
-  function toBaseMinor(amountMinor: number, currency: string): number {
-    if (currency === baseCurrency) return amountMinor;
-    const rate = rates[currency];
-    if (rate === undefined) return 0;
-    return majorToMinor(minorToMajor(amountMinor, currency) * rate, baseCurrency);
-  }
+  const { toBaseMinor } = useBaseConverter((accounts ?? []).map((a) => a.currency));
 
   const categoryInfo = (id: number | null) => categories?.find((c) => c.id === id);
 
@@ -99,7 +75,7 @@ export default function AnalyticsScreen() {
       );
     }
     return sortedBuckets(map);
-  }, [monthTransactions, accounts, categories, kind, rates, baseCurrency]);
+  }, [monthTransactions, accounts, categories, kind, toBaseMinor]);
   const categoryTotal = byCategory.reduce((sum, b) => sum + b.totalMinor, 0);
 
   const accountBalanceAtEnd = new Map(

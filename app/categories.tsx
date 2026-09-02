@@ -11,8 +11,8 @@ import { useFilteredTransactions } from "../db/queries/transactions";
 import type { CategoryKind } from "../db/schema";
 import { db } from "../db/client";
 import { GlobalHeader } from "../components/GlobalHeader";
-import { getRatesToBase } from "../services/currency";
-import { formatMoney, majorToMinor, minorToMajor } from "../services/format";
+import { useBaseConverter } from "../hooks/useBaseConverter";
+import { formatMoney } from "../services/format";
 import { currentMonthPeriod, monthRange } from "../services/period";
 import { ensureMaterialized } from "../services/recurrence";
 import { EmptyState } from "../components/ui/EmptyState";
@@ -35,31 +35,7 @@ export default function CategoriesScreen() {
   }, [range.end]);
   const { data: monthTransactions } = useFilteredTransactions({ range });
 
-  const foreignCurrencies = useMemo(() => {
-    const set = new Set<string>();
-    for (const a of accounts ?? []) {
-      if (a.currency !== baseCurrency) set.add(a.currency);
-    }
-    return Array.from(set);
-  }, [accounts, baseCurrency]);
-
-  const [rates, setRates] = useState<Record<string, number>>({});
-  useEffect(() => {
-    let cancelled = false;
-    getRatesToBase(db, foreignCurrencies, baseCurrency).then((result) => {
-      if (!cancelled) setRates(result);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [foreignCurrencies.join(","), baseCurrency]);
-
-  function toBaseMinor(amountMinor: number, currency: string): number {
-    if (currency === baseCurrency) return amountMinor;
-    const rate = rates[currency];
-    if (rate === undefined) return 0;
-    return majorToMinor(minorToMajor(amountMinor, currency) * rate, baseCurrency);
-  }
+  const { toBaseMinor } = useBaseConverter((accounts ?? []).map((a) => a.currency));
 
   // Sums whichever transaction type matches the active tab — previously
   // hardcoded to "expense" only, which meant the Income tab always showed
@@ -73,7 +49,7 @@ export default function CategoriesScreen() {
       totals.set(t.categoryId, prior + toBaseMinor(t.amountMinor, accountCurrency));
     }
     return totals;
-  }, [monthTransactions, accounts, rates, kind]);
+  }, [monthTransactions, accounts, toBaseMinor, kind]);
 
   return (
     <View className="flex-1 bg-bg">

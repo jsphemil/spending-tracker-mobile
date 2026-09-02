@@ -13,8 +13,8 @@ import { useAccounts } from "../../../db/queries/accounts";
 import { useCategories } from "../../../db/queries/categories";
 import { useSettings } from "../../../db/queries/settings";
 import { useFilteredTransactions } from "../../../db/queries/transactions";
-import { getRatesToBase } from "../../../services/currency";
-import { majorToMinor, minorToMajor } from "../../../services/format";
+import { useBaseConverter } from "../../../hooks/useBaseConverter";
+import { minorToMajor } from "../../../services/format";
 import { currentMonthPeriod, monthLabel, monthRange, shiftMonth } from "../../../services/period";
 import { ensureMaterialized } from "../../../services/recurrence";
 import { resolveAccountSettings } from "../../../services/settings";
@@ -99,31 +99,7 @@ export default function TransactionsListScreen() {
     ? accounts?.find((a) => a.id === accountId)?.currency ?? baseCurrency
     : baseCurrency;
 
-  const foreignCurrencies = useMemo(() => {
-    const set = new Set<string>();
-    for (const a of accounts ?? []) {
-      if (a.currency !== baseCurrency) set.add(a.currency);
-    }
-    return Array.from(set);
-  }, [accounts, baseCurrency]);
-
-  const [rates, setRates] = useState<Record<string, number>>({});
-  useEffect(() => {
-    let cancelled = false;
-    getRatesToBase(db, foreignCurrencies, baseCurrency).then((result) => {
-      if (!cancelled) setRates(result);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [foreignCurrencies.join(","), baseCurrency]);
-
-  function toBaseMinor(amountMinor: number, txCurrency: string): number {
-    if (txCurrency === baseCurrency) return amountMinor;
-    const rate = rates[txCurrency];
-    if (rate === undefined) return 0;
-    return majorToMinor(minorToMajor(amountMinor, txCurrency) * rate, baseCurrency);
-  }
+  const { toBaseMinor } = useBaseConverter((accounts ?? []).map((a) => a.currency));
 
   const totals = typeFilteredRows.reduce(
     (acc, t) => {

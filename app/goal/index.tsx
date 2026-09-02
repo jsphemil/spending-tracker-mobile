@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Link } from "expo-router";
 import { FlatList, Pressable, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -10,8 +10,8 @@ import { useAccounts } from "../../db/queries/accounts";
 import { useGoals } from "../../db/queries/goals";
 import { useSettings } from "../../db/queries/settings";
 import { getNetWorthSeries } from "../../services/balance";
-import { getRatesToBase } from "../../services/currency";
-import { formatMoney, majorToMinor, minorToMajor } from "../../services/format";
+import { useBaseConverter } from "../../hooks/useBaseConverter";
+import { formatMoney } from "../../services/format";
 import { computeGoalProgress } from "../../services/goals";
 
 // Six months back is enough signal for a trailing growth rate without
@@ -25,31 +25,7 @@ export default function GoalsListScreen() {
   const { data: goals } = useGoals();
   const { data: accounts } = useAccounts();
 
-  const foreignCurrencies = useMemo(() => {
-    const set = new Set<string>();
-    for (const a of accounts ?? []) {
-      if (a.currency !== baseCurrency) set.add(a.currency);
-    }
-    return Array.from(set);
-  }, [accounts, baseCurrency]);
-
-  const [rates, setRates] = useState<Record<string, number>>({});
-  useEffect(() => {
-    let cancelled = false;
-    getRatesToBase(db, foreignCurrencies, baseCurrency).then((result) => {
-      if (!cancelled) setRates(result);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [foreignCurrencies.join(","), baseCurrency]);
-
-  function toBaseMinor(amountMinor: number, currency: string): number {
-    if (currency === baseCurrency) return amountMinor;
-    const rate = rates[currency];
-    if (rate === undefined) return 0;
-    return majorToMinor(minorToMajor(amountMinor, currency) * rate, baseCurrency);
-  }
+  const { toBaseMinor } = useBaseConverter((accounts ?? []).map((a) => a.currency));
 
   const today = useMemo(() => {
     const now = new Date();

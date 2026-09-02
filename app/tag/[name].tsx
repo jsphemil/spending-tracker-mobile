@@ -1,12 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
 import { useLocalSearchParams } from "expo-router";
 import { FlatList, Text, View } from "react-native";
 
 import { db } from "../../db/client";
 import { useSettings } from "../../db/queries/settings";
 import { useTagTransactions } from "../../db/queries/tags";
-import { getExchangeRate } from "../../services/currency";
-import { formatMoney, majorToMinor, minorToMajor } from "../../services/format";
+import { useBaseConverter } from "../../hooks/useBaseConverter";
+import { formatMoney } from "../../services/format";
 import { EmptyState } from "../../components/ui/EmptyState";
 
 export default function TagSummaryScreen() {
@@ -16,38 +15,7 @@ export default function TagSummaryScreen() {
   const { settings } = useSettings();
   const baseCurrency = settings?.baseCurrency ?? "INR";
 
-  const foreignCurrencies = useMemo(() => {
-    const set = new Set<string>();
-    for (const row of rows ?? []) {
-      if (row.accountCurrency !== baseCurrency) set.add(row.accountCurrency);
-    }
-    return Array.from(set);
-  }, [rows, baseCurrency]);
-
-  const [rates, setRates] = useState<Record<string, number>>({});
-
-  useEffect(() => {
-    let cancelled = false;
-    Promise.all(
-      foreignCurrencies.map(async (currency) => {
-        const rate = await getExchangeRate(db, currency, baseCurrency);
-        return [currency, rate] as const;
-      }),
-    ).then((entries) => {
-      if (!cancelled) setRates(Object.fromEntries(entries));
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [foreignCurrencies.join(","), baseCurrency]);
-
-  function toBaseMinor(amountMinor: number, currency: string): number {
-    if (currency === baseCurrency) return amountMinor;
-    const rate = rates[currency];
-    if (rate === undefined) return 0; // rate not loaded yet
-    const majorInSource = minorToMajor(amountMinor, currency);
-    return majorToMinor(majorInSource * rate, baseCurrency);
-  }
+  const { toBaseMinor } = useBaseConverter((rows ?? []).map((r) => r.accountCurrency));
 
   const totals = (rows ?? []).reduce(
     (acc, { transaction, accountCurrency }) => {
