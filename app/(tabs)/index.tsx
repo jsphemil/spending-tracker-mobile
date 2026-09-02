@@ -1,27 +1,21 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "expo-router";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { Pressable, ScrollView, Switch, Text, View } from "react-native";
 import { Icon } from "../../components/ui/Icon";
 
-import { AssetAllocationChart } from "../../components/charts/AssetAllocationChart";
 import { NetWorthTrendChart } from "../../components/charts/NetWorthTrendChart";
-import { CalendarMonthGrid } from "../../components/CalendarMonthGrid";
-import { confirmDeleteTransaction } from "../../components/confirmDeleteTransaction";
-import { CurrencyAmount } from "../../components/CurrencyAmount";
-import { GaugeRing } from "../../components/rings/GaugeRing";
-import { TransactionListItem } from "../../components/TransactionListItem";
-import { EmptyState } from "../../components/ui/EmptyState";
-import { ACCOUNT_TYPE_LABELS } from "../../constants/accountTypes";
+import { GlobalFab } from "../../components/GlobalFab";
+import { GlobalHeader } from "../../components/GlobalHeader";
 import { db } from "../../db/client";
 import { useAccounts } from "../../db/queries/accounts";
 import { useCategories } from "../../db/queries/categories";
 import { useGoals } from "../../db/queries/goals";
 import { useSettings } from "../../db/queries/settings";
-import { useRecentTagNames } from "../../db/queries/tags";
 import { useFilteredTransactions } from "../../db/queries/transactions";
 import { getAccountBalanceMinor, getEarliestTransactionDate, getNetWorthSeries, getPeriodTotals } from "../../services/balance";
 import { getRatesToBase } from "../../services/currency";
 import { formatMoney, majorToMinor, minorToMajor } from "../../services/format";
+import { computeGoalProgress } from "../../services/goals";
 import {
   currentMonthPeriod,
   monthLabel,
@@ -35,51 +29,57 @@ import { ensureMaterialized } from "../../services/recurrence";
 import { TAB_BAR_CLEARANCE } from "../../theme/tabBar";
 import { useThemeColors } from "../../theme/palette";
 
-const ASSET_ALLOCATION_BUCKETS = [
-  { name: "Liquid (Savings/Wallet)", types: ["savings", "wallet"], color: "#7c6ef2" },
-  { name: "Deposits (FD/RD)", types: ["deposit"], color: "#f0a63a" },
-  { name: "Invested", types: ["investment"], color: "#3aa0c9" },
-] as const;
+const ASSET_TYPES = ["savings", "wallet", "deposit", "investment"] as const;
+const COMMITMENT_LOOKAHEAD_DAYS = 7;
+const GOAL_TRAILING_MONTHS = 6;
 
+function greeting(now: Date): string {
+  const hour = now.getHours();
+  if (hour < 12) return "Good morning";
+  if (hour < 18) return "Good afternoon";
+  return "Good evening";
+}
+
+interface Shortcut {
+  href: "/commitments" | "/categories" | "/goal" | "/tag" | "/calendar" | "/settings";
+  icon: string;
+  label: string;
+}
+
+// Only destinations without their own bottom tab (spec.md §5.19 "Dashboard
+// navigation shortcuts") — never Accounts/Transactions/Analytics, never
+// Profile (folded into Settings).
+const SHORTCUTS: Shortcut[] = [
+  { href: "/commitments", icon: "calendar-sync-outline", label: "Commitments" },
+  { href: "/categories", icon: "shape-outline", label: "Categories" },
+  { href: "/goal", icon: "target", label: "Goals" },
+  { href: "/tag", icon: "tag-outline", label: "Tags" },
+  { href: "/calendar", icon: "calendar-month-outline", label: "Calendar" },
+  { href: "/settings", icon: "settings-outline", label: "Settings" },
+];
+
+// Dashboard V2 (spec.md §5.19): Position → Performance → Action. Reuses
+// every calculation from the old Dashboard/Goals/Commitments screens as-is
+// — no new financial formulas, just a different composition of them.
 export default function DashboardScreen() {
   const colors = useThemeColors();
-  const [period, setPeriod] = useState(currentMonthPeriod());
-  const range = useMemo(() => monthRange(period), [period]);
-  useEffect(() => {
-    ensureMaterialized(db, { through: range.end });
-  }, [range.end]);
-
   const { settings } = useSettings();
   const baseCurrency = settings?.baseCurrency ?? "INR";
   const { data: accounts } = useAccounts();
   const { data: categories } = useCategories();
   const { data: goals } = useGoals();
-  const recentTagNames = useRecentTagNames(8);
-  const { data: monthTransactions } = useFilteredTransactions({ range });
-  // "Recent transactions" is the 5 most recent up to the viewed period's
-  // end — not scoped to its start too — so a month with under 5 rows still
-  // fills in with the tail of the previous month, matching the real app.
-  const { data: recentTransactionsRaw } = useFilteredTransactions({
-    range: { start: new Date(2000, 0, 1), end: range.end },
-  });
 
-  // Spec 5.6: same declutter-only semantics as Account Detail and the
-  // Transactions list — hides future-dated rows/day-cells, never touches
-  // totals, only while genuinely viewing the current month. Dashboard is
-  // never scoped to one account, so there's no per-account override to
-  // resolve — just the global setting.
-  const now = new Date();
-  const todayDateOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const isCurrentMonth = now.getFullYear() === period.year && now.getMonth() === period.month;
-  const hidingFuture = isCurrentMonth && !(settings?.showFutureTxGlobal ?? true);
-  const visibleMonthTransactions = hidingFuture
-    ? (monthTransactions ?? []).filter((t) => t.date <= todayDateOnly)
-    : (monthTransactions ?? []);
-  const recentTransactionsAll = hidingFuture
-    ? (recentTransactionsRaw ?? []).filter((t) => t.date <= todayDateOnly)
-    : (recentTransactionsRaw ?? []);
-  const recentTransactions = recentTransactionsAll.slice(0, 5);
-  const hiddenFutureCount = (recentTransactionsRaw ?? []).length - recentTransactionsAll.length;
+  const [showWealthHistory, setShowWealthHistory] = useState(false);
+
+  // Performance is the only month-scoped section — Position (net worth /
+  // assets / debt) and Action are always "as of right now," same
+  // today-anchored convention Goals and the debt-payoff projection already
+  // use, so paging this month-nav never makes them lie.
+  const [period, setPeriod] = useState(currentMonthPeriod());
+  const range = useMemo(() => monthRange(period), [period]);
+  useEffect(() => {
+    ensureMaterialized(db, { through: range.end });
+  }, [range.end]);
 
   const foreignCurrencies = useMemo(() => {
     const set = new Set<string>();
@@ -107,371 +107,272 @@ export default function DashboardScreen() {
     return majorToMinor(minorToMajor(amountMinor, currency) * rate, baseCurrency);
   }
 
-  // Every aggregate below is "as of the viewed month's end" (range.end),
-  // not always today — so paging the month nav moves everything together,
-  // matching the real app's deltasAtEnd/deltasAtStart pattern.
-  const accountBalanceAtEnd = new Map(
-    (accounts ?? []).map((a) => [a.id, getAccountBalanceMinor(db, a.id, range.end)]),
-  );
-  const accountBalanceAtStart = new Map(
-    (accounts ?? []).map((a) => [a.id, getAccountBalanceMinor(db, a.id, range.start)]),
-  );
-
+  // ---- POSITION (today) ----
+  const accountBalanceNow = new Map((accounts ?? []).map((a) => [a.id, getAccountBalanceMinor(db, a.id)]));
   let netWorthMinor = 0;
-  let carryForwardMinor = 0;
-  let creditCardDebtMinor = 0;
+  let assetsMinor = 0;
+  let debtMinor = 0;
+  for (const account of accounts ?? []) {
+    const baseBalance = toBaseMinor(accountBalanceNow.get(account.id) ?? 0, account.currency);
+    netWorthMinor += baseBalance;
+    if (account.type === "credit_card") {
+      if (baseBalance < 0) debtMinor += -baseBalance;
+    } else if ((ASSET_TYPES as readonly string[]).includes(account.type) && baseBalance > 0) {
+      assetsMinor += baseBalance;
+    }
+  }
+
+  // ---- PERFORMANCE (viewed month) ----
+  const { data: monthTransactions } = useFilteredTransactions({ range });
   let incomeMinor = 0;
   let expenseMinor = 0;
+  let carryForwardMinor = 0;
   for (const account of accounts ?? []) {
-    const baseBalance = toBaseMinor(accountBalanceAtEnd.get(account.id) ?? 0, account.currency);
-    netWorthMinor += baseBalance;
-    if (account.type === "credit_card" && baseBalance < 0) {
-      creditCardDebtMinor += -baseBalance;
-    }
-    carryForwardMinor += toBaseMinor(accountBalanceAtStart.get(account.id) ?? 0, account.currency);
-
     const totals = getPeriodTotals(db, { accountId: account.id, ...range });
     incomeMinor += toBaseMinor(totals.incomeMinor, account.currency);
     expenseMinor += toBaseMinor(totals.expenseMinor, account.currency);
+    carryForwardMinor += toBaseMinor(getAccountBalanceMinor(db, account.id, range.start), account.currency);
   }
+  const availableThisMonthMinor = carryForwardMinor + incomeMinor - expenseMinor;
 
-  // A gauge, not a flow-ratio pie: capacity is what the portfolio had
-  // available this period (carry forward + income, transfers excluded
-  // since they cancel out across accounts), Used eats into it, Available
-  // is what's left — which is exactly Net Worth.
-  const totalAvailable = carryForwardMinor + incomeMinor;
-  const usedFraction = totalAvailable > 0 ? expenseMinor / totalAvailable : null;
-  const percentUsed = usedFraction !== null ? usedFraction * 100 : null;
-
-  // Composition of positive balances by liquidity — Credit Card balances
-  // are debt, not an asset, so excluded here and shown as their own figure.
-  const assetAllocation = ASSET_ALLOCATION_BUCKETS.map((bucket) => ({
-    name: bucket.name,
-    color: bucket.color,
-    valueMinor: (accounts ?? [])
-      .filter((a) => (bucket.types as readonly string[]).includes(a.type))
-      .reduce(
-        (sum, a) => sum + Math.max(0, toBaseMinor(accountBalanceAtEnd.get(a.id) ?? 0, a.currency)),
-        0,
-      ),
-  })).filter((b) => b.valueMinor > 0);
-
-  // Net worth trend, capped to the account's actual history rather than a
-  // flat 12 months — a brand-new profile shows just the 1 real point it has.
-  const earliestTransactionDate = getEarliestTransactionDate(db);
+  // ---- WEALTH HISTORY (only computed when the toggle is actually on) ----
+  const earliestTransactionDate = showWealthHistory ? getEarliestTransactionDate(db) : null;
   const earliestPeriod: MonthPeriod = earliestTransactionDate
     ? { year: earliestTransactionDate.getFullYear(), month: earliestTransactionDate.getMonth() }
     : period;
   const trendLength = Math.min(12, Math.max(1, monthsBetween(earliestPeriod, period) + 1));
   const trendMonths = Array.from({ length: trendLength }, (_, i) => shiftMonth(period, i - (trendLength - 1)));
-  const trendCutoffs = trendMonths.map((mk) => monthRange(mk).end);
-  const netWorthSeries = accounts
-    ? getNetWorthSeries(db, accounts.map((a) => ({ id: a.id, currency: a.currency })), trendCutoffs, toBaseMinor)
-    : [];
-  const trendData = trendMonths.map((mk, i) => ({
-    label: monthShortLabel(mk),
-    valueMinor: netWorthSeries[i] ?? 0,
-  }));
+  const trendData = useMemo(() => {
+    if (!showWealthHistory || !accounts) return [];
+    const cutoffs = trendMonths.map((mk) => monthRange(mk).end);
+    const series = getNetWorthSeries(db, accounts.map((a) => ({ id: a.id, currency: a.currency })), cutoffs, toBaseMinor);
+    return trendMonths.map((mk, i) => ({ label: monthShortLabel(mk), valueMinor: series[i] ?? 0 }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showWealthHistory, accounts, trendMonths.map((m) => `${m.year}-${m.month}`).join(","), rates, baseCurrency]);
 
-  // Over-budget categories this month — reuses the month's own transactions
-  // rather than a separate query, same spend calc as the Categories screen.
+  // ---- ACTION (always "right now," independent of the Performance month-nav) ----
+  const currentRange = useMemo(() => monthRange(currentMonthPeriod()), []);
+  const { data: currentMonthTx } = useFilteredTransactions({ range: currentRange });
+
   const spendByCategory = new Map<number, number>();
-  for (const t of monthTransactions ?? []) {
+  for (const t of currentMonthTx ?? []) {
     if (t.type !== "expense" || t.categoryId === null) continue;
     const acctCurrency = accounts?.find((a) => a.id === t.accountId)?.currency ?? baseCurrency;
-    spendByCategory.set(
-      t.categoryId,
-      (spendByCategory.get(t.categoryId) ?? 0) + toBaseMinor(t.amountMinor, acctCurrency),
-    );
+    spendByCategory.set(t.categoryId, (spendByCategory.get(t.categoryId) ?? 0) + toBaseMinor(t.amountMinor, acctCurrency));
   }
   const overBudgetCategories = (categories ?? [])
     .filter((c) => c.kind === "expense" && c.monthlyBudgetMinor != null)
     .map((c) => ({ ...c, spentMinor: spendByCategory.get(c.id) ?? 0 }))
     .filter((c) => c.spentMinor > c.monthlyBudgetMinor!);
 
-  const expenseByDay: Record<number, number> = {};
-  for (const t of visibleMonthTransactions) {
-    if (t.type !== "expense") continue;
-    const acctCurrency = accounts?.find((a) => a.id === t.accountId)?.currency ?? baseCurrency;
-    const day = t.date.getDate();
-    expenseByDay[day] = (expenseByDay[day] ?? 0) + toBaseMinor(t.amountMinor, acctCurrency);
-  }
+  const today = useMemo(() => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  }, []);
+  const lookaheadEnd = useMemo(
+    () => new Date(today.getFullYear(), today.getMonth(), today.getDate() + COMMITMENT_LOOKAHEAD_DAYS),
+    [today],
+  );
+  useEffect(() => {
+    ensureMaterialized(db, { through: lookaheadEnd });
+  }, [lookaheadEnd]);
+  const { data: upcomingTx } = useFilteredTransactions({ range: { start: today, end: lookaheadEnd } });
+  const upcomingCommitments = useMemo(() => {
+    const seen = new Set<number>();
+    const rows: { id: number; label: string; date: Date }[] = [];
+    for (const t of (upcomingTx ?? []).slice().sort((a, b) => a.date.getTime() - b.date.getTime())) {
+      if (t.recurringRuleId == null || seen.has(t.recurringRuleId)) continue;
+      if (t.type !== "expense" && t.type !== "transfer") continue;
+      seen.add(t.recurringRuleId);
+      const account = accounts?.find((a) => a.id === t.accountId);
+      const category = categories?.find((c) => c.id === t.categoryId);
+      rows.push({
+        id: t.id,
+        label: t.type === "transfer" ? `Transfer from ${account?.name ?? "?"}` : (category?.name ?? "Uncategorized"),
+        date: t.date,
+      });
+    }
+    return rows;
+  }, [upcomingTx, accounts, categories]);
 
-  const topGoals = (goals ?? []).slice(0, 3).map((goal) => ({
-    goal,
-    percent: Math.min(100, Math.max(0, (netWorthMinor / goal.targetAmountMinor) * 100)),
-  }));
+  const sixMonthsAgo = useMemo(
+    () => new Date(today.getFullYear(), today.getMonth() - GOAL_TRAILING_MONTHS, today.getDate()),
+    [today],
+  );
+  const [netWorthPast, netWorthToday] = accounts
+    ? getNetWorthSeries(db, accounts.map((a) => ({ id: a.id, currency: a.currency })), [sixMonthsAgo, today], toBaseMinor)
+    : [0, 0];
+  const goalMonthlyGrowth = (netWorthToday - netWorthPast) / GOAL_TRAILING_MONTHS;
+  const behindPaceGoals = (goals ?? [])
+    .map((g) => computeGoalProgress(g, netWorthToday, goalMonthlyGrowth, today))
+    .filter((g) => g.isBehindTarget);
 
-  const categoryName = (id: number | null) => categories?.find((c) => c.id === id)?.name;
-  const accountName = (id: number | null) => accounts?.find((a) => a.id === id)?.name;
+  const hasAttentionItems = overBudgetCategories.length > 0 || upcomingCommitments.length > 0 || behindPaceGoals.length > 0;
 
+  const displayName = settings?.displayName?.trim();
   const card = "rounded-card border border-glass-border bg-glass p-4";
   const cardTitle = "mb-3 text-sm font-display text-fg";
 
   return (
-    <ScrollView className="flex-1 bg-bg" contentContainerStyle={{ padding: 16, paddingBottom: TAB_BAR_CLEARANCE, gap: 12 }}>
-      <View className="flex-row items-center justify-between">
-        <Pressable onPress={() => setPeriod((p) => shiftMonth(p, -1))} className="p-3" hitSlop={8}>
-          <Icon name="chevron-left" size={28} color={colors.fg} />
-        </Pressable>
-        <Text className="text-base font-medium text-fg">{monthLabel(period)}</Text>
-        <Pressable onPress={() => setPeriod((p) => shiftMonth(p, 1))} className="p-3" hitSlop={8}>
-          <Icon name="chevron-right" size={28} color={colors.fg} />
-        </Pressable>
-      </View>
+    <View className="flex-1 bg-bg">
+      <GlobalHeader />
+      <ScrollView className="flex-1 bg-bg" contentContainerStyle={{ padding: 16, paddingBottom: TAB_BAR_CLEARANCE, gap: 16 }}>
+        <View>
+          <Text className="text-lg font-display-xbold text-fg">
+            {displayName ? `${greeting(new Date())}, ${displayName}` : greeting(new Date())}
+          </Text>
+          <Text className="text-sm text-fg-muted">Here&rsquo;s your financial picture at a glance.</Text>
+        </View>
 
-      {overBudgetCategories.length > 0 && (
-        <View className="gap-1 rounded-card border border-danger/30 bg-danger-soft px-4 py-3">
-          {overBudgetCategories.map((c) => (
-            <Text key={c.id} className="text-xs font-medium text-danger">
-              {c.name} is {formatMoney(c.spentMinor - c.monthlyBudgetMinor!, baseCurrency)} over
-              its {formatMoney(c.monthlyBudgetMinor!, baseCurrency)}/mo budget
+        {/* ---------- POSITION: Where do I stand? ---------- */}
+        <View className={card}>
+          <Text className="mb-1 text-xs font-semibold uppercase tracking-wide text-fg-muted">Net worth</Text>
+          <Text className="font-data text-4xl font-bold tabular-nums text-fg">
+            {formatMoney(netWorthMinor, baseCurrency)}
+          </Text>
+          {netWorthMinor < 0 && (
+            <Text className="mt-1 text-xs font-medium text-danger">
+              Overdrawn by {formatMoney(Math.abs(netWorthMinor), baseCurrency)}
             </Text>
-          ))}
-          <Link href="/categories" asChild>
-            <Pressable>
-              <Text className="text-xs font-medium text-danger">Review budgets →</Text>
-            </Pressable>
-          </Link>
-        </View>
-      )}
-
-      <View className={card}>
-        <Text className="mb-3 text-xs font-semibold uppercase tracking-wide text-fg-muted">
-          Net worth
-        </Text>
-        <GaugeRing
-          usedFraction={usedFraction}
-          centerLabel={monthLabel(period)}
-          centerValue={formatMoney(netWorthMinor, baseCurrency)}
-          centerSubtext={percentUsed !== null ? `${percentUsed.toFixed(0)}% of available used` : undefined}
-        />
-        {netWorthMinor < 0 && (
-          <Text className="mt-3 text-center text-xs font-medium text-danger">
-            Overdrawn by {formatMoney(Math.abs(netWorthMinor), baseCurrency)}
-          </Text>
-        )}
-      </View>
-
-      <View className={card}>
-        <View className="mb-1 flex-row items-center justify-between">
-          <Text className={cardTitle}>Net worth trend</Text>
-          <Text className="text-[10px] font-medium uppercase tracking-wide text-fg-subtle">
-            {trendLength >= 12 ? "Last 12 months" : `Since ${monthShortLabel(trendMonths[0])}`}
-          </Text>
-        </View>
-        <NetWorthTrendChart data={trendData} currency={baseCurrency} height={160} />
-      </View>
-
-      <View className="flex-row flex-wrap gap-3">
-        <View className="min-w-[45%] flex-1 rounded-card bg-surface-2 p-3.5">
-          <Text className="text-[11px] text-fg-muted">Carry forward</Text>
-          <Text className="font-data mt-1.5 text-base font-semibold tabular-nums text-fg">
-            {formatMoney(carryForwardMinor, baseCurrency)}
-          </Text>
-        </View>
-        <View className="min-w-[45%] flex-1 rounded-card bg-surface-2 p-3.5">
-          <Text className="text-[11px] text-fg-muted">Income</Text>
-          <Text className="font-data mt-1.5 text-base font-semibold tabular-nums text-success">
-            +{formatMoney(incomeMinor, baseCurrency)}
-          </Text>
-        </View>
-        <View className="min-w-[45%] flex-1 rounded-card bg-surface-2 p-3.5">
-          <Text className="text-[11px] text-fg-muted">Expense</Text>
-          <Text className="font-data mt-1.5 text-base font-semibold tabular-nums text-danger">
-            −{formatMoney(expenseMinor, baseCurrency)}
-          </Text>
-        </View>
-        <View className="min-w-[45%] flex-1 rounded-card bg-surface-2 p-3.5">
-          <Text className="text-[11px] text-fg-muted">Credit card debt</Text>
-          <Text className="font-data mt-1.5 text-base font-semibold tabular-nums text-fg">
-            {creditCardDebtMinor > 0 ? formatMoney(creditCardDebtMinor, baseCurrency) : "—"}
-          </Text>
-        </View>
-      </View>
-
-      <View className={card}>
-        <Text className={cardTitle}>Asset allocation</Text>
-        {assetAllocation.length > 0 ? (
-          <>
-            <AssetAllocationChart data={assetAllocation} currency={baseCurrency} />
-            {creditCardDebtMinor > 0 && (
-              <Text className="mt-3 text-center text-xs text-fg-muted">
-                Not included above —{" "}
-                <Text className="font-medium text-danger">
-                  Credit card debt: {formatMoney(creditCardDebtMinor, baseCurrency)}
-                </Text>
+          )}
+          <View className="mt-4 flex-row gap-3">
+            <View className="flex-1 rounded-card bg-surface-2 p-3">
+              <Text className="text-[11px] text-fg-muted">Assets</Text>
+              <Text className="font-data mt-1 text-base font-semibold tabular-nums text-success">
+                {formatMoney(assetsMinor, baseCurrency)}
               </Text>
-            )}
-          </>
-        ) : (
-          <Text className="text-sm text-fg-muted">No positive balances yet.</Text>
-        )}
-      </View>
-
-      <View className={card}>
-        <View className="mb-3 flex-row items-center justify-between">
-          <Text className="text-sm font-semibold text-fg">Goals</Text>
-          <Link href="/goal" asChild>
-            <Pressable>
-              <Text className="text-xs font-medium text-accent">
-                {(goals ?? []).length === 0 ? "Set a goal" : "View all"}
+            </View>
+            <View className="flex-1 rounded-card bg-surface-2 p-3">
+              <Text className="text-[11px] text-fg-muted">Debt</Text>
+              <Text className="font-data mt-1 text-base font-semibold tabular-nums text-fg">
+                {debtMinor > 0 ? formatMoney(debtMinor, baseCurrency) : "—"}
               </Text>
-            </Pressable>
-          </Link>
+            </View>
+          </View>
+
+          <View className="mt-4 flex-row items-center justify-between border-t border-glass-border pt-3">
+            <Text className="text-sm text-fg-muted">Wealth history</Text>
+            <Switch
+              value={showWealthHistory}
+              onValueChange={setShowWealthHistory}
+              trackColor={{ false: colors.glassFill, true: colors.accent }}
+              thumbColor="#ffffff"
+              ios_backgroundColor={colors.glassFill}
+            />
+          </View>
+          {showWealthHistory && (
+            <View className="mt-3">
+              <NetWorthTrendChart data={trendData} currency={baseCurrency} height={140} />
+            </View>
+          )}
         </View>
-        {(goals ?? []).length === 0 ? (
-          <View>
-            <Text className="text-sm text-fg-muted">
-              No goals yet — set a net worth target to track progress here.
-            </Text>
-            <Link href="/goal/new" asChild>
-              <Pressable className="mt-2">
-                <Text className="text-xs font-medium text-accent">Create your first goal →</Text>
+
+        {/* ---------- PERFORMANCE: How am I doing this month? ---------- */}
+        <View className={card}>
+          <View className="mb-3 flex-row items-center justify-between">
+            <Pressable onPress={() => setPeriod((p) => shiftMonth(p, -1))} className="p-2" hitSlop={8}>
+              <Icon name="chevron-left" size={22} color={colors.fg} />
+            </Pressable>
+            <Text className={cardTitle}>{monthLabel(period)}</Text>
+            <Pressable onPress={() => setPeriod((p) => shiftMonth(p, 1))} className="p-2" hitSlop={8}>
+              <Icon name="chevron-right" size={22} color={colors.fg} />
+            </Pressable>
+          </View>
+          <View className="flex-row gap-3">
+            <View className="flex-1 rounded-card bg-surface-2 p-3.5">
+              <Text className="text-[11px] text-fg-muted">Actual income</Text>
+              <Text className="font-data mt-1.5 text-lg font-semibold tabular-nums text-success">
+                +{formatMoney(incomeMinor, baseCurrency)}
+              </Text>
+            </View>
+            <View className="flex-1 rounded-card bg-surface-2 p-3.5">
+              <Text className="text-[11px] text-fg-muted">Actual spending</Text>
+              <Text className="font-data mt-1.5 text-lg font-semibold tabular-nums text-danger">
+                −{formatMoney(expenseMinor, baseCurrency)}
+              </Text>
+            </View>
+          </View>
+          <Text className="mt-3 text-xs text-fg-muted">
+            {formatMoney(availableThisMonthMinor, baseCurrency)} available this month (carry forward
+            + income − spending, transfers not counted as spending)
+          </Text>
+        </View>
+
+        {/* ---------- ACTION: What needs my attention? ---------- */}
+        <View className={card}>
+          <Text className={cardTitle}>What needs my attention</Text>
+          {!hasAttentionItems ? (
+            <Text className="text-sm text-fg-muted">You&rsquo;re all caught up.</Text>
+          ) : (
+            <View className="gap-3">
+              {overBudgetCategories.map((c) => (
+                <AttentionRow
+                  key={`budget-${c.id}`}
+                  icon="shape-outline"
+                  tone="danger"
+                  text={`${c.name} is ${formatMoney(c.spentMinor - c.monthlyBudgetMinor!, baseCurrency)} over its ${formatMoney(c.monthlyBudgetMinor!, baseCurrency)}/mo budget`}
+                  href="/categories"
+                />
+              ))}
+              {upcomingCommitments.slice(0, 3).map((row) => (
+                <AttentionRow
+                  key={`commitment-${row.id}`}
+                  icon="calendar-sync-outline"
+                  tone="transfer"
+                  text={`${row.label} due ${row.date.toLocaleDateString(undefined, { month: "short", day: "numeric" })}`}
+                  href="/commitments"
+                />
+              ))}
+              {behindPaceGoals.map(({ goal }) => (
+                <AttentionRow
+                  key={`goal-${goal.id}`}
+                  icon="target"
+                  tone="danger"
+                  text={`${goal.name} is behind pace for its target date`}
+                  href="/goal"
+                />
+              ))}
+            </View>
+          )}
+        </View>
+
+        {/* ---------- Shortcuts (no dedicated tab) ---------- */}
+        <View className="flex-row flex-wrap gap-3">
+          {SHORTCUTS.map((s) => (
+            <Link key={s.href} href={s.href} asChild>
+              <Pressable className="min-w-[30%] flex-1 items-center gap-2 rounded-card border border-glass-border bg-glass py-4">
+                <Icon name={s.icon} size={20} color={colors.accent} />
+                <Text className="text-xs font-medium text-fg">{s.label}</Text>
               </Pressable>
             </Link>
-          </View>
-        ) : (
-          <View className="gap-3">
-            {topGoals.map(({ goal, percent }) => (
-              <View key={goal.id}>
-                <View className="flex-row items-center justify-between">
-                  <Text className="text-sm font-medium text-fg">{goal.name}</Text>
-                  <Text className="font-data text-sm tabular-nums text-fg-muted">
-                    {percent.toFixed(0)}%
-                  </Text>
-                </View>
-                <View className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-surface-3">
-                  <View
-                    className={`h-full rounded-full ${percent >= 100 ? "bg-success" : "bg-accent"}`}
-                    style={{ width: `${percent}%` }}
-                  />
-                </View>
-              </View>
-            ))}
-          </View>
-        )}
-      </View>
+          ))}
+        </View>
+      </ScrollView>
+      <GlobalFab insideTabs />
+    </View>
+  );
+}
 
-      <View className={card}>
-        <View className="mb-3 flex-row items-center justify-between">
-          <Text className={cardTitle}>{monthLabel(period)}</Text>
-        </View>
-        <View className="mb-3 flex-row gap-2">
-          <Link href="/transaction/new?type=income" asChild>
-            <Pressable className="flex-1 items-center rounded-lg border border-glass-border py-1.5">
-              <Text className="text-xs font-medium text-fg">+ Income</Text>
-            </Pressable>
-          </Link>
-          <Link href="/transaction/new?type=expense" asChild>
-            <Pressable className="flex-1 items-center rounded-lg border border-glass-border py-1.5">
-              <Text className="text-xs font-medium text-fg">+ Expense</Text>
-            </Pressable>
-          </Link>
-          <Link href="/transaction/new?type=transfer" asChild>
-            <Pressable className="flex-1 items-center rounded-lg border border-glass-border py-1.5">
-              <Text className="text-xs font-medium text-fg">+ Transfer</Text>
-            </Pressable>
-          </Link>
-        </View>
-        <CalendarMonthGrid period={period} currency={baseCurrency} expenseByDay={expenseByDay} />
-      </View>
-
-      <View className={card}>
-        <View className="mb-3 flex-row items-center justify-between">
-          <Text className={cardTitle}>Accounts</Text>
-          <Link href="/accounts" asChild>
-            <Pressable>
-              <Text className="text-xs font-medium text-accent">View all</Text>
-            </Pressable>
-          </Link>
-        </View>
-        {(accounts ?? []).length === 0 ? (
-          <Text className="text-sm text-fg-muted">No accounts yet.</Text>
-        ) : (
-          <View className="gap-1">
-            {(accounts ?? []).map((a) => (
-              <Link key={a.id} href={`/accounts/${a.id}`} asChild>
-                <Pressable className="flex-row items-center justify-between rounded-lg py-2">
-                  <View className="flex-row items-center gap-3">
-                    <View style={{ backgroundColor: a.color }} className="h-9 w-9 rounded-lg" />
-                    <View>
-                      <Text className="text-sm font-medium text-fg">{a.name}</Text>
-                      <Text className="text-xs text-fg-muted">{ACCOUNT_TYPE_LABELS[a.type]}</Text>
-                    </View>
-                  </View>
-                  <CurrencyAmount
-                    amountMinor={accountBalanceAtEnd.get(a.id) ?? 0}
-                    currency={a.currency}
-                    className="text-sm font-medium text-fg"
-                  />
-                </Pressable>
-              </Link>
-            ))}
-          </View>
-        )}
-      </View>
-
-      <View className={card}>
-        <View className="mb-3 flex-row items-center justify-between">
-          <Text className={cardTitle}>Recent transactions</Text>
-          <Link href="/transactions" asChild>
-            <Pressable>
-              <Text className="text-xs font-medium text-accent">View all</Text>
-            </Pressable>
-          </Link>
-        </View>
-        {hiddenFutureCount > 0 && (
-          <Text className="mb-2 text-xs text-fg-muted">
-            {hiddenFutureCount} upcoming transaction{hiddenFutureCount === 1 ? "" : "s"} hidden — Show
-            Future Transactions is off.
-          </Text>
-        )}
-        {recentTransactions.length === 0 ? (
-          <EmptyState message="No transactions yet." />
-        ) : (
-          recentTransactions.map((item) => (
-            <TransactionListItem
-              key={item.id}
-              transaction={item}
-              currency={accounts?.find((a) => a.id === item.accountId)?.currency ?? baseCurrency}
-              categoryName={categoryName(item.categoryId)}
-              fromAccountName={item.type === "transfer" ? accountName(item.accountId) : undefined}
-              toAccountName={item.type === "transfer" ? accountName(item.toAccountId) : undefined}
-              showActionIcons
-              onDelete={() => confirmDeleteTransaction(db, item, () => {})}
-            />
-          ))
-        )}
-      </View>
-
-      <View className={card}>
-        <View className="mb-3 flex-row items-center justify-between">
-          <Text className={cardTitle}>Tags</Text>
-          <Link href="/tag" asChild>
-            <Pressable>
-              <Text className="text-xs font-medium text-accent">
-                {recentTagNames.length === 0 ? "" : "More"}
-              </Text>
-            </Pressable>
-          </Link>
-        </View>
-        {recentTagNames.length === 0 ? (
-          <Text className="text-sm text-fg-muted">
-            No tags yet — add one from any transaction.
-          </Text>
-        ) : (
-          <View className="flex-row flex-wrap gap-2">
-            {recentTagNames.map((name) => (
-              <Link key={name} href={`/tag/${encodeURIComponent(name)}`} asChild>
-                <Pressable className="rounded-full bg-surface-2 px-3 py-1.5">
-                  <Text className="text-sm text-fg-muted">{name}</Text>
-                </Pressable>
-              </Link>
-            ))}
-          </View>
-        )}
-      </View>
-    </ScrollView>
+function AttentionRow({
+  icon,
+  tone,
+  text,
+  href,
+}: {
+  icon: string;
+  tone: "danger" | "transfer";
+  text: string;
+  href: "/categories" | "/commitments" | "/goal";
+}) {
+  const colors = useThemeColors();
+  const toneColor = tone === "danger" ? colors.danger : colors.transfer;
+  return (
+    <Link href={href} asChild>
+      <Pressable className="flex-row items-center gap-2.5">
+        <Icon name={icon} size={16} color={toneColor} />
+        <Text className="flex-1 text-sm text-fg">{text}</Text>
+        <Icon name="chevron-right" size={16} color={colors.fgSubtle} />
+      </Pressable>
+    </Link>
   );
 }
