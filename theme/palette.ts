@@ -1,3 +1,7 @@
+import { useColorScheme } from "react-native";
+
+import { useSettings } from "../db/queries/settings";
+
 // Mirrors global.css's CSS-variable tokens as literal hex values, for the
 // handful of consumers that can't take a Tailwind className (react-native-svg
 // stroke/fill props, icon `color` props). Dark values are the
@@ -29,9 +33,6 @@ export interface ThemeColors {
 }
 
 export const palette: Record<"light" | "dark", ThemeColors> = {
-  // Unreachable now that useResolvedTheme() always resolves "dark" (Erebor
-  // is a dark-only design system) — kept only so the Record<"light"|"dark",
-  // ThemeColors> type shape doesn't need a wider refactor.
   light: {
     bg: "#f5f5f8",
     surface: "#ffffff",
@@ -139,12 +140,17 @@ export function cssVars(scheme: "light" | "dark"): Record<string, string> {
   };
 }
 
-// Erebor is a dark-only design system — no light theme exists in the
-// source. `settings.themePreference` (schema/storage/Profile's former
-// 3-way toggle) is left untouched elsewhere, this is the one place that
-// now ignores it in favor of always resolving "dark".
+// V2 reinstates the Light/Dark/System choice (spec.md §5.19 "Theme V2"),
+// reversing the design-refresh pass's hardcoded "always dark". Resolves
+// settings.themePreference against the OS scheme for "system"; while
+// settings hasn't loaded yet (first paint, mid-migration) falls back to
+// "dark" so there's no flash of an unstyled/wrong-token screen.
 export function useResolvedTheme(): "light" | "dark" {
-  return "dark";
+  const { settings } = useSettings();
+  const systemScheme = useColorScheme();
+  const preference = settings?.themePreference ?? "dark";
+  if (preference === "system") return systemScheme === "light" ? "light" : "dark";
+  return preference;
 }
 
 export function useThemeColors(): ThemeColors {
