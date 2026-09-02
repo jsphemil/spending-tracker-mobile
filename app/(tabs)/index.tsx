@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "expo-router";
-import { Pressable, ScrollView, Switch, Text, View } from "react-native";
+import { Pressable, ScrollView, Text, View } from "react-native";
 import { Icon } from "../../components/ui/Icon";
 
-import { NetWorthTrendChart } from "../../components/charts/NetWorthTrendChart";
 import { GlobalHeader } from "../../components/GlobalHeader";
 import { db } from "../../db/client";
 import { useAccounts } from "../../db/queries/accounts";
@@ -11,7 +10,7 @@ import { useCategories } from "../../db/queries/categories";
 import { useGoals } from "../../db/queries/goals";
 import { useSettings } from "../../db/queries/settings";
 import { useFilteredTransactions } from "../../db/queries/transactions";
-import { getAccountBalanceMinor, getEarliestTransactionDate, getNetWorthSeries, getPeriodTotals } from "../../services/balance";
+import { getAccountBalanceMinor, getNetWorthSeries, getPeriodTotals } from "../../services/balance";
 import { getRatesToBase } from "../../services/currency";
 import { formatMoney, majorToMinor, minorToMajor } from "../../services/format";
 import { computeGoalProgress } from "../../services/goals";
@@ -19,10 +18,7 @@ import {
   currentMonthPeriod,
   monthLabel,
   monthRange,
-  monthShortLabel,
-  monthsBetween,
   shiftMonth,
-  type MonthPeriod,
 } from "../../services/period";
 import { ensureMaterialized } from "../../services/recurrence";
 import { TAB_BAR_CLEARANCE } from "../../theme/tabBar";
@@ -68,7 +64,6 @@ export default function DashboardScreen() {
   const { data: categories } = useCategories();
   const { data: goals } = useGoals();
 
-  const [showWealthHistory, setShowWealthHistory] = useState(false);
 
   // Performance is the only month-scoped section — Position (net worth /
   // assets / debt) and Action are always "as of right now," same
@@ -112,9 +107,8 @@ export default function DashboardScreen() {
   // already-materialized future-dated recurring transactions (next month's
   // salary, etc.) and silently overstates net worth. It also has to be
   // range.end rather than a "now" timestamp so this figure keeps tracking
-  // the month navigation, and so it agrees with the trend chart below
-  // (which cuts each point at its own month end) and with the Accounts and
-  // Analytics screens, which both already pass range.end.
+  // the month navigation, and so it agrees with the Accounts and Analytics
+  // screens, which both already pass range.end.
   const accountBalanceAsOf = new Map(
     (accounts ?? []).map((a) => [a.id, getAccountBalanceMinor(db, a.id, range.end)]),
   );
@@ -144,20 +138,9 @@ export default function DashboardScreen() {
   }
   const availableThisMonthMinor = carryForwardMinor + incomeMinor - expenseMinor;
 
-  // ---- WEALTH HISTORY (only computed when the toggle is actually on) ----
-  const earliestTransactionDate = showWealthHistory ? getEarliestTransactionDate(db) : null;
-  const earliestPeriod: MonthPeriod = earliestTransactionDate
-    ? { year: earliestTransactionDate.getFullYear(), month: earliestTransactionDate.getMonth() }
-    : period;
-  const trendLength = Math.min(12, Math.max(1, monthsBetween(earliestPeriod, period) + 1));
-  const trendMonths = Array.from({ length: trendLength }, (_, i) => shiftMonth(period, i - (trendLength - 1)));
-  const trendData = useMemo(() => {
-    if (!showWealthHistory || !accounts) return [];
-    const cutoffs = trendMonths.map((mk) => monthRange(mk).end);
-    const series = getNetWorthSeries(db, accounts.map((a) => ({ id: a.id, currency: a.currency })), cutoffs, toBaseMinor);
-    return trendMonths.map((mk, i) => ({ label: monthShortLabel(mk), valueMinor: series[i] ?? 0 }));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showWealthHistory, accounts, trendMonths.map((m) => `${m.year}-${m.month}`).join(","), rates, baseCurrency]);
+  // Wealth history lived here behind a toggle, duplicating the Net worth
+  // trend chart that Analytics shows unconditionally. Removed from the
+  // Dashboard rather than kept in two places.
 
   // ---- ACTION (always "right now," independent of the Performance month-nav) ----
   const currentRange = useMemo(() => monthRange(currentMonthPeriod()), []);
@@ -259,21 +242,6 @@ export default function DashboardScreen() {
             </View>
           </View>
 
-          <View className="mt-4 flex-row items-center justify-between border-t border-glass-border pt-3">
-            <Text className="text-sm text-fg-muted">Wealth history</Text>
-            <Switch
-              value={showWealthHistory}
-              onValueChange={setShowWealthHistory}
-              trackColor={{ false: colors.glassFill, true: colors.accent }}
-              thumbColor="#ffffff"
-              ios_backgroundColor={colors.glassFill}
-            />
-          </View>
-          {showWealthHistory && (
-            <View className="mt-3">
-              <NetWorthTrendChart data={trendData} currency={baseCurrency} height={140} />
-            </View>
-          )}
         </View>
 
         {/* ---------- PERFORMANCE: How am I doing this month? ---------- */}
