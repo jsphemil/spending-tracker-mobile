@@ -93,6 +93,15 @@ export default function RootLayout() {
             }}
           >
             <Stack.Screen name="(tabs)" />
+            {/* V2 shortcut destinations (spec.md §5.19) — moved out of the
+                tab bar, each renders its own GlobalHeader/GlobalFab instead
+                of an in-navigator header. */}
+            <Stack.Screen name="commitments" />
+            <Stack.Screen name="categories" />
+            <Stack.Screen name="calendar" />
+            {/* Settings owns its own Stack (app/settings/_layout.tsx) with
+                normal in-navigator headers — no GlobalHeader/FAB there. */}
+            <Stack.Screen name="settings" />
             <Stack.Screen
               name="account/new"
               options={{ presentation: "modal", headerShown: true, title: "New Account" }}
@@ -117,10 +126,7 @@ export default function RootLayout() {
               name="category/[id]/edit"
               options={{ presentation: "modal", headerShown: true, title: "Edit Category" }}
             />
-            <Stack.Screen
-              name="goal/index"
-              options={{ headerShown: true, title: "Goals" }}
-            />
+            <Stack.Screen name="goal/index" />
             <Stack.Screen
               name="goal/new"
               options={{ presentation: "modal", headerShown: true, title: "New Goal" }}
@@ -129,10 +135,7 @@ export default function RootLayout() {
               name="goal/[id]/edit"
               options={{ presentation: "modal", headerShown: true, title: "Edit Goal" }}
             />
-            <Stack.Screen
-              name="tag/index"
-              options={{ headerShown: true, title: "Tags" }}
-            />
+            <Stack.Screen name="tag/index" />
             <Stack.Screen
               name="tag/[name]"
               options={{ headerShown: true, title: "Tag" }}

@@ -4,16 +4,19 @@ import { Icon } from "../../components/ui/Icon";
 import { NAV_SHADOW } from "../../theme/gradients";
 import { useThemeColors } from "../../theme/palette";
 
+// Exactly 4 destinations (spec.md §5.19 "Navigation V2"): Dashboard,
+// Accounts, Transactions, Analytics. Commitments/Categories/Goals/Tags/
+// Calendar/Settings moved out to top-level shortcut routes, reachable from
+// the Dashboard's shortcut row and/or the global header — never duplicated
+// here. Every tab hides its own header now; each screen renders the shared
+// GlobalHeader itself.
 export default function TabsLayout() {
   const colors = useThemeColors();
 
   return (
     <Tabs
       screenOptions={{
-        headerShown: true,
-        headerStyle: { backgroundColor: colors.surface },
-        headerTitleStyle: { color: colors.fg, fontFamily: "Manrope_700Bold" },
-        headerTintColor: colors.fg,
+        headerShown: false,
         tabBarStyle: {
           position: "absolute",
           left: 16,
@@ -21,7 +24,7 @@ export default function TabsLayout() {
           bottom: 16,
           height: 78,
           borderRadius: 9999,
-          backgroundColor: "rgba(19, 26, 44, 0.86)",
+          backgroundColor: colors.glassFillStrong,
           borderTopWidth: 0,
           borderWidth: 1,
           borderColor: colors.glassBorder,
@@ -42,16 +45,10 @@ export default function TabsLayout() {
           tabBarIcon: ({ color, size }) => <Icon name="view-dashboard-outline" size={size} color={color} />,
         }}
       />
-      {/* accounts/ and transactions/ are each their own Stack navigator
-          (see their _layout.tsx) — that inner Stack owns the header so
-          it can show a back button and a per-screen title ("Accounts"
-          vs. "Account") when navigating into a detail screen. Showing
-          this outer tab header too would just duplicate it. */}
       <Tabs.Screen
         name="accounts"
         options={{
           title: "Accounts",
-          headerShown: false,
           tabBarIcon: ({ color, size }) => <Icon name="wallet-outline" size={size} color={color} />,
         }}
       />
@@ -59,29 +56,14 @@ export default function TabsLayout() {
         name="transactions"
         options={{
           title: "Transactions",
-          headerShown: false,
           tabBarIcon: ({ color, size }) => <Icon name="swap-horizontal" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
-        name="commitments"
+        name="analytics"
         options={{
-          title: "Commitments",
-          tabBarIcon: ({ color, size }) => <Icon name="calendar-sync-outline" size={size} color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="categories"
-        options={{
-          title: "Categories",
-          tabBarIcon: ({ color, size }) => <Icon name="shape-outline" size={size} color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: "Profile",
-          tabBarIcon: ({ color, size }) => <Icon name="account-circle-outline" size={size} color={color} />,
+          title: "Analytics",
+          tabBarIcon: ({ color, size }) => <Icon name="chart-line" size={size} color={color} />,
         }}
       />
     </Tabs>

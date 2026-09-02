@@ -13,7 +13,9 @@ import { currentMonthPeriod, monthLabel, monthRange, shiftMonth } from "../../..
 import { ensureMaterialized } from "../../../services/recurrence";
 import { CurrencyAmount } from "../../../components/CurrencyAmount";
 import { EmptyState } from "../../../components/ui/EmptyState";
-import { TAB_BAR_CLEARANCE, FAB_BOTTOM_OFFSET } from "../../../theme/tabBar";
+import { GlobalFab } from "../../../components/GlobalFab";
+import { GlobalHeader } from "../../../components/GlobalHeader";
+import { TAB_BAR_CLEARANCE } from "../../../theme/tabBar";
 import { useThemeColors } from "../../../theme/palette";
 
 interface AccountFlow {
@@ -57,19 +59,29 @@ export default function AccountsListScreen() {
 
   return (
     <View className="flex-1 bg-bg">
+      <GlobalHeader />
       <FlatList
         data={accounts ?? []}
         keyExtractor={(item) => String(item.id)}
         contentContainerStyle={{ padding: 16, paddingBottom: TAB_BAR_CLEARANCE, gap: 12 }}
         ListHeaderComponent={
-          <View className="mb-3 flex-row items-center justify-center gap-2">
+          <View className="mb-3 flex-row items-center justify-between gap-2">
             <Pressable onPress={() => setPeriod((p) => shiftMonth(p, -1))} className="p-3" hitSlop={8}>
               <Icon name="chevron-left" size={28} color={colors.fg} />
             </Pressable>
-            <Text className="text-base font-medium text-fg">{monthLabel(period)}</Text>
+            <Text className="flex-1 text-center text-base font-medium text-fg">{monthLabel(period)}</Text>
             <Pressable onPress={() => setPeriod((p) => shiftMonth(p, 1))} className="p-3" hitSlop={8}>
               <Icon name="chevron-right" size={28} color={colors.fg} />
             </Pressable>
+            <Link href="/account/new" asChild>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="New account"
+                className="h-10 w-10 items-center justify-center rounded-full bg-glass"
+              >
+                <Icon name="plus" size={18} color={colors.fg} />
+              </Pressable>
+            </Link>
           </View>
         }
         ListEmptyComponent={<EmptyState message="No accounts yet." />}
@@ -131,14 +143,7 @@ export default function AccountsListScreen() {
           );
         }}
       />
-      <Link href="/account/new" asChild>
-        <Pressable
-          className="absolute right-6 h-14 w-14 items-center justify-center rounded-full bg-accent"
-          style={{ bottom: FAB_BOTTOM_OFFSET }}
-        >
-          <Text className="text-2xl text-white">+</Text>
-        </Pressable>
-      </Link>
+      <GlobalFab insideTabs />
     </View>
   );
 }

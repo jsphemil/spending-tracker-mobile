@@ -1,22 +1,27 @@
 import { useEffect, useMemo, useState } from "react";
-import { Icon } from "../../components/ui/Icon";
+import { Icon } from "../components/ui/Icon";
 import { Link } from "expo-router";
 import { FlatList, Pressable, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { useAccounts } from "../../db/queries/accounts";
-import { useCategories } from "../../db/queries/categories";
-import { useSettings } from "../../db/queries/settings";
-import { useFilteredTransactions } from "../../db/queries/transactions";
-import type { CategoryKind } from "../../db/schema";
-import { db } from "../../db/client";
-import { getRatesToBase } from "../../services/currency";
-import { formatMoney, majorToMinor, minorToMajor } from "../../services/format";
-import { currentMonthPeriod, monthRange } from "../../services/period";
-import { ensureMaterialized } from "../../services/recurrence";
-import { EmptyState } from "../../components/ui/EmptyState";
-import { TAB_BAR_CLEARANCE, FAB_BOTTOM_OFFSET } from "../../theme/tabBar";
+import { useAccounts } from "../db/queries/accounts";
+import { useCategories } from "../db/queries/categories";
+import { useSettings } from "../db/queries/settings";
+import { useFilteredTransactions } from "../db/queries/transactions";
+import type { CategoryKind } from "../db/schema";
+import { db } from "../db/client";
+import { GlobalFab } from "../components/GlobalFab";
+import { GlobalHeader } from "../components/GlobalHeader";
+import { getRatesToBase } from "../services/currency";
+import { formatMoney, majorToMinor, minorToMajor } from "../services/format";
+import { currentMonthPeriod, monthRange } from "../services/period";
+import { ensureMaterialized } from "../services/recurrence";
+import { EmptyState } from "../components/ui/EmptyState";
+import { useThemeColors } from "../theme/palette";
 
 export default function CategoriesScreen() {
+  const colors = useThemeColors();
+  const insets = useSafeAreaInsets();
   const [kind, setKind] = useState<CategoryKind>("expense");
   const { settings } = useSettings();
   const baseCurrency = settings?.baseCurrency ?? "INR";
@@ -73,7 +78,8 @@ export default function CategoriesScreen() {
 
   return (
     <View className="flex-1 bg-bg">
-      <View className="flex-row gap-2 p-4">
+      <GlobalHeader />
+      <View className="flex-row items-center gap-2 p-4">
         {(["expense", "income"] as const).map((k) => (
           <Pressable
             key={k}
@@ -87,12 +93,21 @@ export default function CategoriesScreen() {
             </Text>
           </Pressable>
         ))}
+        <Link href={`/category/new?kind=${kind}`} asChild>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="New category"
+            className="h-10 w-10 items-center justify-center rounded-full bg-glass"
+          >
+            <Icon name="plus" size={18} color={colors.fg} />
+          </Pressable>
+        </Link>
       </View>
 
       <FlatList
         data={categories ?? []}
         keyExtractor={(item) => String(item.id)}
-        contentContainerStyle={{ padding: 16, paddingBottom: TAB_BAR_CLEARANCE, gap: 8 }}
+        contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 96, gap: 8 }}
         ListEmptyComponent={<EmptyState message="No categories yet." />}
         renderItem={({ item }) => {
           const spentMinor = spentByCategoryMinor.get(item.id) ?? 0;
@@ -134,15 +149,7 @@ export default function CategoriesScreen() {
           );
         }}
       />
-
-      <Link href={`/category/new?kind=${kind}`} asChild>
-        <Pressable
-          className="absolute right-6 h-14 w-14 items-center justify-center rounded-full bg-accent"
-          style={{ bottom: FAB_BOTTOM_OFFSET }}
-        >
-          <Text className="text-2xl text-white">+</Text>
-        </Pressable>
-      </Link>
+      <GlobalFab />
     </View>
   );
 }

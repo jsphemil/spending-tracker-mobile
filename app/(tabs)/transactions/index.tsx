@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { Link, Stack } from "expo-router";
 import { FlatList, Pressable, ScrollView, Text, View } from "react-native";
 import { Icon } from "../../../components/ui/Icon";
 
 import { confirmDeleteTransaction } from "../../../components/confirmDeleteTransaction";
+import { GlobalFab } from "../../../components/GlobalFab";
+import { GlobalHeader } from "../../../components/GlobalHeader";
 import { SummaryBand } from "../../../components/SummaryBand";
 import { TransactionListItem } from "../../../components/TransactionListItem";
 import { EmptyState } from "../../../components/ui/EmptyState";
@@ -18,7 +19,7 @@ import { majorToMinor, minorToMajor } from "../../../services/format";
 import { currentMonthPeriod, monthLabel, monthRange, shiftMonth } from "../../../services/period";
 import { ensureMaterialized } from "../../../services/recurrence";
 import { resolveAccountSettings } from "../../../services/settings";
-import { TAB_BAR_CLEARANCE, FAB_BOTTOM_OFFSET } from "../../../theme/tabBar";
+import { TAB_BAR_CLEARANCE } from "../../../theme/tabBar";
 import { useThemeColors } from "../../../theme/palette";
 
 type FilterMode = "month" | "custom" | "allTime";
@@ -141,17 +142,7 @@ export default function TransactionsListScreen() {
 
   return (
     <View className="flex-1 bg-bg">
-      <Stack.Screen
-        options={{
-          headerRight: () => (
-            <Link href="/transactions/calendar" asChild>
-              <Pressable hitSlop={8} className="px-2">
-                <Icon name="calendar-month-outline" size={22} color={colors.accent} />
-              </Pressable>
-            </Link>
-          ),
-        }}
-      />
+      <GlobalHeader />
       <View className="gap-3 border-b border-glass-border p-4">
         <View className="flex-row gap-1.5 rounded-lg bg-surface-2 p-1">
           {(
@@ -351,15 +342,7 @@ export default function TransactionsListScreen() {
           />
         )}
       />
-
-      <Link href="/transaction/new" asChild>
-        <Pressable
-          className="absolute right-6 h-14 w-14 items-center justify-center rounded-full bg-accent"
-          style={{ bottom: FAB_BOTTOM_OFFSET }}
-        >
-          <Text className="text-2xl text-white">+</Text>
-        </Pressable>
-      </Link>
+      <GlobalFab insideTabs />
     </View>
   );
 }

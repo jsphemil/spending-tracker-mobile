@@ -1,8 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "expo-router";
 import { FlatList, Pressable, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { EmptyState } from "../../components/ui/EmptyState";
+import { GlobalFab } from "../../components/GlobalFab";
+import { GlobalHeader } from "../../components/GlobalHeader";
 import { db } from "../../db/client";
 import { useAccounts } from "../../db/queries/accounts";
 import { useGoals } from "../../db/queries/goals";
@@ -10,12 +13,14 @@ import { useSettings } from "../../db/queries/settings";
 import { getNetWorthSeries } from "../../services/balance";
 import { getRatesToBase } from "../../services/currency";
 import { formatMoney, majorToMinor, minorToMajor } from "../../services/format";
+import { computeGoalProgress } from "../../services/goals";
 
 // Six months back is enough signal for a trailing growth rate without
 // over-weighting a single unusual month — matches the real app's Goals page.
 const TRAILING_MONTHS = 6;
 
 export default function GoalsListScreen() {
+  const insets = useSafeAreaInsets();
   const { settings } = useSettings();
   const baseCurrency = settings?.baseCurrency ?? "INR";
   const { data: goals } = useGoals();
@@ -66,29 +71,15 @@ export default function GoalsListScreen() {
     : [0, 0];
   const monthlyGrowth = (netWorthNow - netWorthPast) / TRAILING_MONTHS;
 
-  const rows = (goals ?? []).map((goal) => {
-    const target = goal.targetAmountMinor;
-    const remaining = target - netWorthNow;
-    const percent = Math.min(100, Math.max(0, (netWorthNow / target) * 100));
-    const reached = netWorthNow >= target;
-
-    let projectedDate: Date | null = null;
-    if (!reached && monthlyGrowth > 0) {
-      const monthsToGoal = Math.ceil(remaining / monthlyGrowth);
-      projectedDate = new Date(today.getFullYear(), today.getMonth() + monthsToGoal, today.getDate());
-    }
-    const isBehindTarget =
-      goal.targetDate !== null && projectedDate !== null && projectedDate > goal.targetDate;
-
-    return { goal, remaining, percent, reached, projectedDate, isBehindTarget };
-  });
+  const rows = (goals ?? []).map((goal) => computeGoalProgress(goal, netWorthNow, monthlyGrowth, today));
 
   return (
     <View className="flex-1 bg-bg">
+      <GlobalHeader />
       <FlatList
         data={rows}
         keyExtractor={({ goal }) => String(goal.id)}
-        contentContainerStyle={{ padding: 16, gap: 12 }}
+        contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 96, gap: 12 }}
         ListHeaderComponent={
           <Text className="mb-4 text-sm text-fg-muted">
             Tracked against net worth. Projected dates use your trailing {TRAILING_MONTHS}-month
@@ -128,10 +119,10 @@ export default function GoalsListScreen() {
             {!reached && (
               <Text className="mt-1 text-xs text-fg-muted">
                 {projectedDate
-                  ? `At current pace, projected around ${projectedDate.toLocaleDateString("en-US", { month: "long", year: "numeric" })}`
+                  ? `At current pace, projected around ${projectedDate.toLocaleDateString(undefined, { month: "long", year: "numeric" })}`
                   : "Not currently trending toward this goal"}
                 {goal.targetDate
-                  ? ` · target ${goal.targetDate.toLocaleDateString("en-US", { month: "long", year: "numeric" })}`
+                  ? ` · target ${goal.targetDate.toLocaleDateString(undefined, { month: "long", year: "numeric" })}`
                   : ""}
               </Text>
             )}
@@ -151,10 +142,16 @@ export default function GoalsListScreen() {
       />
 
       <Link href="/goal/new" asChild>
-        <Pressable className="absolute bottom-6 right-6 h-14 w-14 items-center justify-center rounded-full bg-accent">
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="New goal"
+          className="absolute h-14 w-14 items-center justify-center rounded-full bg-accent"
+          style={{ bottom: insets.bottom + 20, right: 88 }}
+        >
           <Text className="text-2xl text-white">+</Text>
         </Pressable>
       </Link>
+      <GlobalFab />
     </View>
   );
 }

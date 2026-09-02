@@ -1,15 +1,17 @@
 import { ScrollView, Text, View } from "react-native";
-import { Icon } from "../../components/ui/Icon";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Icon } from "../components/ui/Icon";
 
-import { EmptyState } from "../../components/ui/EmptyState";
-import { useAccounts } from "../../db/queries/accounts";
-import { useCategories } from "../../db/queries/categories";
-import { useActiveRecurringRules } from "../../db/queries/recurringRules";
-import { useSettings } from "../../db/queries/settings";
-import { formatMoney } from "../../services/format";
-import { describeSchedule, monthlyEquivalent } from "../../services/recurrence";
-import { TAB_BAR_CLEARANCE } from "../../theme/tabBar";
-import { useThemeColors } from "../../theme/palette";
+import { EmptyState } from "../components/ui/EmptyState";
+import { GlobalFab } from "../components/GlobalFab";
+import { GlobalHeader } from "../components/GlobalHeader";
+import { useAccounts } from "../db/queries/accounts";
+import { useCategories } from "../db/queries/categories";
+import { useActiveRecurringRules } from "../db/queries/recurringRules";
+import { useSettings } from "../db/queries/settings";
+import { formatMoney } from "../services/format";
+import { describeSchedule, monthlyEquivalent } from "../services/recurrence";
+import { useThemeColors } from "../theme/palette";
 
 const SECTION_DEFS = [
   { type: "expense" as const, title: "Recurring expenses", color: "text-danger" },
@@ -19,6 +21,7 @@ const SECTION_DEFS = [
 
 export default function CommitmentsScreen() {
   const colors = useThemeColors();
+  const insets = useSafeAreaInsets();
   const { settings } = useSettings();
   const baseCurrency = settings?.baseCurrency ?? "INR";
   const { data: rules } = useActiveRecurringRules();
@@ -51,7 +54,12 @@ export default function CommitmentsScreen() {
   const percentOfIncome = totalIncomeMonthly > 0 ? (totalCommitmentMonthly / totalIncomeMonthly) * 100 : null;
 
   return (
-    <ScrollView className="flex-1 bg-bg" contentContainerStyle={{ padding: 16, paddingBottom: TAB_BAR_CLEARANCE, gap: 16 }}>
+    <View className="flex-1 bg-bg">
+      <GlobalHeader />
+      <ScrollView
+        className="flex-1 bg-bg"
+        contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 96, gap: 16 }}
+      >
       <Text className="text-sm text-fg-muted">
         Everything you&rsquo;re locked into every month, normalized from each rule&rsquo;s own
         cadence — a yearly charge and a weekly one both roll into one monthly figure here.
@@ -110,6 +118,8 @@ export default function CommitmentsScreen() {
           </View>
         ))
       )}
-    </ScrollView>
+      </ScrollView>
+      <GlobalFab />
+    </View>
   );
 }

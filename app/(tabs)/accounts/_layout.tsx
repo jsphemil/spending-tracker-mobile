@@ -2,6 +2,10 @@ import { Stack } from "expo-router";
 
 import { useThemeColors } from "../../../theme/palette";
 
+// "index" (the Accounts list) renders its own GlobalHeader/GlobalFab and
+// has no in-navigator header. "[id]" (Account Detail) is a drill-in from
+// that list and keeps a normal back+title header, same as before —
+// spec.md §5.19 doesn't ask every screen to lose its way back.
 export default function AccountsLayout() {
   const colors = useThemeColors();
 
@@ -13,7 +17,7 @@ export default function AccountsLayout() {
         headerTintColor: colors.fg,
       }}
     >
-      <Stack.Screen name="index" options={{ title: "Accounts" }} />
+      <Stack.Screen name="index" options={{ headerShown: false }} />
       <Stack.Screen name="[id]" options={{ title: "Account" }} />
     </Stack>
   );

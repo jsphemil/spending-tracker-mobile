@@ -1,18 +1,23 @@
 import { Link } from "expo-router";
 import { FlatList, Pressable, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { EmptyState } from "../../components/ui/EmptyState";
+import { GlobalFab } from "../../components/GlobalFab";
+import { GlobalHeader } from "../../components/GlobalHeader";
 import { useTags } from "../../db/queries/tags";
 
 export default function TagsListScreen() {
+  const insets = useSafeAreaInsets();
   const { data: tags } = useTags();
 
   return (
     <View className="flex-1 bg-bg">
+      <GlobalHeader />
       <FlatList
         data={tags ?? []}
         keyExtractor={(item) => String(item.id)}
-        contentContainerStyle={{ padding: 16, gap: 8 }}
+        contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 96, gap: 8 }}
         ListEmptyComponent={
           <EmptyState message="No tags yet. Add one from any transaction." />
         }
@@ -24,6 +29,7 @@ export default function TagsListScreen() {
           </Link>
         )}
       />
+      <GlobalFab />
     </View>
   );
 }
