@@ -10,7 +10,7 @@
 ## Status Dashboard
 
 _Kept current per CLAUDE.md's Idea Backlog Protocol — updated the
-moment a status genuinely changes, not batched. Last updated: 2026-08-28._
+moment a status genuinely changes, not batched. Last updated: 2026-09-02._
 
 **Legend:** ✅ Built & Verified (built *and* confirmed working on a
 real device/build) · 🚧 In Progress (code exists, not yet verified, or
@@ -27,9 +27,9 @@ pushed to a later phase) · ❌ Dropped (cut from scope).
 | §5.5 | Budget Mode | ✅ Built & Verified | Account-level toggle + category-level budgets, both confirmed via UAT checklist §4 ("Account-level Budget Mode toggle... passed") and §13 (Profile global switches). |
 | §5.6 | Show/Hide Future Transactions | ✅ Built & Verified | Toggle + schema built; filtering applied across all 4 screens (Account Detail, Dashboard, Transactions, Calendar). User confirmed on-device 2026-08-20: all 4 screens pass. |
 | §5.7 | Smart Features (Claude) | ❌ Dropped | User confirmed 2026-08-20 this isn't getting built — inert FAB placeholder removed same day |
-| §5.8 | Dashboard | ✅ Built & Verified | Full rebuild (net worth gauge, trend chart, asset allocation donut, over-budget banner, embedded calendar, Accounts/Goals/Recent Transactions/Tags cards) + UAT fixes (icon-as-text banner bug, Show-Future-Transactions wiring). UAT checklist §9 confirms the gauge, trend chart, donut, stat row, calendar, and cards all pass. The over-budget banner itself only got a partial re-check ("please push a category over budget and confirm the banner text is clean") — worth one more explicit look, though the underlying bug (icon-as-text) is fixed and visually reconfirmed since. |
-| §5.9 | Navigation | ✅ Built & Verified | 6 tabs (Dashboard, Accounts, Transactions, Commitments, Categories, Profile) with icons — UAT checklist §14 confirms, and every screenshot from the 2026-08-28 design-refresh session shows tab icons rendering correctly (now Lucide icons, see §5.18). |
-| §5.10 | Profile Page | ✅ Built & Verified | Display name, Budget Mode/Show Future Transactions global switches, Base Currency all confirmed via UAT checklist §13. Dropbox section (connect/backup/restore) shipped and was verified on-device 2026-08-28 — see §3. The Light/Dark/System theme toggle described in the original spec text was **removed 2026-08-28** as part of §5.18's dark-only redesign — see that section. |
+| §5.8 | Dashboard (V1 shape) | 🚧 In Progress | V1 build was ✅ Built & Verified (full rebuild: net worth gauge, trend chart, asset allocation donut, over-budget banner, embedded calendar, Accounts/Goals/Recent Transactions/Tags cards — UAT checklist §9 all pass). **Being rebuilt to the V2 Position/Performance/Action shape starting 2026-09-02 — see §5.19.** |
+| §5.9 | Navigation (V1 shape) | 🚧 In Progress | V1 (6 tabs: Dashboard, Accounts, Transactions, Commitments, Categories, Profile) was ✅ Built & Verified — UAT checklist §14. **Being restructured to V2's 4-tab shell starting 2026-09-02 — see §5.19.** |
+| §5.10 | Profile Page (V1 shape) | 🚧 In Progress | V1 was ✅ Built & Verified — display name, global switches, Base Currency, Dropbox section all confirmed via UAT checklist §13. **Being replaced by V2's grouped Settings screen starting 2026-09-02 — see §5.19.** The Light/Dark/System theme toggle removed 2026-08-28 (§5.18's dark-only decision) is being **reinstated** as part of V2 — see §5.19's Theme V2. |
 | §5.11 | Home Screen Widget | 🚧 In Progress | Two separate selectable widgets, Android-only, matching the iOS-deferred decision. **Widget 1 (Accounts & Quick Add) built & verified 2026-08-29** — rewritten natively as Kotlin + Jetpack Glance (`modules/widget-bridge/`), replacing an earlier `react-native-android-widget` JS-library implementation entirely (that library turned out to be a classic bitmap-swap `AppWidgetProvider`, not real Glance). Selected accounts' balances + Income/Expense/Transfer quick-add pills, matching the app's real dark palette and semantic success/danger/transfer colors. A refresh-timing bug (shipped as versionCode 9) and a balance-cutoff bug — the widget showed a "now"-only balance instead of the same "Balance available" figure the Account Detail screen shows — were found and fixed 2026-09-01/02, both verified on-device (versionCode 10). **Widget 2 (Portfolio Rings & Allocation) still 📋 Planned, not started.** |
 | §5.12 | Visual Design System (superseded) | ✅ Built & Verified | The dark-first token theme / monospace-tabular / gauge-over-pie system described here shipped and was verified (Phases 1-3, UAT checklist §15). **Superseded 2026-08-28 by §5.18** — the token *values*, glass-card ask from UAT §15 ("a glass effect would be nice"), and the whole visual language were replaced wholesale by the Erebor redesign. Kept here for history; §5.18 is now the authoritative visual-design status. |
 | §5.13 | First-Run Onboarding & Base Currency | ✅ Built & Verified | Onboarding flow + gate, live per-install base currency (not hardcoded INR), searchable ~170-currency picker. UAT checklist §1 confirms every step, the currency-picker search, and base-currency-change recalculation across the whole app — all pass (including the 2026-08-21 SafeAreaView fix for the onboarding-flush-to-top bug). |
@@ -39,6 +39,7 @@ pushed to a later phase) · ❌ Dropped (cut from scope).
 | §5.17 | Goals | ✅ Built & Verified | Goal CRUD, trailing-6-month pace projection, behind-pace flag, Dashboard card. UAT checklist §8 confirms creation, progress bar, projection text, and behind-pace warning — all pass. |
 | §5.18 | Design Refresh — "Erebor" | ✅ Built & Verified | **New, 2026-08-28.** Complete visual redesign sourced from a separate Claude Design project the user built ("Erebor Wealth App Design System," dark glassy-neon fintech language), applied as a presentational-only pass on the `design-refresh` branch and merged to `master` the same day. See the full write-up below (§5.18) for what shipped, what was explicitly decided, and the one behavior change (AccountForm's icon became user-selectable, at the user's explicit request). Verified via multiple rounds of on-device testing on the user's Pixel 10, including native rebuilds for the new `expo-linear-gradient`/`expo-font` dependencies. |
 | §3 | Dropbox Backup/Restore | ✅ Built & Verified | **Built and fully verified on-device 2026-08-28.** PKCE OAuth connect flow (`services/dropbox.ts`, `expo-auth-session`+`expo-web-browser`, App-folder-scoped access), tokens in `expo-secure-store` (never the unencrypted `settings` table), `VACUUM INTO`-based consistent snapshot backup (not a raw file copy or JSON export), check-on-app-open "automatic daily" backup (a true OS background task is unreliable on mobile — see the feature's own write-up below), manual backup, and a restore picker (`app/backup/restore.tsx`) that replaces the local DB file and prompts a manual app restart. Connect, manual backup, and restore-then-restart all confirmed working on the user's phone. |
+| §5.19 | Erebor V2 Redesign | 🚧 In Progress | **Started 2026-09-02** on `redesign/erebor-v2`. Product/nav/UX redesign (4-tab nav, new onboarding, new Dashboard, new Settings, real Light/Dark/System theme, expense reminders, Analytics tab) reusing the existing financial engine, currency system, and Dropbox backup as-is. See §5.19 for full scope and what it supersedes. |
 
 **Remaining known gaps** (everything else above is fully verified):
 Safe-to-spend/day and the debt-payoff-projection line (§5.1) never got
@@ -922,6 +923,109 @@ this pass, follows the same native Glance pattern later as a second
   user's phone, plus resolving a stray-Metro-process port collision
   along the way. See [[project_android_native_build_env]] memory for
   the exact failure signatures if this recurs.
+
+### 5.19 Erebor V2 — Product, Navigation & UX Redesign 🚧 In Progress
+
+- **Started 2026-09-02**, on branch `redesign/erebor-v2`, driven by the
+  "EREBOR V2 — MASTER DEVELOPMENT PROMPT". This is a **product/UX/nav
+  redesign, not a rewrite** — every financial calculation, the
+  transaction/transfer data model, currency conversion, and Dropbox
+  backup/restore are reused as-is unless a rule below explicitly says
+  otherwise. Target release: **v2.0.0**.
+- **This section supersedes, rather than duplicates, the following**
+  wherever they conflict: §5.9 (Navigation), §5.10 (Profile Page),
+  §5.8 (Dashboard), §5.13 (Onboarding flow *shape* — the base-currency
+  mechanics and existing-user-skip logic described there are unchanged
+  and still apply). Those sections are kept for history; this one is
+  authoritative on nav/onboarding/dashboard/settings shape going
+  forward.
+
+**Global country-neutral requirement.** All product copy becomes
+currency/country-neutral — no hardcoded ₹/INR assumption in UI text,
+onboarding, or examples. `services/format.ts`'s `formatMoney` stops
+hardcoding the `"en-IN"` Intl locale (Indian digit grouping) for every
+currency; `services/period.ts`'s month labels stop hardcoding
+`"en-IN"` too — both move to the device's own locale
+(`Intl.NumberFormat`/`toLocaleDateString` with no explicit locale
+argument, or a locale read from `expo-localization` if device locale
+resolution proves unreliable on Android). This is a **formatting**
+change, not a financial-calculation change — `minorToMajor`/
+`majorToMinor`/the underlying amounts are untouched. `INR` remains the
+hardcoded schema default for new accounts/base-currency (harmless —
+just the seed default, changed at onboarding) and the fallback in a
+handful of `?? "INR"` display-only guards; this is not new
+India-specific product behavior, it's an old fallback pattern that
+predates the currency-neutral requirement and is left in place where
+it's genuinely unreachable (guarded by a real value existing first).
+
+**Navigation V2.** Bottom tabs become exactly four: **Dashboard,
+Accounts, Transactions, Analytics** (new). Commitments, Categories,
+Goals, Tags, Calendar, and Settings (formerly "Profile") move out of
+the tab bar entirely and become reachable only via Dashboard shortcut
+cards and/or the global header. Profile is folded into Settings, not
+its own destination.
+
+**Global app shell.** Every non-Settings screen gets a persistent
+compact top bar (logo/name, currency selector, calendar icon, info
+icon, settings icon) and a persistent transaction-creation FAB, both
+reusing the existing transaction-create flow/screen
+(`app/transaction/new.tsx`) and existing Calendar screen — no second
+implementation of either. Settings and its child screens hide both the
+top bar and the FAB.
+
+**Onboarding V2.** `components/OnboardingFlow.tsx`'s 4-step
+name+forced-account-creation flow is replaced by a 4-screen
+welcome/features/how-to-use/base-currency flow that never blocks on
+name or account creation — the user lands on an empty Dashboard and
+adds accounts later from Accounts. `settings.onboardingCompleted`
+continues to gate this exactly as before (§5.13), so existing installs
+are unaffected and never see the new onboarding.
+
+**Dashboard V2.** Rebuilt around Position → Performance → Action:
+net worth (dominant) / assets / debt at the top (reusing
+`getNetWorthSeries`/`getAccountBalanceMinor`, no new net-worth
+formula), a wealth-history chart that is completely absent from layout
+when its toggle is off (not just visually hidden), this month's actual
+income/spending (reusing `getPeriodTotals`, which already excludes
+transfers), and a dynamic "what needs attention" list built from
+existing category-budget, commitment, and goal-pace data — falling
+back to "You're all caught up." rather than ever showing an invented
+alert. Dashboard shortcuts are Commitments/Categories/Goals/Tags/
+Calendar/Settings only.
+
+**Settings V2.** Grouped screen (Profile/Account, Preferences,
+Security & Legal, Backup & Restore) replacing the flat Profile tab;
+Dropbox backup/restore UI is carried over unchanged.
+
+**Theme V2.** §5.18's dark-only decision is reversed: `useResolvedTheme()`
+goes back to actually resolving `settings.themePreference` (`light` /
+`dark` / `system`, the latter following the OS via React Native's
+`useColorScheme()`), instead of the hardcoded `"dark"` return added in
+the design-refresh pass. The already-defined `light` token set in
+`theme/palette.ts` (previously dead code) becomes reachable. Settings
+exposes the three-way choice again.
+
+**Expense reminders (new).** A local (on-device, `expo-notifications`)
+daily reminder, configurable on/off + time in Settings, that fires only
+when no real `type: "expense"` transaction has been recorded that
+calendar day — transfers, income, opening-balance, and recurring-
+generated rows other than actual expenses never suppress or trigger it.
+Built as a small, extensible scheduling layer so commitment/goal
+reminders can be added later without redesign.
+
+**Analytics (new tab).** Deeper, exploratory reuse of the same
+breakdown/period/chart services the old Dashboard and Account Detail
+already used (`services/breakdown.ts`, `services/period.ts`,
+`components/charts/*`) — trends, category composition, income, and
+asset allocation over longer windows. No new domain calculations.
+
+**Explicitly unchanged in V2** (per the master prompt's preservation
+rule — see each section's own status row above): all of §5.1-§5.7,
+§5.11, §5.13's currency/skip-existing-user mechanics, §5.14-§5.17, §3
+(Dropbox), and the underlying visual language of §5.18 (glass panels,
+gradient accents, Manrope/Inter type) — V2 restructures *where* things
+live and *how the Dashboard/onboarding/settings communicate*, not the
+financial engine or the base visual identity.
 
 ## 6. Explicitly out of scope for v1
 
