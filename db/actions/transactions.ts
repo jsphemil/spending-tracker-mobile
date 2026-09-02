@@ -1,8 +1,9 @@
 import { and, eq } from "drizzle-orm";
 
 import { db } from "../client";
-import { transactionTags, transactions, type TransactionType } from "../schema";
+import { settings, transactionTags, transactions, type TransactionType } from "../schema";
 import { refreshAccountsWidget } from "../../widgets/refresh";
+import { rescheduleExpenseReminder } from "../../services/notifications";
 
 export interface TransactionInput {
   type: TransactionType;
@@ -38,6 +39,12 @@ export function createTransaction(input: TransactionInput): number {
     return row.id;
   });
   refreshAccountsWidget();
+  if (input.type === "expense") {
+    // Today's first expense should push the pending reminder to tomorrow
+    // right away, not wait for the next app-foreground check.
+    const row = db.select().from(settings).limit(1).get();
+    if (row) rescheduleExpenseReminder(db, row).catch(() => {});
+  }
   return newId;
 }
 

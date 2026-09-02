@@ -227,6 +227,15 @@ export const settings = sqliteTable("settings", {
   // gate that stands in for a true OS background schedule (unreliable
   // on mobile). Manual backups don't touch this field.
   lastAutoBackupDate: text("last_auto_backup_date"),
+  // Expense reminder (spec.md §5.19 "Expense reminders") — an
+  // extensible-by-convention prefix (`expenseReminder*`) so future reminder
+  // kinds (commitment/goal) can each get their own enabled+time pair
+  // without redesigning this table.
+  expenseReminderEnabled: integer("expense_reminder_enabled", { mode: "boolean" })
+    .notNull()
+    .default(false),
+  // "HH:MM", 24-hour, device-local time.
+  expenseReminderTime: text("expense_reminder_time").notNull().default("20:00"),
 });
 
 // Home Screen Widget (spec.md §5.11) — which accounts the "Accounts &

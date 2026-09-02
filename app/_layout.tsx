@@ -17,6 +17,7 @@ import { db } from "../db/client";
 import { useSettings } from "../db/queries/settings";
 import { ensureSeeded } from "../db/seed";
 import { runAutoBackupIfDue } from "../services/dropbox";
+import { rescheduleExpenseReminder } from "../services/notifications";
 import { cssVars, useResolvedTheme, useThemeColors } from "../theme/palette";
 import migrations from "../drizzle/migrations";
 
@@ -50,6 +51,15 @@ export default function RootLayout() {
       runAutoBackupIfDue(settings.id, settings.lastAutoBackupDate);
     }
   }, [settings?.id, settings?.dropboxAccountEmail, settings?.lastAutoBackupDate]);
+
+  // Same "check on app open" pattern as the Dropbox auto-backup above —
+  // re-derives whether today's expense reminder is still pending and
+  // reschedules it (spec.md §5.19 "Expense reminders").
+  useEffect(() => {
+    if (settings) {
+      rescheduleExpenseReminder(db, settings).catch(() => {});
+    }
+  }, [settings?.id, settings?.expenseReminderEnabled, settings?.expenseReminderTime]);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>

@@ -9,14 +9,19 @@ interface CurrencyPickerProps {
   value: string;
   onChange: (code: string) => void;
   label?: string;
+  // Renders as a small icon-only trigger (currency code, no label/box) for
+  // the V2 global header's currency selector — same underlying search
+  // modal, no separate currency-picking implementation (spec.md §5.19).
+  compact?: boolean;
 }
 
 // Full searchable list of every currency Frankfurter supports (~170+),
 // replacing a small hardcoded pill list — requested 2026-08-13 after the
 // Profile page's base-currency field only offered a handful of quick
-// picks. Used for base-currency selection (onboarding + Profile); account
-// currency keeps its existing pill+free-text field for now.
-export function CurrencyPicker({ value, onChange, label = "Currency" }: CurrencyPickerProps) {
+// picks. Used for base-currency selection (onboarding + Profile/Settings +
+// the V2 global header); account currency keeps its existing pill+free-text
+// field for now.
+export function CurrencyPicker({ value, onChange, label = "Currency", compact = false }: CurrencyPickerProps) {
   const colors = useThemeColors();
   const [visible, setVisible] = useState(false);
   const [query, setQuery] = useState("");
@@ -39,17 +44,28 @@ export function CurrencyPicker({ value, onChange, label = "Currency" }: Currency
   const selected = currencies.find((c) => c.code === value.toUpperCase());
 
   return (
-    <View className="gap-2">
-      <Text className="text-sm font-medium text-fg-muted">{label}</Text>
-      <Pressable
-        onPress={() => setVisible(true)}
-        className="rounded-lg border border-glass-border bg-glass px-3 py-2"
-      >
-        <Text className="text-base text-fg">
-          {value.toUpperCase()}
-          {selected ? ` — ${selected.name}` : ""}
-        </Text>
-      </Pressable>
+    <View className={compact ? undefined : "gap-2"}>
+      {!compact && <Text className="text-sm font-medium text-fg-muted">{label}</Text>}
+      {compact ? (
+        <Pressable
+          onPress={() => setVisible(true)}
+          accessibilityRole="button"
+          accessibilityLabel={`Currency: ${value.toUpperCase()}`}
+          className="h-9 min-w-9 items-center justify-center rounded-full bg-glass px-2"
+        >
+          <Text className="text-xs font-semibold text-fg">{value.toUpperCase()}</Text>
+        </Pressable>
+      ) : (
+        <Pressable
+          onPress={() => setVisible(true)}
+          className="rounded-lg border border-glass-border bg-glass px-3 py-2"
+        >
+          <Text className="text-base text-fg">
+            {value.toUpperCase()}
+            {selected ? ` — ${selected.name}` : ""}
+          </Text>
+        </Pressable>
+      )}
 
       <Modal visible={visible} animationType="slide" onRequestClose={() => setVisible(false)}>
         <View className="flex-1 bg-bg pt-16">

@@ -64,6 +64,13 @@
       "when": 1787972899951,
       "tag": "0008_rich_lady_bullseye",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1788361285733,
+      "tag": "0009_chunky_titanium_man",
+      "breakpoints": true
     }
   ]
 }

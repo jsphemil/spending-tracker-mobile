@@ -14,6 +14,8 @@ export function updateSettings(
     onboardingCompleted: boolean;
     dropboxAccountEmail: string | null;
     lastAutoBackupDate: string | null;
+    expenseReminderEnabled: boolean;
+    expenseReminderTime: string;
   }>,
 ): void {
   db.update(settings).set(patch).where(eq(settings.id, id)).run();
