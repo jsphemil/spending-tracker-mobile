@@ -143,7 +143,13 @@ export default function TransactionsListScreen() {
     <View className="flex-1 bg-bg">
       <GlobalHeader />
       <View className="gap-3 border-b border-glass-border p-4">
-        <View className="flex-row gap-1.5 rounded-lg bg-surface-2 p-1">
+        {/* Same pill language as the account/category/type filter chips
+            below — accent border + soft accent fill when selected — rather
+            than the tray-and-raised-tab segmented control this used to be,
+            which matched nothing else in the app. Full width because this
+            switches the whole screen's mode, unlike the chips that scroll
+            horizontally beneath it. */}
+        <View className="flex-row gap-2">
           {(
             [
               ["month", "This month"],
@@ -154,20 +160,16 @@ export default function TransactionsListScreen() {
             <Pressable
               key={mode}
               onPress={() => setFilterMode(mode)}
-              className={`flex-1 items-center rounded py-1.5 ${filterMode === mode ? "bg-glass" : ""}`}
-              style={
-                filterMode === mode
-                  ? {
-                      shadowColor: "#000",
-                      shadowOffset: { width: 0, height: 1 },
-                      shadowOpacity: 0.05,
-                      shadowRadius: 2,
-                      elevation: 1,
-                    }
-                  : undefined
-              }
+              accessibilityRole="button"
+              accessibilityState={filterMode === mode ? { selected: true } : {}}
+              className={`flex-1 items-center rounded-full border px-3 py-1.5 ${
+                filterMode === mode ? "border-accent bg-accent-soft" : "border-glass-border"
+              }`}
             >
-              <Text className={`text-xs font-medium ${filterMode === mode ? "text-fg" : "text-fg-muted"}`}>
+              <Text
+                numberOfLines={1}
+                className={`text-sm font-medium ${filterMode === mode ? "text-accent" : "text-fg-muted"}`}
+              >
                 {label}
               </Text>
             </Pressable>
