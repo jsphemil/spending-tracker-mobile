@@ -144,6 +144,31 @@ export function TransactionForm({
     setAddingCategory(false);
   }
 
+  // Saving navigates away, but not instantly — the screen stays mounted and
+  // the button stays pressable for the whole round trip. Without this guard
+  // a quick double-tap wrote a second transaction, and a few impatient taps
+  // wrote several: five identical Eating Out rows (ids 94-98, same amount,
+  // same date, same account, none recurring) were found in a real database
+  // this way. A ref, not state, because two taps in one frame would both
+  // read a stale `false` from state before React re-rendered.
+  const submittingRef = useRef(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  function dispatchOnce(send: () => void) {
+    if (submittingRef.current) return;
+    submittingRef.current = true;
+    setSubmitting(true);
+    try {
+      send();
+    } catch (submitError) {
+      // The caller didn't navigate away, so let the user correct and retry
+      // rather than leaving the form permanently locked.
+      submittingRef.current = false;
+      setSubmitting(false);
+      setError(submitError instanceof Error ? submitError.message : "Could not save. Please try again.");
+    }
+  }
+
   function handleSubmit() {
     const amount = evaluateExpression(amountText);
     if (amount === null) {
@@ -196,10 +221,10 @@ export function TransactionForm({
 
     if (isRecurringEdit) {
       Alert.alert("Apply this change to:", undefined, [
-        { text: "Just this one", onPress: () => onEditScope?.("one", values, scheduleEndDate) },
+        { text: "Just this one", onPress: () => dispatchOnce(() => onEditScope?.("one", values, scheduleEndDate)) },
         {
           text: "This and all future occurrences",
-          onPress: () => onEditScope?.("future", values, scheduleEndDate),
+          onPress: () => dispatchOnce(() => onEditScope?.("future", values, scheduleEndDate)),
         },
         { text: "Cancel", style: "cancel" },
       ]);
@@ -207,11 +232,11 @@ export function TransactionForm({
     }
 
     if (schedule) {
-      onSubmitRecurring?.(values, schedule);
+      dispatchOnce(() => onSubmitRecurring?.(values, schedule));
       return;
     }
 
-    onSubmit(values);
+    dispatchOnce(() => onSubmit(values));
   }
 
   return (
@@ -471,7 +496,7 @@ export function TransactionForm({
 
       {error && <Text className="text-sm text-danger">{error}</Text>}
 
-      <Button onPress={handleSubmit}>{submitLabel}</Button>
+      <Button onPress={handleSubmit} disabled={submitting}>{submitLabel}</Button>
     </ScrollView>
   );
 }
