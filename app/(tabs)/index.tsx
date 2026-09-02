@@ -4,7 +4,6 @@ import { Pressable, ScrollView, Switch, Text, View } from "react-native";
 import { Icon } from "../../components/ui/Icon";
 
 import { NetWorthTrendChart } from "../../components/charts/NetWorthTrendChart";
-import { GlobalFab } from "../../components/GlobalFab";
 import { GlobalHeader } from "../../components/GlobalHeader";
 import { db } from "../../db/client";
 import { useAccounts } from "../../db/queries/accounts";
@@ -107,13 +106,23 @@ export default function DashboardScreen() {
     return majorToMinor(minorToMajor(amountMinor, currency) * rate, baseCurrency);
   }
 
-  // ---- POSITION (today) ----
-  const accountBalanceNow = new Map((accounts ?? []).map((a) => [a.id, getAccountBalanceMinor(db, a.id)]));
+  // ---- POSITION (as of the viewed month) ----
+  // `range.end` is required, not optional polish: getAccountBalanceMinor
+  // with no cutoff sums an account's *entire* history, which includes
+  // already-materialized future-dated recurring transactions (next month's
+  // salary, etc.) and silently overstates net worth. It also has to be
+  // range.end rather than a "now" timestamp so this figure keeps tracking
+  // the month navigation, and so it agrees with the trend chart below
+  // (which cuts each point at its own month end) and with the Accounts and
+  // Analytics screens, which both already pass range.end.
+  const accountBalanceAsOf = new Map(
+    (accounts ?? []).map((a) => [a.id, getAccountBalanceMinor(db, a.id, range.end)]),
+  );
   let netWorthMinor = 0;
   let assetsMinor = 0;
   let debtMinor = 0;
   for (const account of accounts ?? []) {
-    const baseBalance = toBaseMinor(accountBalanceNow.get(account.id) ?? 0, account.currency);
+    const baseBalance = toBaseMinor(accountBalanceAsOf.get(account.id) ?? 0, account.currency);
     netWorthMinor += baseBalance;
     if (account.type === "credit_card") {
       if (baseBalance < 0) debtMinor += -baseBalance;
@@ -348,7 +357,6 @@ export default function DashboardScreen() {
           ))}
         </View>
       </ScrollView>
-      <GlobalFab insideTabs />
     </View>
   );
 }

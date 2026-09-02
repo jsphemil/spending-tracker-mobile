@@ -75,8 +75,36 @@ describe("getAccountBalanceMinor", () => {
     // As of end of February (exclusive upper bound, matches getPeriodTotals'
     // range.end convention): both rows count.
     expect(getAccountBalanceMinor(db, accountId, new Date("2026-03-01"))).toBe(7000);
-    // No asOfDate at all: same as "as of now," i.e. everything.
+    // No asOfDate at all: the account's whole history. Note this is NOT the
+    // same as "as of now" whenever future-dated rows exist — see the
+    // regression test below.
     expect(getAccountBalanceMinor(db, accountId)).toBe(7000);
+  });
+
+  // Regression: the Dashboard's net worth called this with no asOfDate,
+  // which silently added already-materialized future-dated recurring rows
+  // (next month's salary and so on) to the headline figure — reported
+  // on-device as ~17 lakh where ~13 lakh was correct. The same
+  // "omitted cutoff" mistake had already shipped once in the home screen
+  // widget, so it is pinned here rather than left to review.
+  it("omitting asOfDate includes future-dated rows, a cutoff excludes them", () => {
+    const accountId = insertAccount(db);
+    const today = new Date("2026-06-10");
+    const nextMonth = new Date("2026-07-01");
+    db.insert(transactions)
+      .values([
+        { type: "income", amountMinor: 1_300_000, date: new Date("2026-06-01"), accountId },
+        // Already materialized, but hasn't happened yet.
+        { type: "income", amountMinor: 450_000, date: new Date("2026-07-25"), accountId },
+      ])
+      .run();
+
+    // What the Dashboard must show: this month's position only.
+    expect(getAccountBalanceMinor(db, accountId, nextMonth)).toBe(1_300_000);
+    // What the bug did: swept in the future-dated row too.
+    expect(getAccountBalanceMinor(db, accountId)).toBe(1_750_000);
+    // And a cutoff at today likewise excludes it.
+    expect(getAccountBalanceMinor(db, accountId, today)).toBe(1_300_000);
   });
 
   it("an opening balance doesn't leak into periods before the account existed", () => {
