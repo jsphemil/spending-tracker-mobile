@@ -9,6 +9,7 @@ import {
   transactions,
   type RecurrenceUnit,
 } from "../db/schema";
+import { refreshAccountsWidget } from "../widgets/refresh";
 
 type RecurringRule = typeof recurringRules.$inferSelect;
 type Tx = Parameters<Parameters<Db["transaction"]>[0]>[0];
@@ -82,14 +83,17 @@ function buildOccurrenceData(rule: RecurringRule, occurrenceDate: Date) {
 // occurrences (unlike the source web app) — materializedThrough only ever
 // moves forward, so an occurrence once passed is never revisited by this
 // loop again, whether its row was later edited, deleted, or left alone.
-function materializeRule(tx: Tx, rule: RecurringRule, horizon: Date): void {
+// Returns whether it actually inserted any transaction rows, so the caller
+// can tell a real materialization apart from the far more common no-op
+// call — this runs on nearly every screen mount.
+function materializeRule(tx: Tx, rule: RecurringRule, horizon: Date): boolean {
   const effectiveEnd = rule.endDate && rule.endDate < horizon ? rule.endDate : horizon;
-  if (effectiveEnd < rule.startDate) return;
+  if (effectiveEnd < rule.startDate) return false;
 
   let cursor = rule.materializedThrough
     ? addInterval(rule.materializedThrough, rule.intervalCount, rule.intervalUnit)
     : rule.startDate;
-  if (cursor > effectiveEnd) return;
+  if (cursor > effectiveEnd) return false;
 
   const occurrences: Date[] = [];
   while (cursor <= effectiveEnd) {
@@ -103,6 +107,7 @@ function materializeRule(tx: Tx, rule: RecurringRule, horizon: Date): void {
     .where(eq(recurringRuleTags.recurringRuleId, rule.id))
     .all();
 
+  let insertedAny = false;
   for (const occurrenceDate of occurrences) {
     const inserted = tx
       .insert(transactions)
@@ -112,6 +117,7 @@ function materializeRule(tx: Tx, rule: RecurringRule, horizon: Date): void {
       .all();
     const newId = inserted[0]?.id;
     if (newId !== undefined) {
+      insertedAny = true;
       for (const { tagId } of ruleTags) {
         tx.insert(transactionTags).values({ transactionId: newId, tagId }).onConflictDoNothing().run();
       }
@@ -129,6 +135,8 @@ function materializeRule(tx: Tx, rule: RecurringRule, horizon: Date): void {
     .set({ materializedThrough: occurrences[occurrences.length - 1] })
     .where(eq(recurringRules.id, rule.id))
     .run();
+
+  return insertedAny;
 }
 
 // Primary materialization entry point — call at the top of any screen that
@@ -138,6 +146,7 @@ function materializeRule(tx: Tx, rule: RecurringRule, horizon: Date): void {
 // navigates, not just today+3 months.
 export function ensureMaterialized(db: Db, opts?: { through?: Date }): void {
   const horizon = effectiveHorizon(opts?.through);
+  let insertedAny = false;
   db.transaction((tx) => {
     const rules = tx
       .select()
@@ -146,9 +155,17 @@ export function ensureMaterialized(db: Db, opts?: { through?: Date }): void {
       .all()
       .filter((rule) => rule.startDate <= horizon);
     for (const rule of rules) {
-      materializeRule(tx, rule, horizon);
+      if (materializeRule(tx, rule, horizon)) insertedAny = true;
     }
   });
+
+  // Materializing a rule creates real transactions, so account balances just
+  // moved — the same reason every write in db/actions refreshes the widget.
+  // Without this the widget kept showing pre-salary/pre-rent balances until
+  // its next 30-minute scheduled update. Guarded on an actual insert because
+  // this function runs on nearly every screen mount and is otherwise a
+  // no-op; firing the native bridge each time would be pure noise.
+  if (insertedAny) refreshAccountsWidget();
 }
 
 export interface RecurringSchedule {
