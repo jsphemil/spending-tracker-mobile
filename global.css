@@ -9,16 +9,20 @@
    can apply opacity modifiers; "soft" tokens already carry their own alpha
    as a full rgba() and are consumed directly, not through that wrapper. */
 
+/* Light is the aquatic palette — cyan/teal-cast neutrals rather than pure
+   greys. Kept in sync with theme/palette.ts's `light` object by hand; note
+   that cssVars() there is what actually drives these at runtime, so
+   palette.ts is the value that matters if the two ever disagree. */
 :root {
-  --bg: 245 245 248;
+  --bg: 238 246 248;
   --surface: 255 255 255;
-  --surface-2: 240 240 245;
-  --surface-3: 232 233 240;
-  --border: 226 227 234;
-  --border-strong: 207 209 220;
-  --fg: 22 23 28;
-  --fg-muted: 98 102 122;
-  --fg-subtle: 148 152 168;
+  --surface-2: 227 239 243;
+  --surface-3: 213 230 236;
+  --border: 208 226 232;
+  --border-strong: 176 201 209;
+  --fg: 15 26 30;
+  --fg-muted: 86 106 114;
+  --fg-subtle: 137 161 170;
   --accent: 91 79 224;
   --accent-strong: 74 63 208;
   --accent-soft: rgba(91, 79, 224, 0.1);

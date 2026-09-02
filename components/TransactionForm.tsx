@@ -53,6 +53,16 @@ const TYPE_LABELS: Record<TransactionType, string> = {
   transfer: "Transfer",
 };
 
+// The selected type carries its own semantic colour rather than the generic
+// accent, so the form says which kind of entry you're making at a glance —
+// the same success/danger/transfer tokens the transaction list, summary
+// band and home screen widget already use for these three.
+const TYPE_STYLES: Record<TransactionType, { selected: string; text: string }> = {
+  income: { selected: "border-success bg-success-soft", text: "text-success" },
+  expense: { selected: "border-danger bg-danger-soft", text: "text-danger" },
+  transfer: { selected: "border-transfer bg-transfer-soft", text: "text-transfer" },
+};
+
 const UNIT_LABELS: Record<RecurrenceUnit, string> = {
   day: "day(s)",
   week: "week(s)",
@@ -212,10 +222,10 @@ export function TransactionForm({
             key={t}
             onPress={() => setType(t)}
             className={`flex-1 items-center rounded-lg border py-2 ${
-              type === t ? "border-accent bg-accent-soft" : "border-glass-border bg-glass"
+              type === t ? TYPE_STYLES[t].selected : "border-glass-border bg-glass"
             }`}
           >
-            <Text className={type === t ? "text-accent" : "text-fg-muted"}>
+            <Text className={type === t ? `font-medium ${TYPE_STYLES[t].text}` : "text-fg-muted"}>
               {TYPE_LABELS[t]}
             </Text>
           </Pressable>

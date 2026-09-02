@@ -33,26 +33,30 @@ export interface ThemeColors {
 }
 
 export const palette: Record<"light" | "dark", ThemeColors> = {
+  // Aquatic light theme: the neutrals carry a cyan/teal cast rather than
+  // being pure greys, echoing the dark theme's cyan accent. The glass
+  // tokens are a deep teal at low alpha instead of plain black, so a card
+  // reads as tinted rather than merely darker than the page behind it.
   light: {
-    bg: "#f5f5f8",
+    bg: "#eef6f8",
     surface: "#ffffff",
-    surface2: "#f0f0f5",
-    surface3: "#e8e9f0",
-    border: "#e2e3ea",
-    borderStrong: "#cfd1dc",
-    fg: "#16171c",
-    fgMuted: "#62667a",
-    fgSubtle: "#9498a8",
+    surface2: "#e3eff3",
+    surface3: "#d5e6ec",
+    border: "#d0e2e8",
+    borderStrong: "#b0c9d1",
+    fg: "#0f1a1e",
+    fgMuted: "#566a72",
+    fgSubtle: "#89a1aa",
     accent: "#5b4fe0",
     accentStrong: "#4a3fd0",
     success: "#12a57c",
     danger: "#e0435a",
     transfer: "#b45309",
-    glassFill: "rgba(0, 0, 0, 0.04)",
-    glassFillStrong: "rgba(0, 0, 0, 0.07)",
-    glassFillPress: "rgba(0, 0, 0, 0.10)",
-    glassBorder: "rgba(0, 0, 0, 0.08)",
-    glassBorderStrong: "rgba(0, 0, 0, 0.14)",
+    glassFill: "rgba(6, 74, 92, 0.05)",
+    glassFillStrong: "rgba(6, 74, 92, 0.09)",
+    glassFillPress: "rgba(6, 74, 92, 0.13)",
+    glassBorder: "rgba(6, 74, 92, 0.10)",
+    glassBorderStrong: "rgba(6, 74, 92, 0.18)",
   },
   dark: {
     bg: "#0c1120",
