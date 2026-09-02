@@ -20,8 +20,10 @@ export function shiftMonth({ year, month }: MonthPeriod, delta: number): MonthPe
   return { year: date.getFullYear(), month: date.getMonth() };
 }
 
+// Device locale (spec.md §5.19 "Global country-neutral requirement") —
+// previously hardcoded to "en-IN" for every user.
 export function monthLabel({ year, month }: MonthPeriod): string {
-  return new Date(year, month, 1).toLocaleDateString("en-IN", {
+  return new Date(year, month, 1).toLocaleDateString(undefined, {
     month: "long",
     year: "numeric",
   });
@@ -29,7 +31,7 @@ export function monthLabel({ year, month }: MonthPeriod): string {
 
 // e.g. "Aug '26" — compact enough for chart axis labels.
 export function monthShortLabel({ year, month }: MonthPeriod): string {
-  const label = new Date(year, month, 1).toLocaleDateString("en-IN", { month: "short" });
+  const label = new Date(year, month, 1).toLocaleDateString(undefined, { month: "short" });
   return `${label} '${String(year).slice(-2)}`;
 }
 

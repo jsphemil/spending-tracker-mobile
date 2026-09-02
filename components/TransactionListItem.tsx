@@ -103,7 +103,7 @@ export function TransactionListItem({
           <Text className="text-sm text-fg-muted">{transaction.description}</Text>
         ) : null}
         <Text className="text-xs text-fg-subtle">
-          {transaction.date.toLocaleDateString("en-IN")}
+          {transaction.date.toLocaleDateString()}
           {transaction.recurringRuleId != null ? " · 🔁" : ""}
         </Text>
       </View>

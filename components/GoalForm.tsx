@@ -4,7 +4,8 @@ import { Input } from "./ui/Input";
 import DateTimePicker from "@react-native-community/datetimepicker";
 
 import type { GoalInput } from "../db/actions/goals";
-import { majorToMinor, minorToMajor } from "../services/format";
+import { useSettings } from "../db/queries/settings";
+import { currencySymbol, majorToMinor, minorToMajor } from "../services/format";
 import { useThemeColors } from "../theme/palette";
 import { Button } from "./ui/Button";
 
@@ -14,15 +15,18 @@ interface GoalFormProps {
   submitLabel: string;
 }
 
-// Goals track net worth across every account, so — same as category
-// budgets — the target is always entered in the app's base currency.
-const GOAL_CURRENCY = "INR";
-
 export function GoalForm({ initialValues, onSubmit, submitLabel }: GoalFormProps) {
+  const { settings } = useSettings();
+  // Goals track net worth across every account, so — same as category
+  // budgets — the target is always entered in the app's own base currency,
+  // read live rather than hardcoded (spec.md §5.19 "Global country-neutral
+  // requirement" — a hardcoded "INR" here would silently mis-scale minor
+  // units for a zero-decimal base currency like JPY).
+  const goalCurrency = settings?.baseCurrency ?? "INR";
   const [name, setName] = useState(initialValues?.name ?? "");
   const [targetText, setTargetText] = useState(
     initialValues?.targetAmountMinor != null
-      ? String(minorToMajor(initialValues.targetAmountMinor, GOAL_CURRENCY))
+      ? String(minorToMajor(initialValues.targetAmountMinor, goalCurrency))
       : "",
   );
   const [targetDate, setTargetDate] = useState<Date | null>(initialValues?.targetDate ?? null);
@@ -43,7 +47,7 @@ export function GoalForm({ initialValues, onSubmit, submitLabel }: GoalFormProps
     setError(null);
     onSubmit({
       name: name.trim(),
-      targetAmountMinor: majorToMinor(target, GOAL_CURRENCY),
+      targetAmountMinor: majorToMinor(target, goalCurrency),
       targetDate,
     });
   }
@@ -62,7 +66,9 @@ export function GoalForm({ initialValues, onSubmit, submitLabel }: GoalFormProps
       </View>
 
       <View className="gap-2">
-        <Text className="text-sm font-medium text-fg-muted">Target net worth (₹)</Text>
+        <Text className="text-sm font-medium text-fg-muted">
+          Target net worth ({currencySymbol(goalCurrency).trim()})
+        </Text>
         <Input
           value={targetText}
           onChangeText={setTargetText}

@@ -97,7 +97,7 @@ export default function TagSummaryScreen() {
                 {item.transaction.description || item.accountName}
               </Text>
               <Text className="text-xs text-fg-subtle">
-                {item.accountName} · {item.transaction.date.toLocaleDateString("en-IN")}
+                {item.accountName} · {item.transaction.date.toLocaleDateString()}
               </Text>
             </View>
             <Text

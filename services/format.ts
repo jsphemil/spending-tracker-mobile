@@ -16,11 +16,16 @@ export function majorToMinor(amountMajor: number, currency: string): number {
   return Math.round(amountMajor * 10 ** decimals);
 }
 
-// Indian numbering system (₹1,53,168.00), used throughout per spec.md §5.4.
+// Device-locale digit grouping (spec.md §5.19 "Global country-neutral
+// requirement") — previously hardcoded to "en-IN" (Indian lakh/crore
+// comma placement) for every currency and every user, which was fine for
+// this app's original India-only audience but wrong for a global one. A
+// formatting change only: minorToMajor/majorToMinor and the underlying
+// stored amounts are untouched.
 export function formatMoney(amountMinor: number, currency: string): string {
   const major = minorToMajor(amountMinor, currency);
   const decimals = minorUnitsFor(currency);
-  const formatted = new Intl.NumberFormat("en-IN", {
+  const formatted = new Intl.NumberFormat(undefined, {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
   }).format(Math.abs(major));

@@ -8,7 +8,8 @@ import { Button } from "./ui/Button";
 import { IconPicker } from "./ui/IconPicker";
 import { CATEGORY_KINDS, type CategoryKind } from "../db/schema";
 import type { CategoryInput } from "../db/actions/categories";
-import { majorToMinor, minorToMajor } from "../services/format";
+import { useSettings } from "../db/queries/settings";
+import { currencySymbol, majorToMinor, minorToMajor } from "../services/format";
 import { useThemeColors } from "../theme/palette";
 
 interface CategoryFormProps {
@@ -17,20 +18,23 @@ interface CategoryFormProps {
   submitLabel: string;
 }
 
-// Category budgets are always tracked in the app's base currency (INR),
-// matching how cross-account totals are aggregated elsewhere (Dashboard,
-// Transactions summary band) — a category isn't scoped to one account/
-// currency the way accounts.budgetMonthlyMinor is.
-const BUDGET_CURRENCY = "INR";
-
 export function CategoryForm({ initialValues, onSubmit, submitLabel }: CategoryFormProps) {
+  const { settings } = useSettings();
+  // Category budgets are always tracked in the app's own base currency,
+  // matching how cross-account totals are aggregated elsewhere (Dashboard,
+  // Transactions summary band) — a category isn't scoped to one account/
+  // currency the way accounts.budgetMonthlyMinor is. Reads the user's
+  // actual chosen base currency (not a hardcoded "INR") so minor-unit
+  // scaling stays correct for zero-decimal currencies too (spec.md §5.19
+  // "Global country-neutral requirement").
+  const budgetCurrency = settings?.baseCurrency ?? "INR";
   const [name, setName] = useState(initialValues?.name ?? "");
   const [kind, setKind] = useState<CategoryKind>(initialValues?.kind ?? "expense");
   const [icon, setIcon] = useState(initialValues?.icon ?? ALL_ICON_OPTIONS[0].key);
   const [color, setColor] = useState(initialValues?.color ?? COLOR_PALETTE[0]);
   const [budgetText, setBudgetText] = useState(
     initialValues?.monthlyBudgetMinor != null
-      ? String(minorToMajor(initialValues.monthlyBudgetMinor, BUDGET_CURRENCY))
+      ? String(minorToMajor(initialValues.monthlyBudgetMinor, budgetCurrency))
       : "",
   );
   const [error, setError] = useState<string | null>(null);
@@ -52,7 +56,7 @@ export function CategoryForm({ initialValues, onSubmit, submitLabel }: CategoryF
       kind,
       icon,
       color,
-      monthlyBudgetMinor: budgetNum !== null ? majorToMinor(budgetNum, BUDGET_CURRENCY) : null,
+      monthlyBudgetMinor: budgetNum !== null ? majorToMinor(budgetNum, budgetCurrency) : null,
     });
   }
 
@@ -107,7 +111,7 @@ export function CategoryForm({ initialValues, onSubmit, submitLabel }: CategoryF
       {kind === "expense" && (
         <View className="gap-2">
           <Text className="text-sm font-medium text-fg-muted">
-            Monthly Budget (₹, optional)
+            Monthly Budget ({currencySymbol(budgetCurrency).trim()}, optional)
           </Text>
           <Input
             value={budgetText}
