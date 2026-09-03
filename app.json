@@ -2,7 +2,7 @@
   "expo": {
     "name": "Erebor Wealth Management",
     "slug": "spending-tracker-mobile",
-    "version": "1.0.0",
+    "version": "2.0.0",
     "scheme": "spendingtracker",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
