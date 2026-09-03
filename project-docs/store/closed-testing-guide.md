@@ -219,6 +219,36 @@ That history is worth being candid about in the production-access form,
 since "we found a real bug in testing, diagnosed it properly, and
 shipped a verified fix" is exactly the kind of evidence it asks for.
 
+**versionCode 10 (2026-09-02)** — follow-up to the same widget work:
+balance now matches "Balance available" rather than a bare now-cutoff.
+
+**Update 2 shipped as versionCode 12, versionName 2.0.0 — "Erebor WM V2"
+(2026-09-02)** — the V2 redesign merged from `redesign/erebor-v2`
+(22 commits, fast-forward), carrying four real bug fixes found by
+auditing the code rather than by waiting for a tester to report them:
+- Net worth counted already-materialized future-dated recurring rows,
+  overstating it by ~₹4.5L on a real ledger.
+- The Save button had no re-entry guard, so repeated taps wrote
+  duplicate transactions — a real database held five identical rows.
+- The widget never refreshed when recurring rules materialized.
+- One unavailable exchange rate could zero every conversion on a screen.
+Also: ESLint added and driven from 25 problems to 0, six copies of the
+currency-conversion logic consolidated into one hook, and totals now
+disclose a currency they had to exclude.
+
+Version numbering from here follows semver on `app.json`'s `version`:
+patch (2.0.1) for fixes, minor (2.1.0) for new features, major (3.0.0)
+for another reshaping on V2's scale. Android's versionCode is separate
+and auto-increments per build via `eas.json`'s `autoIncrement`; it must
+be unique across *all* tracks, which is why abandoned builds simply burn
+a number (11 was one such).
+
+**R8/ProGuard is still deliberately out of every release so far.** It
+shrinks and obfuscates, and it breaks reflection-based code *silently* —
+Dropbox OAuth, expo-secure-store and the Glance widget are all exposed.
+It needs its own build and its own targeted test pass, never bundled
+into a feature release where a failure would be ambiguous.
+
 **How this one was verified (reusable method).** Rather than shipping a
 guess and waiting ~20 minutes per Play round trip, the fix was proven
 locally over adb:
