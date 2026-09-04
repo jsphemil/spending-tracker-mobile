@@ -1155,7 +1155,7 @@ Readiness)** — not app code:
 
 ## 9. Play Store Launch Readiness
 
-_Last updated: 2026-08-29. Tracked separately from the Status Dashboard
+_Last updated: 2026-09-04 (V2 screenshots added — see below). Tracked separately from the Status Dashboard
 above since these are Play Console/submission requirements, not app
 features — reviewed against Google's Play Store requirements
 2026-08-12, code re-reviewed end-to-end 2026-08-29. Re-check the
@@ -1238,22 +1238,40 @@ analytics, IAP)._
       review, regenerated in Claude Design using the actual icon file
       as reference; now uses the same chevron glyph and brand
       gradient as `assets/icon.png`.
-- [x] **Screenshots — done 2026-08-28.** 7 phone screenshots at
-      `project-docs/store/assets/screenshots/` (1080×2340, RGB, no alpha), covering
-      Dashboard (net worth, asset allocation, accounts card),
-      Accounts, Transactions, Categories, and Profile — each a real
-      screenshot in a device frame with a marketing caption, per
-      `store-assets-guide.md`. Two review rounds caught real defects
-      before these shipped: (1) the first batch had a systemic
-      double-exposure/ghosting artifact on every image (unrelated
-      content bleeding through near the tab bar) — regenerated; (1a)
-      that same first batch leaked the user's **real personal Dropbox
-      email** in the Profile screenshot's ghosted layer — fixed by
-      both removing the ghosting and anonymizing the shown email to
-      `you@example.com`; (2) two of the regenerated screenshots
-      (allocation legend, account list) had text wrapping and
-      overlapping the line below it — fixed with a targeted spacing
-      prompt, verified clean on the third pass.
+- [x] **Screenshots (V1 UI) — done 2026-08-28, now stale — see V2 set below.**
+      7 phone screenshots at `project-docs/store/assets/screenshots/`
+      (1080×2340, RGB, no alpha), covering Dashboard (net worth, asset
+      allocation, accounts card), Accounts, Transactions, Categories,
+      and Profile — each a real screenshot in a device frame with a
+      marketing caption, per `store-assets-guide.md`. Two review
+      rounds caught real defects before these shipped: (1) the first
+      batch had a systemic double-exposure/ghosting artifact on every
+      image (unrelated content bleeding through near the tab bar) —
+      regenerated; (1a) that same first batch leaked the user's **real
+      personal Dropbox email** in the Profile screenshot's ghosted
+      layer — fixed by both removing the ghosting and anonymizing the
+      shown email to `you@example.com`; (2) two of the regenerated
+      screenshots (allocation legend, account list) had text wrapping
+      and overlapping the line below it — fixed with a targeted
+      spacing prompt, verified clean on the third pass. **This set
+      shows the pre-V2 6-tab nav (Dashboard/Accounts/Transactions/
+      Commitments/Categories/Profile) and is what's still actually
+      live in the app** — don't swap the Play Console listing to the
+      V2 set below until §5.19 merges to `master` and ships.
+- [ ] **Screenshots (V2 UI) — new set built 2026-09-04, not yet
+      uploaded to Play Console.** 5 phone screenshots at
+      `project-docs/store/assets/screenshots-v2/` (1080×2340, RGB, no
+      alpha), covering the Erebor V2 4-tab nav (Onboarding, Dashboard,
+      Analytics, Transactions, Accounts), built from real screens on
+      dummy account/transaction data supplied by the user. Composited
+      (device frame + brand gradient glow background + one-line
+      marketing caption per screen, real screenshot content
+      unaltered) with a local HTML + headless-Chromium render
+      pipeline instead of the separate Claude Design chat step
+      `store-assets-guide.md` describes — same visual spec, done
+      in-session. **Supersedes the V1 set once §5.19 ships**; until
+      then it's a ready-to-go asset sitting ahead of the release, not
+      the live listing.
 - [x] Title (≤30 chars) / short description (≤80 chars) / full
       description (≤4,000 chars) — **drafted 2026-08-28**, see
       `store-listing.md`. Product name decided 2026-08-28: **Erebor
