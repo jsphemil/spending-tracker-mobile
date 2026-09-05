@@ -10,7 +10,7 @@
 ## Status Dashboard
 
 _Kept current per CLAUDE.md's Idea Backlog Protocol — updated the
-moment a status genuinely changes, not batched. Last updated: 2026-09-02._
+moment a status genuinely changes, not batched. Last updated: 2026-09-05._
 
 **Legend:** ✅ Built & Verified (built *and* confirmed working on a
 real device/build) · 🚧 In Progress (code exists, not yet verified, or
@@ -27,9 +27,9 @@ pushed to a later phase) · ❌ Dropped (cut from scope).
 | §5.5 | Budget Mode | ✅ Built & Verified | Account-level toggle + category-level budgets, both confirmed via UAT checklist §4 ("Account-level Budget Mode toggle... passed") and §13 (Profile global switches). |
 | §5.6 | Show/Hide Future Transactions | ✅ Built & Verified | Toggle + schema built; filtering applied across all 4 screens (Account Detail, Dashboard, Transactions, Calendar). User confirmed on-device 2026-08-20: all 4 screens pass. |
 | §5.7 | Smart Features (Claude) | ❌ Dropped | User confirmed 2026-08-20 this isn't getting built — inert FAB placeholder removed same day |
-| §5.8 | Dashboard (V1 shape) | 🚧 In Progress | V1 build was ✅ Built & Verified (full rebuild: net worth gauge, trend chart, asset allocation donut, over-budget banner, embedded calendar, Accounts/Goals/Recent Transactions/Tags cards — UAT checklist §9 all pass). **Being rebuilt to the V2 Position/Performance/Action shape starting 2026-09-02 — see §5.19.** |
-| §5.9 | Navigation (V1 shape) | 🚧 In Progress | V1 (6 tabs: Dashboard, Accounts, Transactions, Commitments, Categories, Profile) was ✅ Built & Verified — UAT checklist §14. **Being restructured to V2's 4-tab shell starting 2026-09-02 — see §5.19.** |
-| §5.10 | Profile Page (V1 shape) | 🚧 In Progress | V1 was ✅ Built & Verified — display name, global switches, Base Currency, Dropbox section all confirmed via UAT checklist §13. **Being replaced by V2's grouped Settings screen starting 2026-09-02 — see §5.19.** The Light/Dark/System theme toggle removed 2026-08-28 (§5.18's dark-only decision) is being **reinstated** as part of V2 — see §5.19's Theme V2. |
+| §5.8 | Dashboard (V1 shape, superseded) | ✅ Built & Verified | V1 build (net worth gauge, trend chart, asset allocation donut, over-budget banner, embedded calendar, Accounts/Goals/Recent Transactions/Tags cards) was ✅ Built & Verified — UAT checklist §9 all pass. **Superseded 2026-09-02 by §5.19's Position/Performance/Action rebuild, which itself shipped and was verified on-device 2026-09-02 (versionCode 12, 2.0.0).** Kept here for history. |
+| §5.9 | Navigation (V1 shape, superseded) | ✅ Built & Verified | V1 (6 tabs: Dashboard, Accounts, Transactions, Commitments, Categories, Profile) was ✅ Built & Verified — UAT checklist §14. **Superseded 2026-09-02 by §5.19's 4-tab shell, shipped and verified on-device the same day (versionCode 12, 2.0.0).** Kept here for history. |
+| §5.10 | Profile Page (V1 shape, superseded) | ✅ Built & Verified | V1 was ✅ Built & Verified — display name, global switches, Base Currency, Dropbox section all confirmed via UAT checklist §13. **Superseded 2026-09-02 by §5.19's grouped Settings screen, shipped and verified on-device the same day.** The Light/Dark/System theme toggle removed 2026-08-28 (§5.18's dark-only decision) was **reinstated** as part of V2 and confirmed working — see §5.19's Theme V2. |
 | §5.11 | Home Screen Widget | 🚧 In Progress | Two separate selectable widgets, Android-only, matching the iOS-deferred decision. **Widget 1 (Accounts & Quick Add) built & verified 2026-08-29** — rewritten natively as Kotlin + Jetpack Glance (`modules/widget-bridge/`), replacing an earlier `react-native-android-widget` JS-library implementation entirely (that library turned out to be a classic bitmap-swap `AppWidgetProvider`, not real Glance). Selected accounts' balances + Income/Expense/Transfer quick-add pills, matching the app's real dark palette and semantic success/danger/transfer colors. A refresh-timing bug (shipped as versionCode 9) and a balance-cutoff bug — the widget showed a "now"-only balance instead of the same "Balance available" figure the Account Detail screen shows — were found and fixed 2026-09-01/02, both verified on-device (versionCode 10). **Widget 2 (Portfolio Rings & Allocation) still 📋 Planned, not started.** |
 | §5.12 | Visual Design System (superseded) | ✅ Built & Verified | The dark-first token theme / monospace-tabular / gauge-over-pie system described here shipped and was verified (Phases 1-3, UAT checklist §15). **Superseded 2026-08-28 by §5.18** — the token *values*, glass-card ask from UAT §15 ("a glass effect would be nice"), and the whole visual language were replaced wholesale by the Erebor redesign. Kept here for history; §5.18 is now the authoritative visual-design status. |
 | §5.13 | First-Run Onboarding & Base Currency | ✅ Built & Verified | Onboarding flow + gate, live per-install base currency (not hardcoded INR), searchable ~170-currency picker. UAT checklist §1 confirms every step, the currency-picker search, and base-currency-change recalculation across the whole app — all pass (including the 2026-08-21 SafeAreaView fix for the onboarding-flush-to-top bug). |
@@ -39,17 +39,30 @@ pushed to a later phase) · ❌ Dropped (cut from scope).
 | §5.17 | Goals | ✅ Built & Verified | Goal CRUD, trailing-6-month pace projection, behind-pace flag, Dashboard card. UAT checklist §8 confirms creation, progress bar, projection text, and behind-pace warning — all pass. |
 | §5.18 | Design Refresh — "Erebor" | ✅ Built & Verified | **New, 2026-08-28.** Complete visual redesign sourced from a separate Claude Design project the user built ("Erebor Wealth App Design System," dark glassy-neon fintech language), applied as a presentational-only pass on the `design-refresh` branch and merged to `master` the same day. See the full write-up below (§5.18) for what shipped, what was explicitly decided, and the one behavior change (AccountForm's icon became user-selectable, at the user's explicit request). Verified via multiple rounds of on-device testing on the user's Pixel 10, including native rebuilds for the new `expo-linear-gradient`/`expo-font` dependencies. |
 | §3 | Dropbox Backup/Restore | ✅ Built & Verified | **Built and fully verified on-device 2026-08-28.** PKCE OAuth connect flow (`services/dropbox.ts`, `expo-auth-session`+`expo-web-browser`, App-folder-scoped access), tokens in `expo-secure-store` (never the unencrypted `settings` table), `VACUUM INTO`-based consistent snapshot backup (not a raw file copy or JSON export), check-on-app-open "automatic daily" backup (a true OS background task is unreliable on mobile — see the feature's own write-up below), manual backup, and a restore picker (`app/backup/restore.tsx`) that replaces the local DB file and prompts a manual app restart. Connect, manual backup, and restore-then-restart all confirmed working on the user's phone. |
-| §5.19 | Erebor V2 Redesign | 🚧 In Progress | **Started 2026-09-02** on `redesign/erebor-v2`. Product/nav/UX redesign (4-tab nav, new onboarding, new Dashboard, new Settings, real Light/Dark/System theme, expense reminders, Analytics tab) reusing the existing financial engine, currency system, and Dropbox backup as-is. See §5.19 for full scope and what it supersedes. |
+| §5.19 | Erebor V2 Redesign | ✅ Built & Verified | **Shipped 2026-09-02.** Product/nav/UX redesign (4-tab nav, new onboarding, new Dashboard, new Settings, real Light/Dark/System theme, expense reminders, Analytics tab) reusing the existing financial engine, currency system, and Dropbox backup as-is. On-device pass covered all 8 test sections and passed; merged `redesign/erebor-v2` → `master` (22 commits) and shipped as versionCode 12, versionName 2.0.0 — closed-testing update 2 of 3. See §5.19 for full scope and what it supersedes. |
+| — | R8/ProGuard (release build shrinking) | ✅ Built & Verified | **Shipped 2026-09-05**, versionCode 13, versionName 2.0.1 — closed-testing update 3 of 3, the last required update for the 14-day window. Isolated on `r8-test`, verified on-device against the three reflection-exposed surfaces (Dropbox connect/backup/restore, home screen widget, notifications) before merging to `master`. No ProGuard keep rules needed. See §9 for the local build-environment fix this needed (an outdated bundled `ninja` broke `assembleRelease` on Windows, unrelated to R8 itself). |
 
-**Remaining known gaps** (everything else above is fully verified):
+**Remaining known gaps** (everything else above is fully verified,
+carried forward unchanged from the last audit — none of these have
+been re-tested since, they're just re-confirmed as still open):
 Safe-to-spend/day and the debt-payoff-projection line (§5.1) never got
 an explicit on-device check; the over-budget banner (§5.8) only got a
-partial re-check; offline currency-conversion fallback (mentioned under
-§5.13) couldn't be tested in the user's current environment (no way to
-go offline to test it). None of these are known-broken — they're
-code-complete and either passed indirectly or simply weren't
-individually re-confirmed. See `backlog.md`'s UAT checklist for the
-exact unchecked items.
+partial re-check, and it's still unclear whether the user's original
+"categories are not shown at all" report was fully explained by the
+icon-slug-as-text bug or might be a second, separate bug in the
+`overBudgetCategories` filter itself; offline currency-conversion
+fallback (mentioned under §5.13) couldn't be tested in the user's
+current environment (no way to go offline to test it). None of these
+are known-broken — they're code-complete and either passed indirectly
+or simply weren't individually re-confirmed. **Worth a dedicated
+verification pass now that the app is stable and shipping regularly**,
+rather than staying open indefinitely. See `backlog.md`'s UAT
+checklist for the exact unchecked items.
+
+**Also still open, not a UAT gap:** Home Screen Widget 2 (Portfolio
+Rings & Allocation, §5.11) was never started; In-App Info/Tips (§5.15)
+remains explicitly deferred by the user; iOS (§2) has no work started
+at all.
 
 ## 1. What this app is
 
@@ -924,7 +937,7 @@ this pass, follows the same native Glance pattern later as a second
   along the way. See [[project_android_native_build_env]] memory for
   the exact failure signatures if this recurs.
 
-### 5.19 Erebor V2 — Product, Navigation & UX Redesign 🚧 In Progress
+### 5.19 Erebor V2 — Product, Navigation & UX Redesign ✅ Built & Verified
 
 - **Started 2026-09-02**, on branch `redesign/erebor-v2`, driven by the
   "EREBOR V2 — MASTER DEVELOPMENT PROMPT". This is a **product/UX/nav
@@ -1027,20 +1040,17 @@ gradient accents, Manrope/Inter type) — V2 restructures *where* things
 live and *how the Dashboard/onboarding/settings communicate*, not the
 financial engine or the base visual identity.
 
-**Implementation status as of 2026-09-02 (code-complete, not yet
-device-verified):** every checklist item in the master prompt's
+**Shipped 2026-09-02.** Every checklist item in the master prompt's
 definition of done is implemented — 4-tab nav, global header/FAB,
 onboarding V2, Dashboard V2, Settings V2, real Light/Dark/System theme,
 expense reminders, Analytics tab, migration 0009 — and `tsc`/`jest`
 (62/62, including 9 new regression tests added before any UI work:
 transfer semantics, debt-payoff projection, and goal pace/behind-target
-math) are clean on the `redesign/erebor-v2` branch. **Two things this
-remote sandboxed session cannot do and has not claimed to do: physical
-Android device testing, and an EAS production build** (no device
-attached, no interactive EAS credentials here) — both are explicitly
-called out as outstanding in `backlog.md`. Everything above is
-therefore 🚧 In Progress, not ✅ Built & Verified, until someone runs it
-on-device.
+math) were clean on the `redesign/erebor-v2` branch. The on-device pass
+(8 test sections) then confirmed all of it working on the user's
+Pixel 10, `redesign/erebor-v2` was merged into `master` (22 commits,
+fast-forward), and it shipped the same day as versionCode 12,
+versionName 2.0.0 — closed-testing update 2 of 3.
 
 ## 6. Explicitly out of scope for v1
 
@@ -1137,25 +1147,28 @@ anymore.
 **The design refresh (§5.18) also shipped and merged to `master`
 2026-08-28**, on top of the feature-complete app.
 
-With features and visual design both done, what's left before this is
-genuinely ready to ship is almost entirely **§9 (Play Store Launch
-Readiness)** — not app code:
+With features, visual design, the V2 redesign, and R8 all done and
+shipped (2026-09-05), what's left before production access unlocks is
+almost entirely **§9 (Play Store Launch Readiness)** — not app code:
 
 1. ~~Add a README.md~~ — done.
-2. Work through §9 top to bottom: ~~store listing assets (icon,
-   screenshots, feature graphic)~~ — done 2026-08-28, ~~a hosted
-   privacy policy~~ — done. Still open: the Data Safety form, a Google
-   Play Developer account, Content Rating/Target Audience, and — the
-   single longest lead-time item — the mandatory 12-tester/14-day
-   closed testing track, which can start as soon as a stable build
-   exists rather than waiting for every last checklist box.
-3. Monetization (one-time purchase, confirmed direction) still needs
-   an actual implementation decision and `expo-iap`/RevenueCat
-   integration — currently just a §7 open question, not started.
+2. ~~Publish ≥3 updates during the 14-day window~~ — done 2026-09-05
+   (versionCode 9, 12, 13).
+3. Work through the rest of §9 top to bottom: ~~store listing assets
+   (icon, screenshots, feature graphic)~~ — done 2026-08-28, ~~a hosted
+   privacy policy~~ — done. Still open: the Data Safety form, Content
+   Rating/Target Audience declarations, confirming actual tester
+   opt-in count and elapsed days on the closed-testing track, and then
+   the production-access application itself (§9 step 9).
+4. Monetization is **resolved** (simple one-time-purchase paid app, no
+   IAP — see §9 Monetization) — the only remaining monetization item is
+   confirming whether Play Console requires a payments profile just to
+   set a price on a paid listing, which can only be checked when
+   actually setting the price.
 
 ## 9. Play Store Launch Readiness
 
-_Last updated: 2026-09-04 (V2 screenshots added — see below). Tracked separately from the Status Dashboard
+_Last updated: 2026-09-05 (R8 shipped, closed-testing update 3 of 3 done — see below). Tracked separately from the Status Dashboard
 above since these are Play Console/submission requirements, not app
 features — reviewed against Google's Play Store requirements
 2026-08-12, code re-reviewed end-to-end 2026-08-29. Re-check the
@@ -1208,6 +1221,22 @@ analytics, IAP)._
       Signed with the existing EAS-managed remote keystore (Build
       Credentials `uwbFl8AYVm`) — confirms release builds never touch
       the local debug keystore.
+- [x] **R8/ProGuard code shrinking enabled for release builds —
+      shipped 2026-09-05**, versionCode 13, versionName 2.0.1. Required
+      fixing an unrelated local build-environment problem first:
+      `./gradlew :app:assembleRelease` had never been run on this
+      Windows machine before, and failed during
+      `react-native-reanimated`'s native CMake build ("manifest
+      'build.ninja' still dirty after 100 tries") because the Android
+      SDK's bundled `ninja` (1.10.2) mishandles the longer file paths a
+      release build produces — fixed locally (not a code change) by
+      replacing it with ninja 1.13.2, per reanimated's own Windows
+      build guide. Verified R8 actually ran (`mapping.txt`/`usage.txt`
+      present, not just a successful build), then tested on-device as
+      an upgrade install against the three reflection-exposed surfaces
+      (Dropbox connect/backup/restore, home screen widget,
+      notifications) — all passed, no keep rules needed. See
+      `closed-testing-guide.md` for the full record.
 
 ### Legal
 - [x] **License decided 2026-08-28: All Rights Reserved / proprietary**
@@ -1258,8 +1287,11 @@ analytics, IAP)._
       Commitments/Categories/Profile) and is what's still actually
       live in the app** — don't swap the Play Console listing to the
       V2 set below until §5.19 merges to `master` and ships.
-- [ ] **Screenshots (V2 UI) — new set built 2026-09-04, not yet
-      uploaded to Play Console.** 5 phone screenshots at
+- [ ] **Screenshots (V2 UI) — built 2026-09-04, merged to `master` via
+      GitHub PR alongside a new `DESIGN.md` (V2 design system/UX
+      contract), but still not uploaded to the Play Console listing
+      itself** — that's a manual Play Console step, no code dependency.
+      5 phone screenshots at
       `project-docs/store/assets/screenshots-v2/` (1080×2340, RGB, no
       alpha), covering the Erebor V2 4-tab nav (Onboarding, Dashboard,
       Analytics, Transactions, Accounts), built from real screens on
@@ -1343,15 +1375,21 @@ analytics, IAP)._
       actually setting the app's price in Play Console; if prompted
       there, this is that same flow, now with a real Play Store
       listing to reference in the KYC form.
-- [ ] **Closed testing (12 opted-in testers, 14 continuous days).**
-      Mandatory for personal developer accounts created after Nov
-      2023, and the single longest lead-time item in the whole
-      process. **Started 2026-08-28** — see `closed-testing-guide.md`
-      for the full walkthrough. First production AAB built 2026-08-28
-      (versionCode 2); **superseded 2026-08-29 by versionCode 3** (see
-      "Technical / build" above) — use that one to upload, it carries
-      the splash-screen, privacy-link, and dependency-alignment fixes
-      the versionCode-2 build predates.
+- [x] **Publish ≥3 updates during the 14-day window — done 2026-09-05.**
+      versionCode 9 (widget fix, update 1), versionCode 12 (Erebor V2,
+      2.0.0, update 2), versionCode 13 (R8/ProGuard, 2.0.1, update 3) —
+      all real, user-visible changes with honest release notes, not
+      padding. See `closed-testing-guide.md` §8 for the full record.
+- [ ] **Closed testing (12 opted-in testers, 14 continuous days) —
+      update-count requirement now satisfied; tester-count/day-count
+      still needs confirming in Play Console.** Mandatory for personal
+      developer accounts created after Nov 2023. **Started 2026-08-28**
+      — see `closed-testing-guide.md` for the full walkthrough. First
+      production AAB built 2026-08-28 (versionCode 2); superseded by
+      versionCode 3, then 9, 12, and now 13 as fixes and updates
+      shipped. Next real gate is confirming actual tester opt-ins and
+      elapsed days, then the production-access application (§9 step 9
+      below).
 
 ---
 *Once this file reflects what you want, the next step is setting up a
