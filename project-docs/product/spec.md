@@ -41,6 +41,7 @@ pushed to a later phase) · ❌ Dropped (cut from scope).
 | §3 | Dropbox Backup/Restore | ✅ Built & Verified | **Built and fully verified on-device 2026-08-28.** PKCE OAuth connect flow (`services/dropbox.ts`, `expo-auth-session`+`expo-web-browser`, App-folder-scoped access), tokens in `expo-secure-store` (never the unencrypted `settings` table), `VACUUM INTO`-based consistent snapshot backup (not a raw file copy or JSON export), check-on-app-open "automatic daily" backup (a true OS background task is unreliable on mobile — see the feature's own write-up below), manual backup, and a restore picker (`app/backup/restore.tsx`) that replaces the local DB file and prompts a manual app restart. Connect, manual backup, and restore-then-restart all confirmed working on the user's phone. |
 | §5.19 | Erebor V2 Redesign | ✅ Built & Verified | **Shipped 2026-09-02.** Product/nav/UX redesign (4-tab nav, new onboarding, new Dashboard, new Settings, real Light/Dark/System theme, expense reminders, Analytics tab) reusing the existing financial engine, currency system, and Dropbox backup as-is. On-device pass covered all 8 test sections and passed; merged `redesign/erebor-v2` → `master` (22 commits) and shipped as versionCode 12, versionName 2.0.0 — closed-testing update 2 of 3. See §5.19 for full scope and what it supersedes. |
 | — | R8/ProGuard (release build shrinking) | ✅ Built & Verified | **Shipped 2026-09-05**, versionCode 13, versionName 2.0.1 — closed-testing update 3 of 3, the last required update for the 14-day window. Isolated on `r8-test`, verified on-device against the three reflection-exposed surfaces (Dropbox connect/backup/restore, home screen widget, notifications) before merging to `master`. No ProGuard keep rules needed. See §9 for the local build-environment fix this needed (an outdated bundled `ninja` broke `assembleRelease` on Windows, unrelated to R8 itself). |
+| §5.20 | New Home Screen Widgets (Quick Add / Cash Flow / Net Worth) | 🚧 In Progress | **Started 2026-09-05.** Three new, independently-selectable widgets alongside the existing Accounts & Quick Add widget (§5.11), which is explicitly unmodified. See §5.20 for full scope. |
 
 **Remaining known gaps** (everything else above is fully verified,
 carried forward unchanged from the last audit — none of these have
@@ -1051,6 +1052,73 @@ math) were clean on the `redesign/erebor-v2` branch. The on-device pass
 Pixel 10, `redesign/erebor-v2` was merged into `master` (22 commits,
 fast-forward), and it shipped the same day as versionCode 12,
 versionName 2.0.0 — closed-testing update 2 of 3.
+
+### 5.20 New Home Screen Widgets — Quick Add, Monthly Cash Flow, Net Worth 🚧 In Progress
+
+- **Started 2026-09-05**, direct master-prompt request (not an Inbox
+  idea) — same handling as §5.19's Erebor V2 prompt. Adds **three new,
+  independently-selectable** Android home-screen widgets alongside the
+  existing **Accounts & Quick Add** widget (§5.11), which this work
+  explicitly does **not** modify, redesign, replace, or refactor — it
+  must keep its exact current look, behavior, data, refresh, config,
+  resize behavior, and deep links, and must remain addable/usable for
+  anyone who already has it placed. Building one widget at a time on a
+  dedicated branch, each locally built and on-device tested before
+  starting the next; merges to `master` only once all three are ready
+  to ship together, per the now-standing local-build-first workflow
+  (see [[feedback_verify_before_shipping_fixes]]).
+- **New Widget A — Quick Add Transaction.** Action-only, no financial
+  data shown. A smooth-cornered triangular shape (not a rectangular
+  card) with three independently-tappable regions — Expense / Income /
+  Transfer — around a central Erebor-logo hub. Each tap opens the
+  existing `app/transaction/new.tsx` flow via the same
+  `spendingtracker://transaction/new?type=...` deep link the existing
+  widget's own quick-add pills already use (confirmed in
+  `AccountsGlanceWidget.kt`) — no second transaction-entry
+  implementation.
+- **New Widget B — Monthly Cash Flow.** Current month's total inflow
+  (positive carry-forward + income + transfer-in) vs. outflow
+  (|negative carry-forward| + expenses + transfer-out), a single
+  proportional bar showing outflow as a % of inflow (explicitly
+  handling >100% outflow and zero-inflow, no division-by-zero, no
+  silent 100% clamp), remaining, and today's inflow/outflow
+  (deliberately excluding carry-forward, which is a monthly starting
+  position, not today's activity). Whole-portfolio (all accounts),
+  base-currency — no per-widget account selection, matching how the
+  Dashboard's own monthly totals already work; no config screen needed.
+- **New Widget C — Net Worth & Financial Composition.** Net worth in
+  the center of a **single** ring (not separate asset/liability rings)
+  whose segments are proportional to actual absolute values. Reuses
+  the app's real, already-built asset-allocation buckets —
+  `analytics.tsx`'s `ASSET_BUCKETS`: **Liquid (Savings/Wallet)**,
+  **Deposits (FD/RD)**, **Invested** — plus a **Liabilities** segment
+  for credit card debt, in the same ring. This deliberately does *not*
+  use the original request's own example categories ("Property",
+  "Loans") since neither exists as an account type in this app
+  (confirmed against `db/schema.ts`'s account-type enum: savings,
+  investment, deposit, wallet, credit_card) — inventing them would
+  violate the request's own "don't invent categories that don't exist"
+  rule. **This also fulfills the previously-planned, never-started
+  backlog item "Widget 2 (Portfolio Rings & Allocation)"** (§5.11) —
+  same feature (net worth gauge + asset allocation donut, miniaturized
+  for a widget), so it supersedes that item rather than being built
+  twice. Whole-portfolio, base-currency, no config screen, same as
+  Widget B.
+- **Android launcher shortcuts.** Long-pressing the app icon offers
+  Expense / Income / Transfer as static shortcuts
+  (`ShortcutManager`/`shortcuts.xml`), using the same deep-link scheme
+  as the widgets above — an additional entry point, not a widget.
+- **Responsive sizing is a hard requirement for all three new
+  widgets** — content must reflow (not just scale) across the
+  launcher's actual allocated width/height, using Glance's
+  `LocalSize.current` inside `provideContent`, the same
+  size-responsiveness pattern already proven fixing the existing
+  widget's account-list layout (§5.11's `LazyColumn` fix). The
+  triangular Widget A's shape itself is generated as a size-aware
+  drawn bitmap (rounded-path `Canvas`/`Paint`), not a static image
+  asset, so it resizes correctly too.
+- **Implementation status:** see `backlog.md`'s In Progress section for
+  the live build order and per-widget verification notes.
 
 ## 6. Explicitly out of scope for v1
 
