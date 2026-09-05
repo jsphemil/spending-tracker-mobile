@@ -200,7 +200,7 @@ find 12 testers for your Android App](https://medium.com/@ingrid_dev/how-to-find
 
 ---
 
-## 8. Publish at least 3 updates during the 14-day window — 📋 Not started
+## 8. Publish at least 3 updates during the 14-day window — ✅ Done (2026-09-05)
 
 Per Testers Community's ["Google Play production access rejected"
 write-up](https://www.testerscommunity.com/blog/google-play-production-access-rejected?source=email),
@@ -264,7 +264,7 @@ locally over adb:
 5. Only then ship to Play.
 Worth repeating for any future bug that survives one release attempt.
 
-**Update 2 shipped as versionCode 10 (2026-09-02)**, release name
+**versionCode 10 shipped (2026-09-02)**, release name
 `Erebor_WM10(1.0.0)` — the home screen widget's balance for an account
 didn't match that account's "Balance available" on the Account Detail
 screen. Reported by the user with exact numbers (widget showed 50318,
@@ -287,23 +287,48 @@ Fixed the home screen widget showing a balance that didn't match the account's B
 </en-GB>
 ```
 
-**Plan for the remaining 1 update:** publish it against the live
-"EWM Alpha" track, a real, user-visible change with honest release
-notes — not padding. Natural candidates already identified in this
-project:
-1. The R8/ProGuard + resource-shrinking build
-   (`expo-build-properties` already configured in `app.json`, see
-   step 2 above) — **but only after it's been dedicated-tested**
-   (Dropbox connect/backup/restore, the home screen widget) outside
-   of closed testing first, since R8 can silently break
-   reflection-based native code. Don't ship an untested R8 build to
-   real testers as one of the 3. (Attempted once already — enabled,
-   then reverted untested per commit `ab262e4`; needs a real
-   dedicated-test pass before trying again.)
-2. Another genuine small fix or polish item that comes up from tester
-   feedback or normal development before the window closes.
-3. A third small improvement — copy fix, minor UI polish, or whatever
-   is next in the backlog at the time.
+**Update 3 shipped as versionCode 13, versionName 2.0.1 — "Erebor WM
+2.0.1" (2026-09-05)** — R8/ProGuard and resource shrinking turned on
+for release builds. This was deliberately held back from update 2
+(see the R8 note above) until it had its own dedicated test pass,
+following exactly the plan laid out there:
+1. `assembleRelease` itself was failing on this machine before R8 ever
+   ran, during `react-native-reanimated`'s native CMake build
+   ("manifest 'build.ninja' still dirty after 100 tries") — a Windows
+   long-path bug in the Android SDK's bundled ninja 1.10.2, fixed by
+   replacing it locally with ninja 1.13.2 per reanimated's own Windows
+   build docs. Environment-only fix, no code change, isolated to this
+   machine.
+2. Built on branch `r8-test` (never `master`) exactly as planned.
+   `assembleRelease` succeeded; confirmed R8 actually ran by checking
+   for real `mapping.txt`/`usage.txt`/`seeds.txt` output, not just a
+   successful build.
+3. Installed the release APK as an upgrade over the existing debug
+   build on-device (`adb install -r`) and tested the three
+   reflection-exposed surfaces: **Dropbox connect/backup/restore**,
+   the **home screen widget** (removed and re-added, reconfigured,
+   confirmed live balance refresh after a transaction), and
+   **notifications**. All three passed with no ProGuard keep rules
+   needed.
+4. Merged `r8-test` → `master`, deleted the now-fully-merged branches
+   (`r8-test`, `redesign/erebor-v2`, and the remote-only
+   `claude/playstore-screenshot-design-zt81zl`), confirmed local and
+   remote `master` match exactly.
+5. Bumped `app.json` to 2.0.1 (patch — R8 is a build-config change,
+   not a feature), built via `eas build --platform android --profile
+   production --non-interactive`, which auto-incremented versionCode
+   12 → 13, and uploaded to the EWM Alpha track.
+
+Release notes used (versionCode 13):
+```
+<en-GB>
+This update turns on Android code shrinking and obfuscation (R8/ProGuard) for smaller, more secure release builds. We verified Dropbox backup/restore, the home screen widget, and notifications all still work correctly under it. No other changes this round -- please keep testing and flag anything that looks off.
+</en-GB>
+```
+
+All 3 required updates for the 14-day window are now shipped
+(versionCode 9, 12, 13 — see step 9 below for the production-access
+application, the next gate).
 
 **How to push each update to the existing closed testing track (not a
 new track):**
