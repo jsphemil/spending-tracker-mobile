@@ -21,7 +21,6 @@ import androidx.glance.appwidget.SizeMode
 import androidx.glance.appwidget.action.actionStartActivity
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.provideContent
-import androidx.glance.background
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Box
 import androidx.glance.layout.Column
@@ -29,6 +28,7 @@ import androidx.glance.layout.Row
 import androidx.glance.layout.fillMaxHeight
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.fillMaxWidth
+import androidx.glance.layout.height
 import androidx.glance.layout.padding
 import androidx.glance.layout.size
 import androidx.glance.semantics.contentDescription
@@ -45,18 +45,27 @@ import androidx.glance.unit.ColorProvider
 // existing app/transaction/new.tsx flow via the same
 // spendingtracker://transaction/new?type=... deep link the existing
 // widget's own quick-add pills already use (see WidgetSharedUtil.kt).
+//
+// Visual design: exact transcription of the finalized Figma export
+// (QuickAddTriangleShape.kt draws the three gradient petals, badge
+// circles and icon glyphs onto a bitmap). This file positions Glance's
+// own clickable regions, Text labels and the hub tap target on top of
+// that bitmap, using the same 320-unit-space fractions the bitmap was
+// drawn from, so the two stay in sync without duplicated magic numbers.
+//
+// Square-only sizing (explicit product requirement, not a Glance
+// limitation worked around): Android's widget framework has no
+// aspect-ratio lock, so the launcher can still offer a non-square
+// resize. Regardless of what box it actually allocates, the whole
+// composition is inscribed in a centered square sized to
+// min(width, height) -- it is never stretched into a non-square shape.
 class QuickAddGlanceWidget : GlanceAppWidget() {
-  // Exact, not Single, so LocalSize.current reflects the launcher's real
-  // allocated size -- the triangle background is a bitmap drawn to that
-  // exact size (QuickAddTriangleShape.kt), not a static asset, so it has
-  // to know the real dimensions to stay crisp and correctly proportioned
-  // at any size the user resizes to.
+  // Exact, not Single, so LocalSize.current reflects the launcher's
+  // real allocated size -- the composition bitmap is drawn to that
+  // exact (square-clamped) size, not a static asset.
   override val sizeMode = SizeMode.Exact
 
   override suspend fun provideGlance(context: Context, id: GlanceId) {
-    // Session-constant, same reasoning as AccountsGlanceWidget.kt: the
-    // launcher icon and the app's launch intent can't change while this
-    // session is alive.
     val iconBitmap = currentAppIconBitmap(context)
     val openApp = launchAppIntent(context)
 
@@ -69,75 +78,85 @@ class QuickAddGlanceWidget : GlanceAppWidget() {
   private fun Content(size: DpSize, iconBitmap: Bitmap, openApp: Intent) {
     val context = LocalContext.current
     val density = context.resources.displayMetrics.density
-    val widthPx = (size.width.value * density).toInt().coerceAtLeast(1)
-    val heightPx = (size.height.value * density).toInt().coerceAtLeast(1)
-    val triangleBitmap = remember(widthPx, heightPx) { drawRoundedTriangle(widthPx, heightPx) }
+    val squareDp: Dp = if (size.width < size.height) size.width else size.height
+    val squareSizePx = (squareDp.value * density).toInt().coerceAtLeast(1)
+    val compositionBitmap = remember(squareSizePx) { drawQuickAddComposition(squareSizePx) }
 
-    // Never let labels clip or overlap on a small widget -- scale down
-    // rather than truncate, and shrink the central hub to match.
-    val compact = size.width < 150.dp || size.height < 150.dp
+    val compact = squareDp < 150.dp
     val labelSize = if (compact) 11.sp else 13.sp
-    val hubSize: Dp = if (compact) 30.dp else 42.dp
+    val hubIconSize = squareDp * (HUB_SIZE_FRAC * 0.66f)
 
-    Box(modifier = GlanceModifier.fillMaxSize()) {
-      Image(
-        provider = ImageProvider(triangleBitmap),
-        contentDescription = null,
-        modifier = GlanceModifier.fillMaxSize(),
-      )
+    Box(modifier = GlanceModifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+      Box(modifier = GlanceModifier.size(squareDp)) {
+        Image(
+          provider = ImageProvider(compositionBitmap),
+          contentDescription = null,
+          modifier = GlanceModifier.fillMaxSize(),
+        )
 
-      // Three tappable regions layered on top of the triangle image:
-      // full-width top strip for Expense (under the triangle's apex),
-      // and the bottom split left/right for Income/Transfer. Android
-      // widgets can't hit-test an arbitrary drawn path, so this is a
-      // deliberate, standard approximation -- visually the triangle,
-      // functionally three rectangular regions sized to match where a
-      // finger naturally lands for each corner.
-      Column(modifier = GlanceModifier.fillMaxSize()) {
-        Box(
-          modifier = GlanceModifier
-            .fillMaxWidth()
-            .defaultWeight()
-            .clickable(actionStartActivity(newTransactionIntent("expense")))
-            .semantics { contentDescription = "Add expense" },
-          contentAlignment = Alignment.TopCenter,
-        ) {
-          ActionLabel("− Expense", WIDGET_EXPENSE, labelSize, GlanceModifier.padding(top = 10.dp))
-        }
-        Row(modifier = GlanceModifier.fillMaxWidth().defaultWeight()) {
+        // Three tappable regions, proportioned from the same fractions
+        // QuickAddTriangleShape.kt drew the petals from -- the PDF
+        // spec explicitly permits transparent rectangular hit areas
+        // aligned to each curved surface, since RemoteViews/Glance
+        // can only hit-test rectangular view bounds, never an
+        // arbitrary drawn path.
+        Column(modifier = GlanceModifier.fillMaxSize()) {
           Box(
             modifier = GlanceModifier
-              .defaultWeight()
-              .fillMaxHeight()
-              .clickable(actionStartActivity(newTransactionIntent("income")))
-              .semantics { contentDescription = "Add income" },
-            contentAlignment = Alignment.BottomStart,
+              .fillMaxWidth()
+              .height(squareDp * TOP_REGION_HEIGHT_FRAC)
+              .clickable(actionStartActivity(newTransactionIntent("expense")))
+              .semantics { contentDescription = "Add expense" },
+            contentAlignment = Alignment.BottomCenter,
           ) {
-            ActionLabel("+ Income", WIDGET_INCOME, labelSize, GlanceModifier.padding(bottom = 10.dp, start = 10.dp))
+            Text(
+              text = "Expense",
+              style = TextStyle(fontSize = labelSize, fontWeight = FontWeight.Bold, color = ColorProvider(androidx.compose.ui.graphics.Color.White)),
+              modifier = GlanceModifier.padding(bottom = squareDp * EXPENSE_LABEL_BOTTOM_PAD_FRAC),
+            )
           }
-          Box(
-            modifier = GlanceModifier
-              .defaultWeight()
-              .fillMaxHeight()
-              .clickable(actionStartActivity(newTransactionIntent("transfer")))
-              .semantics { contentDescription = "Add transfer" },
-            contentAlignment = Alignment.BottomEnd,
-          ) {
-            ActionLabel("⇄ Transfer", WIDGET_TRANSFER, labelSize, GlanceModifier.padding(bottom = 10.dp, end = 10.dp))
+          Row(modifier = GlanceModifier.fillMaxWidth().fillMaxHeight()) {
+            Box(
+              modifier = GlanceModifier
+                .defaultWeight()
+                .fillMaxHeight()
+                .clickable(actionStartActivity(newTransactionIntent("income")))
+                .semantics { contentDescription = "Add income" },
+              contentAlignment = Alignment.BottomCenter,
+            ) {
+              Text(
+                text = "Income",
+                style = TextStyle(fontSize = labelSize, fontWeight = FontWeight.Bold, color = ColorProvider(androidx.compose.ui.graphics.Color.White)),
+                modifier = GlanceModifier.padding(bottom = squareDp * INCOME_TRANSFER_LABEL_BOTTOM_PAD_FRAC),
+              )
+            }
+            Box(
+              modifier = GlanceModifier
+                .defaultWeight()
+                .fillMaxHeight()
+                .clickable(actionStartActivity(newTransactionIntent("transfer")))
+                .semantics { contentDescription = "Add transfer" },
+              contentAlignment = Alignment.BottomCenter,
+            ) {
+              Text(
+                text = "Transfer",
+                style = TextStyle(fontSize = labelSize, fontWeight = FontWeight.Bold, color = ColorProvider(androidx.compose.ui.graphics.Color.White)),
+                modifier = GlanceModifier.padding(bottom = squareDp * INCOME_TRANSFER_LABEL_BOTTOM_PAD_FRAC),
+              )
+            }
           }
         }
-      }
 
-      // Central Erebor-logo hub, on top of everything else, not part of
-      // any of the three clickable regions -- tapping it opens the app
-      // itself, matching the existing widget's icon-taps-open-app
-      // precedent (AccountsGlanceWidget.kt's header icon).
-      Box(modifier = GlanceModifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        // Central hub tap target, layered on top (last in this Box's
+        // children, so it wins hit-testing over the regions beneath
+        // it) -- opens the app itself, matching the existing widget's
+        // icon-taps-open-app precedent. Positioned/sized from the same
+        // fractions the bitmap's hub circle was drawn from, so the
+        // invisible tap target lines up with the visible circle.
         Box(
           modifier = GlanceModifier
-            .size(hubSize)
-            .cornerRadius(hubSize / 2)
-            .background(HUB_BACKGROUND)
+            .padding(start = squareDp * HUB_LEFT_FRAC, top = squareDp * HUB_TOP_FRAC)
+            .size(squareDp * HUB_SIZE_FRAC)
             .clickable(actionStartActivity(openApp))
             .semantics { contentDescription = "Open Erebor" },
           contentAlignment = Alignment.Center,
@@ -145,21 +164,10 @@ class QuickAddGlanceWidget : GlanceAppWidget() {
           Image(
             provider = ImageProvider(iconBitmap),
             contentDescription = null,
-            modifier = GlanceModifier.size(hubSize * 0.68f).cornerRadius(hubSize * 0.2f),
+            modifier = GlanceModifier.size(hubIconSize).cornerRadius(hubIconSize * 0.2f),
           )
         }
       }
     }
   }
-
-  @Composable
-  private fun ActionLabel(text: String, accent: androidx.compose.ui.graphics.Color, size: androidx.compose.ui.unit.TextUnit, modifier: GlanceModifier) {
-    Text(
-      text = text,
-      style = TextStyle(fontSize = size, fontWeight = FontWeight.Bold, color = ColorProvider(accent)),
-      modifier = modifier,
-    )
-  }
 }
-
-private val HUB_BACKGROUND = androidx.compose.ui.graphics.Color(0xFF141A2E)
