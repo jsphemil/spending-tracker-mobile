@@ -135,16 +135,23 @@ internal fun startOfTomorrowEpochSeconds(): Long {
   return cal.timeInMillis / 1000
 }
 
-internal data class FlowTotals(val incomeMinor: Long, val expenseMinor: Long, val transferInMinor: Long, val transferOutMinor: Long)
+internal data class FlowTotals(val incomeMinor: Long, val expenseMinor: Long)
 
-// Income/expense (joined on the transaction's own account) plus transfer
-// in/out (joined on the relevant leg's own account, so each leg converts
-// using the currency it actually moved through) for [startEpoch, endEpoch).
+// Income/expense only, for [startEpoch, endEpoch) -- transfers are
+// deliberately excluded. A transfer between two of the user's own
+// accounts never crosses the boundary between "my accounts" and the
+// outside world: its two legs cancel to exactly zero across the whole
+// portfolio by construction, so counting either leg as inflow/outflow
+// would double-count internal movement as if new money had appeared or
+// left. This mirrors services/balance.ts's getPeriodTotals, which
+// excludes transfers for the exact same reason ("money entering or
+// leaving the tracked accounts as a whole, not internal moves between
+// them") -- confirmed as a real bug during on-device testing 2026-09-06,
+// where transferring between two accounts wrongly inflated both Inflow
+// and Outflow.
 private fun flowTotals(db: SQLiteDatabase, converter: RateConverter, startEpoch: Long, endEpoch: Long): FlowTotals {
   var income = 0L
   var expense = 0L
-  var transferIn = 0L
-  var transferOut = 0L
 
   db.rawQuery(
     """
@@ -163,33 +170,7 @@ private fun flowTotals(db: SQLiteDatabase, converter: RateConverter, startEpoch:
     }
   }
 
-  db.rawQuery(
-    """
-    SELECT t.amount_minor, a.currency
-    FROM transactions t JOIN accounts a ON a.id = t.account_id
-    WHERE t.date >= ? AND t.date < ? AND t.type = 'transfer'
-    """.trimIndent(),
-    arrayOf(startEpoch.toString(), endEpoch.toString()),
-  ).use { cursor ->
-    while (cursor.moveToNext()) {
-      transferOut += converter.toBaseMinor(cursor.getLong(0), cursor.getString(1)) ?: continue
-    }
-  }
-
-  db.rawQuery(
-    """
-    SELECT t.amount_minor, a.currency
-    FROM transactions t JOIN accounts a ON a.id = t.to_account_id
-    WHERE t.date >= ? AND t.date < ? AND t.type = 'transfer'
-    """.trimIndent(),
-    arrayOf(startEpoch.toString(), endEpoch.toString()),
-  ).use { cursor ->
-    while (cursor.moveToNext()) {
-      transferIn += converter.toBaseMinor(cursor.getLong(0), cursor.getString(1)) ?: continue
-    }
-  }
-
-  return FlowTotals(income, expense, transferIn, transferOut)
+  return FlowTotals(income, expense)
 }
 
 internal data class CashFlowData(
@@ -197,8 +178,8 @@ internal data class CashFlowData(
   val inflowMinor: Long,
   val outflowMinor: Long,
   val remainingMinor: Long,
-  val todayInflowMinor: Long,
-  val todayOutflowMinor: Long,
+  val todayIncomeMinor: Long,
+  val todayExpenseMinor: Long,
 )
 
 // Whole-portfolio carry forward = sum of every account's own balance as
@@ -227,11 +208,11 @@ internal fun getCashFlowData(context: Context): CashFlowData? {
     val inflowMinor: Long
     val outflowMinor: Long
     if (carryForwardMinor >= 0) {
-      inflowMinor = carryForwardMinor + month.incomeMinor + month.transferInMinor
-      outflowMinor = month.expenseMinor + month.transferOutMinor
+      inflowMinor = carryForwardMinor + month.incomeMinor
+      outflowMinor = month.expenseMinor
     } else {
-      inflowMinor = month.incomeMinor + month.transferInMinor
-      outflowMinor = -carryForwardMinor + month.expenseMinor + month.transferOutMinor
+      inflowMinor = month.incomeMinor
+      outflowMinor = -carryForwardMinor + month.expenseMinor
     }
 
     return CashFlowData(
@@ -239,8 +220,8 @@ internal fun getCashFlowData(context: Context): CashFlowData? {
       inflowMinor = inflowMinor,
       outflowMinor = outflowMinor,
       remainingMinor = inflowMinor - outflowMinor,
-      todayInflowMinor = today.incomeMinor + today.transferInMinor,
-      todayOutflowMinor = today.expenseMinor + today.transferOutMinor,
+      todayIncomeMinor = today.incomeMinor,
+      todayExpenseMinor = today.expenseMinor,
     )
   } finally {
     db.close()

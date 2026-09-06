@@ -1,6 +1,7 @@
 package expo.modules.widgetbridge
 
 import android.content.Context
+import android.graphics.Bitmap
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
@@ -32,6 +33,7 @@ import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.height
 import androidx.glance.layout.padding
+import androidx.glance.layout.size
 import androidx.glance.layout.width
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
@@ -84,6 +86,7 @@ class CashFlowGlanceWidget : GlanceAppWidget() {
 
   override suspend fun provideGlance(context: Context, id: GlanceId) {
     val openApp = launchAppIntent(context)
+    val iconBitmap = currentAppIconBitmap(context)
 
     provideContent {
       val dataVersion = currentState<Preferences>()[KEY_DATA_VERSION] ?: 0
@@ -93,12 +96,12 @@ class CashFlowGlanceWidget : GlanceAppWidget() {
           if (data == null) CashFlowUiState.Unavailable else CashFlowUiState.Ready(data)
         }
       }
-      Content(uiState, LocalSize.current.width, openApp)
+      Content(uiState, LocalSize.current.width, iconBitmap, openApp)
     }
   }
 
   @Composable
-  private fun Content(uiState: CashFlowUiState, widthDp: androidx.compose.ui.unit.Dp, openApp: android.content.Intent) {
+  private fun Content(uiState: CashFlowUiState, widthDp: androidx.compose.ui.unit.Dp, iconBitmap: Bitmap, openApp: android.content.Intent) {
     val context = LocalContext.current
     val density = context.resources.displayMetrics.density
     val barWidthPx = (((widthDp.value - CARD_PADDING_DP * 2) * density).toInt()).coerceAtLeast(1)
@@ -116,13 +119,13 @@ class CashFlowGlanceWidget : GlanceAppWidget() {
         is CashFlowUiState.Unavailable -> Box(modifier = GlanceModifier.fillMaxSize(), contentAlignment = Alignment.Center) {
           Text(text = "Cash flow unavailable", style = TextStyle(fontSize = 13.sp, color = ColorProvider(TEXT_SECONDARY)))
         }
-        is CashFlowUiState.Ready -> ReadyContent(uiState.data, barWidthPx, barHeightPx, openApp)
+        is CashFlowUiState.Ready -> ReadyContent(uiState.data, barWidthPx, barHeightPx, iconBitmap, openApp)
       }
     }
   }
 
   @Composable
-  private fun ReadyContent(data: CashFlowData, barWidthPx: Int, barHeightPx: Int, openApp: android.content.Intent) {
+  private fun ReadyContent(data: CashFlowData, barWidthPx: Int, barHeightPx: Int, iconBitmap: Bitmap, openApp: android.content.Intent) {
     val currency = data.baseCurrency
     val outflowFraction = if (data.inflowMinor > 0) data.outflowMinor.toFloat() / data.inflowMinor.toFloat() else 0f
     val overrun = data.inflowMinor > 0 && data.outflowMinor > data.inflowMinor
@@ -135,7 +138,16 @@ class CashFlowGlanceWidget : GlanceAppWidget() {
     }
 
     Column(modifier = GlanceModifier.fillMaxSize()) {
-      Row(modifier = GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.Vertical.CenterVertically) {
+      Row(
+        modifier = GlanceModifier.fillMaxWidth().clickable(actionStartActivity(openApp)),
+        verticalAlignment = Alignment.Vertical.CenterVertically,
+      ) {
+        Image(
+          provider = ImageProvider(iconBitmap),
+          contentDescription = null,
+          modifier = GlanceModifier.size(16.dp).cornerRadius(4.dp),
+        )
+        Box(modifier = GlanceModifier.width(6.dp)) {}
         Text(
           text = "EREBOR",
           style = TextStyle(fontSize = 11.sp, fontWeight = FontWeight.Bold, color = ColorProvider(TEXT_SECONDARY)),
@@ -144,7 +156,6 @@ class CashFlowGlanceWidget : GlanceAppWidget() {
         Text(
           text = currentMonthLabel(),
           style = TextStyle(fontSize = 12.sp, fontWeight = FontWeight.Medium, color = ColorProvider(TEXT_SECONDARY)),
-          modifier = GlanceModifier.clickable(actionStartActivity(openApp)),
         )
       }
       Box(modifier = GlanceModifier.height(10.dp)) {}
@@ -196,19 +207,19 @@ class CashFlowGlanceWidget : GlanceAppWidget() {
       Box(modifier = GlanceModifier.fillMaxWidth().height(1.dp).background(DIVIDER_COLOR)) {}
       Box(modifier = GlanceModifier.height(10.dp)) {}
 
-      Row(modifier = GlanceModifier.fillMaxWidth()) {
+      Row(modifier = GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.Vertical.CenterVertically) {
         Text(
           text = "Today",
           style = TextStyle(fontSize = 11.sp, color = ColorProvider(TEXT_SECONDARY)),
           modifier = GlanceModifier.defaultWeight(),
         )
         Text(
-          text = "↑ " + formatMoney(data.todayInflowMinor, currency),
+          text = "↑ " + formatMoney(data.todayIncomeMinor, currency),
           style = TextStyle(fontSize = 12.sp, fontWeight = FontWeight.Medium, color = ColorProvider(INFLOW_COLOR)),
         )
         Box(modifier = GlanceModifier.width(10.dp)) {}
         Text(
-          text = "↓ " + formatMoney(data.todayOutflowMinor, currency),
+          text = "↓ " + formatMoney(data.todayExpenseMinor, currency),
           style = TextStyle(fontSize = 12.sp, fontWeight = FontWeight.Medium, color = ColorProvider(OUTFLOW_COLOR)),
         )
       }
