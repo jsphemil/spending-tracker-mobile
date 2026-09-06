@@ -8,4 +8,11 @@ import WidgetBridgeModule from "../modules/widget-bridge/src/WidgetBridgeModule"
 // actual data write it's reacting to.
 export function refreshAccountsWidget(): void {
   WidgetBridgeModule.refreshAccountsWidget().catch(() => {});
+  // Same trigger set also invalidates the whole-portfolio widgets
+  // (Monthly Cash Flow, and later Net Worth) -- they have no config of
+  // their own, so any write that could move a balance is exactly what
+  // they need to hear about too. A separate native function
+  // (refreshPortfolioWidgets), not folded into the call above, so the
+  // existing Accounts widget's own refresh path is untouched.
+  WidgetBridgeModule.refreshPortfolioWidgets().catch(() => {});
 }

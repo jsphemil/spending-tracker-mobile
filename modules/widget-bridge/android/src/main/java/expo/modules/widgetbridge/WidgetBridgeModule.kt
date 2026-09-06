@@ -1,5 +1,6 @@
 package expo.modules.widgetbridge
 
+import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.glance.appwidget.state.updateAppWidgetState
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
@@ -27,6 +28,23 @@ class WidgetBridgeModule : Module() {
             val glanceId = glanceIdFor(context, appWidgetId)
             updateAppWidgetState(context, glanceId) { prefs -> prefs.bumpDataVersion() }
             AccountsGlanceWidget().update(context, glanceId)
+          }
+        }
+      }
+    }
+
+    // Separate from refreshAccountsWidget above -- called from the same
+    // JS trigger points (widgets/refresh.ts), but targets the
+    // whole-portfolio widgets (Monthly Cash Flow, and later Net Worth)
+    // instead. Kept as its own function so the Accounts widget's own
+    // refresh call above is never touched by this widget suite's work.
+    AsyncFunction("refreshPortfolioWidgets") {
+      appContext.reactContext?.let { context ->
+        runBlocking {
+          boundCashFlowWidgetIds(context).forEach { appWidgetId ->
+            val glanceId = GlanceAppWidgetManager(context).getGlanceIdBy(appWidgetId)
+            updateAppWidgetState(context, glanceId) { prefs -> prefs.bumpDataVersion() }
+            CashFlowGlanceWidget().update(context, glanceId)
           }
         }
       }
