@@ -31,6 +31,7 @@ import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.height
 import androidx.glance.layout.padding
 import androidx.glance.layout.size
+import androidx.glance.layout.width
 import androidx.glance.semantics.contentDescription
 import androidx.glance.semantics.semantics
 import androidx.glance.text.FontWeight
@@ -150,22 +151,31 @@ class QuickAddGlanceWidget : GlanceAppWidget() {
         // Central hub tap target, layered on top (last in this Box's
         // children, so it wins hit-testing over the regions beneath
         // it) -- opens the app itself, matching the existing widget's
-        // icon-taps-open-app precedent. Positioned/sized from the same
-        // fractions the bitmap's hub circle was drawn from, so the
-        // invisible tap target lines up with the visible circle.
-        Box(
-          modifier = GlanceModifier
-            .padding(start = squareDp * HUB_LEFT_FRAC, top = squareDp * HUB_TOP_FRAC)
-            .size(squareDp * HUB_SIZE_FRAC)
-            .clickable(actionStartActivity(openApp))
-            .semantics { contentDescription = "Open Erebor" },
-          contentAlignment = Alignment.Center,
-        ) {
-          Image(
-            provider = ImageProvider(iconBitmap),
-            contentDescription = null,
-            modifier = GlanceModifier.size(hubIconSize).cornerRadius(hubIconSize * 0.2f),
-          )
+        // icon-taps-open-app precedent. Positioned via sibling spacer
+        // boxes (Column/Row), not padding()+size() on the same node --
+        // every other proven-working element in this file positions
+        // itself with fillMax()/height()/defaultWeight(), and this is
+        // the one place that combined padding with size on a single
+        // node, which is the most likely reason its Image wasn't
+        // rendering.
+        Column(modifier = GlanceModifier.fillMaxSize()) {
+          Box(modifier = GlanceModifier.height(squareDp * HUB_TOP_FRAC)) {}
+          Row(modifier = GlanceModifier.fillMaxWidth()) {
+            Box(modifier = GlanceModifier.width(squareDp * HUB_LEFT_FRAC)) {}
+            Box(
+              modifier = GlanceModifier
+                .size(squareDp * HUB_SIZE_FRAC)
+                .clickable(actionStartActivity(openApp))
+                .semantics { contentDescription = "Open Erebor" },
+              contentAlignment = Alignment.Center,
+            ) {
+              Image(
+                provider = ImageProvider(iconBitmap),
+                contentDescription = null,
+                modifier = GlanceModifier.size(hubIconSize).cornerRadius(hubIconSize * 0.2f),
+              )
+            }
+          }
         }
       }
     }

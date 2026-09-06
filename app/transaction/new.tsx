@@ -41,6 +41,17 @@ export default function NewTransactionScreen() {
         </Text>
       )}
       <TransactionForm
+        // MainActivity is launchMode="singleTask" (standard for a
+        // single-activity Expo app), so firing a second quick-add deep
+        // link while this screen is already open reuses the same
+        // mounted instance rather than creating a fresh one. Every
+        // useState below that reads from initialValues only applies it
+        // on first mount, so without a key forcing a remount here, a
+        // second link (e.g. Income right after Transfer) would leave
+        // the form showing the first link's type. Keying on the params
+        // that actually distinguish "what am I creating" forces React
+        // to tear down and recreate the form whenever they change.
+        key={`${duplicateId ?? ""}-${params.type ?? ""}-${params.accountId ?? ""}-${params.date ?? ""}`}
         submitLabel="Add Transaction"
         allowRecurring
         initialValues={
