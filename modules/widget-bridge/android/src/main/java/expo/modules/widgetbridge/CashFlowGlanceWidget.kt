@@ -7,6 +7,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.datastore.preferences.core.Preferences
@@ -58,8 +60,13 @@ private val OUTFLOW_COLOR = Color(0xFFFF5C72)
 private val OVERRUN_COLOR = Color(0xFFE24B4A)
 private val DIVIDER_COLOR = Color(0xFF2E323F)
 
-private const val CARD_PADDING_DP = 16
-private const val BAR_HEIGHT_DP = 14
+// Below this the "regular" spacing/font budget doesn't reliably leave
+// room for every section including Today -- confirmed by measuring the
+// actual content stack against the widget's declared minimum size,
+// after a real bug where Today was silently clipped off the bottom of
+// a Column that had no room left for it (Glance/RemoteViews don't
+// scroll or auto-shrink content that overflows).
+private val COMPACT_HEIGHT_THRESHOLD = 220.dp
 
 private fun currentMonthLabel(): String = SimpleDateFormat("MMMM", Locale("en", "IN")).format(Date())
 
@@ -96,36 +103,51 @@ class CashFlowGlanceWidget : GlanceAppWidget() {
           if (data == null) CashFlowUiState.Unavailable else CashFlowUiState.Ready(data)
         }
       }
-      Content(uiState, LocalSize.current.width, iconBitmap, openApp)
+      Content(uiState, LocalSize.current, iconBitmap, openApp)
     }
   }
 
   @Composable
-  private fun Content(uiState: CashFlowUiState, widthDp: androidx.compose.ui.unit.Dp, iconBitmap: Bitmap, openApp: android.content.Intent) {
+  private fun Content(uiState: CashFlowUiState, size: DpSize, iconBitmap: Bitmap, openApp: android.content.Intent) {
     val context = LocalContext.current
     val density = context.resources.displayMetrics.density
-    val barWidthPx = (((widthDp.value - CARD_PADDING_DP * 2) * density).toInt()).coerceAtLeast(1)
-    val barHeightPx = (BAR_HEIGHT_DP * density).toInt().coerceAtLeast(1)
+    val compact = size.height < COMPACT_HEIGHT_THRESHOLD
+    val cardPaddingDp: Dp = if (compact) 12.dp else 16.dp
+    val barHeightDp: Dp = if (compact) 10.dp else 14.dp
+    val barWidthPx = (((size.width - cardPaddingDp * 2).value * density).toInt()).coerceAtLeast(1)
+    val barHeightPx = (barHeightDp.value * density).toInt().coerceAtLeast(1)
 
     Box(
       modifier = GlanceModifier
         .fillMaxSize()
         .cornerRadius(24.dp)
         .background(CARD_BG)
-        .padding(CARD_PADDING_DP.dp),
+        .padding(cardPaddingDp),
     ) {
       when (uiState) {
         is CashFlowUiState.Loading -> {}
         is CashFlowUiState.Unavailable -> Box(modifier = GlanceModifier.fillMaxSize(), contentAlignment = Alignment.Center) {
           Text(text = "Cash flow unavailable", style = TextStyle(fontSize = 13.sp, color = ColorProvider(TEXT_SECONDARY)))
         }
-        is CashFlowUiState.Ready -> ReadyContent(uiState.data, barWidthPx, barHeightPx, iconBitmap, openApp)
+        is CashFlowUiState.Ready -> ReadyContent(uiState.data, compact, barHeightDp, barWidthPx, barHeightPx, iconBitmap, openApp)
       }
     }
   }
 
   @Composable
-  private fun ReadyContent(data: CashFlowData, barWidthPx: Int, barHeightPx: Int, iconBitmap: Bitmap, openApp: android.content.Intent) {
+  private fun ReadyContent(
+    data: CashFlowData,
+    compact: Boolean,
+    barHeightDp: Dp,
+    barWidthPx: Int,
+    barHeightPx: Int,
+    iconBitmap: Bitmap,
+    openApp: android.content.Intent,
+  ) {
+    val gapL: Dp = if (compact) 4.dp else 8.dp
+    val gapS: Dp = if (compact) 3.dp else 6.dp
+    val inflowFontSize = if (compact) 18.sp else 22.sp
+    val statFontSize = if (compact) 13.sp else 15.sp
     val currency = data.baseCurrency
     val outflowFraction = if (data.inflowMinor > 0) data.outflowMinor.toFloat() / data.inflowMinor.toFloat() else 0f
     val overrun = data.inflowMinor > 0 && data.outflowMinor > data.inflowMinor
@@ -158,7 +180,7 @@ class CashFlowGlanceWidget : GlanceAppWidget() {
           style = TextStyle(fontSize = 12.sp, fontWeight = FontWeight.Medium, color = ColorProvider(TEXT_SECONDARY)),
         )
       }
-      Box(modifier = GlanceModifier.height(10.dp)) {}
+      Box(modifier = GlanceModifier.height(gapL)) {}
 
       Text(
         text = "Total inflow",
@@ -166,28 +188,28 @@ class CashFlowGlanceWidget : GlanceAppWidget() {
       )
       Text(
         text = formatMoney(data.inflowMinor, currency),
-        style = TextStyle(fontSize = 22.sp, fontWeight = FontWeight.Bold, color = ColorProvider(TEXT_PRIMARY)),
+        style = TextStyle(fontSize = inflowFontSize, fontWeight = FontWeight.Bold, color = ColorProvider(TEXT_PRIMARY)),
       )
-      Box(modifier = GlanceModifier.height(10.dp)) {}
+      Box(modifier = GlanceModifier.height(gapL)) {}
 
       Image(
         provider = ImageProvider(barBitmap),
         contentDescription = "$percentLabel, ${formatMoney(data.outflowMinor, currency)} outflow",
-        modifier = GlanceModifier.fillMaxWidth().height(BAR_HEIGHT_DP.dp),
+        modifier = GlanceModifier.fillMaxWidth().height(barHeightDp),
       )
-      Box(modifier = GlanceModifier.height(6.dp)) {}
+      Box(modifier = GlanceModifier.height(gapS)) {}
       Text(
         text = percentLabel,
         style = TextStyle(fontSize = 12.sp, fontWeight = FontWeight.Medium, color = ColorProvider(if (overrun) OVERRUN_COLOR else TEXT_SECONDARY)),
       )
-      Box(modifier = GlanceModifier.height(10.dp)) {}
+      Box(modifier = GlanceModifier.height(gapL)) {}
 
       Row(modifier = GlanceModifier.fillMaxWidth()) {
         Column(modifier = GlanceModifier.defaultWeight()) {
           Text(text = "Outflow", style = TextStyle(fontSize = 11.sp, color = ColorProvider(TEXT_SECONDARY)))
           Text(
             text = formatMoney(data.outflowMinor, currency),
-            style = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.Bold, color = ColorProvider(OUTFLOW_COLOR)),
+            style = TextStyle(fontSize = statFontSize, fontWeight = FontWeight.Bold, color = ColorProvider(OUTFLOW_COLOR)),
           )
         }
         Column(modifier = GlanceModifier.defaultWeight()) {
@@ -195,7 +217,7 @@ class CashFlowGlanceWidget : GlanceAppWidget() {
           Text(
             text = formatMoney(data.remainingMinor, currency),
             style = TextStyle(
-              fontSize = 15.sp,
+              fontSize = statFontSize,
               fontWeight = FontWeight.Bold,
               color = ColorProvider(if (data.remainingMinor < 0) OVERRUN_COLOR else TEXT_PRIMARY),
             ),
@@ -203,9 +225,19 @@ class CashFlowGlanceWidget : GlanceAppWidget() {
         }
       }
 
-      Box(modifier = GlanceModifier.defaultWeight()) {}
+      // Deliberately NOT pinned to the bottom via a flexible spacer --
+      // an earlier attempt (an empty Box with only .defaultWeight(),
+      // then with .fillMaxWidth().defaultWeight() added) reliably
+      // absorbed the extra height as expected, but silently prevented
+      // everything after it (this divider and the Today row) from
+      // rendering at all, confirmed on-device across two fix attempts.
+      // Placing Today right after Outflow/Remaining with normal spacing
+      // avoids that Glance behavior entirely, at the cost of Today
+      // sitting right under the stats instead of floating at the very
+      // bottom on a tall widget.
+      Box(modifier = GlanceModifier.height(gapL)) {}
       Box(modifier = GlanceModifier.fillMaxWidth().height(1.dp).background(DIVIDER_COLOR)) {}
-      Box(modifier = GlanceModifier.height(10.dp)) {}
+      Box(modifier = GlanceModifier.height(gapL)) {}
 
       Row(modifier = GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.Vertical.CenterVertically) {
         Text(
