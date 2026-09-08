@@ -41,7 +41,7 @@ pushed to a later phase) · ❌ Dropped (cut from scope).
 | §3 | Dropbox Backup/Restore | ✅ Built & Verified | **Built and fully verified on-device 2026-08-28.** PKCE OAuth connect flow (`services/dropbox.ts`, `expo-auth-session`+`expo-web-browser`, App-folder-scoped access), tokens in `expo-secure-store` (never the unencrypted `settings` table), `VACUUM INTO`-based consistent snapshot backup (not a raw file copy or JSON export), check-on-app-open "automatic daily" backup (a true OS background task is unreliable on mobile — see the feature's own write-up below), manual backup, and a restore picker (`app/backup/restore.tsx`) that replaces the local DB file and prompts a manual app restart. Connect, manual backup, and restore-then-restart all confirmed working on the user's phone. |
 | §5.19 | Erebor V2 Redesign | ✅ Built & Verified | **Shipped 2026-09-02.** Product/nav/UX redesign (4-tab nav, new onboarding, new Dashboard, new Settings, real Light/Dark/System theme, expense reminders, Analytics tab) reusing the existing financial engine, currency system, and Dropbox backup as-is. On-device pass covered all 8 test sections and passed; merged `redesign/erebor-v2` → `master` (22 commits) and shipped as versionCode 12, versionName 2.0.0 — closed-testing update 2 of 3. See §5.19 for full scope and what it supersedes. |
 | — | R8/ProGuard (release build shrinking) | ✅ Built & Verified | **Shipped 2026-09-05**, versionCode 13, versionName 2.0.1 — closed-testing update 3 of 3, the last required update for the 14-day window. Isolated on `r8-test`, verified on-device against the three reflection-exposed surfaces (Dropbox connect/backup/restore, home screen widget, notifications) before merging to `master`. No ProGuard keep rules needed. See §9 for the local build-environment fix this needed (an outdated bundled `ninja` broke `assembleRelease` on Windows, unrelated to R8 itself). |
-| §5.20 | New Home Screen Widgets (Quick Add / Cash Flow / Net Worth) | 🚧 In Progress | **Started 2026-09-05.** Three new, independently-selectable widgets alongside the existing Accounts & Quick Add widget (§5.11), which is explicitly unmodified. See §5.20 for full scope. |
+| §5.20 | New Home Screen Widgets (Quick Add / Cash Flow / Net Worth) | ⏸️ Deferred | **Started 2026-09-05.** Widget A (Quick Add Transaction) ✅ Built & Verified 2026-09-06. **Widgets B (Monthly Cash Flow) and C (Net Worth & Financial Composition) paused 2026-09-08** at the user's request, pending their decision on whether to build them at all — see §5.20 for full scope and Widget B's unresolved bug. |
 
 **Remaining known gaps** (everything else above is fully verified,
 carried forward unchanged from the last audit — none of these have
@@ -1053,7 +1053,7 @@ Pixel 10, `redesign/erebor-v2` was merged into `master` (22 commits,
 fast-forward), and it shipped the same day as versionCode 12,
 versionName 2.0.0 — closed-testing update 2 of 3.
 
-### 5.20 New Home Screen Widgets — Quick Add, Monthly Cash Flow, Net Worth 🚧 In Progress
+### 5.20 New Home Screen Widgets — Quick Add, Monthly Cash Flow, Net Worth ⏸️ Deferred
 
 - **Started 2026-09-05**, direct master-prompt request (not an Inbox
   idea) — same handling as §5.19's Erebor V2 prompt. Adds **three new,
@@ -1104,17 +1104,38 @@ versionName 2.0.0 — closed-testing update 2 of 3.
     shortcut out of the long-press popup (instead of tapping it) is
     standard Android shortcut-pinning behavior, not something app code
     controls.
-- **New Widget B — Monthly Cash Flow.** Current month's total inflow
-  (positive carry-forward + income + transfer-in) vs. outflow
-  (|negative carry-forward| + expenses + transfer-out), a single
-  proportional bar showing outflow as a % of inflow (explicitly
-  handling >100% outflow and zero-inflow, no division-by-zero, no
-  silent 100% clamp), remaining, and today's inflow/outflow
-  (deliberately excluding carry-forward, which is a monthly starting
-  position, not today's activity). Whole-portfolio (all accounts),
-  base-currency — no per-widget account selection, matching how the
-  Dashboard's own monthly totals already work; no config screen needed.
-- **New Widget C — Net Worth & Financial Composition.** Net worth in
+- **New Widget B — Monthly Cash Flow. ⏸️ Deferred (2026-09-08).**
+  Current month's total inflow (positive carry-forward + income +
+  transfer-in) vs. outflow (|negative carry-forward| + expenses +
+  transfer-out), a single proportional bar showing outflow as a % of
+  inflow (explicitly handling >100% outflow and zero-inflow, no
+  division-by-zero, no silent 100% clamp), remaining, and today's
+  inflow/outflow (deliberately excluding carry-forward, which is a
+  monthly starting position, not today's activity). Whole-portfolio
+  (all accounts), base-currency — no per-widget account selection,
+  matching how the Dashboard's own monthly totals already work; no
+  config screen needed.
+  - **Paused at the user's request**, pending their decision on
+    whether to keep building B/C at all. Status at pause: the
+    transfer-double-count bug (transfers were wrongly inflating both
+    inflow and outflow) is fixed and confirmed on-device. The "Today"
+    (daily income/expense) row does **not** render — three fix
+    attempts made (raise `minHeight`/add responsive spacing; add
+    `.fillMaxWidth()` to the bottom spacer; remove the
+    flexible/weighted spacer entirely and use fixed spacing instead),
+    all falsified by on-device testing — most recently confirmed on a
+    second physical device with the widget manually resized much
+    taller than the compact-mode threshold, which still showed a
+    large empty gap with no divider and no Today row. Root cause
+    remains unknown: the app's own logcat shows no exception around
+    the widget's bind/update calls, so the failure isn't visible to
+    the app process — it's either swallowed inside Glance's
+    RemoteViews conversion or failing in the launcher's own process.
+    Unresolved when work paused; a WIP fix-attempt-3 commit is on
+    `widgets/new-suite` for whoever resumes this.
+- **New Widget C — Net Worth & Financial Composition. ⏸️ Deferred
+  (2026-09-08).** Paused alongside Widget B, at the same request —
+  scope was agreed below but no code was written. Net worth in
   the center of a **single** ring (not separate asset/liability rings)
   whose segments are proportional to actual absolute values. Reuses
   the app's real, already-built asset-allocation buckets —
