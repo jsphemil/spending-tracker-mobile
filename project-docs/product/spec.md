@@ -601,6 +601,21 @@ add-transaction-and-watch check wasn't completed on-device (blocked by
 unrelated Metro/ADB flakiness, not a code change) and would be worth a
 real click-through.
 
+**Widget-picker preview images ✅ Built & Verified (2026-09-09).**
+Android's widget picker (long-press home screen → Widgets → app) was
+showing a blank generic shape for both this widget and the new Quick
+Add widget (§5.20) — neither `*_widget_info.xml` declared
+`android:previewImage`, and no preview drawable existed at all. Fixed
+by adding `res/drawable-nodpi/preview_accounts.png` and
+`preview_quick_add.png` (rendered from the widgets' own real
+colors/layout — Quick Add's petals reuse the exact bezier path data
+from `QuickAddTriangleShape.kt` for pixel-accurate geometry, not an
+approximation) and wiring `android:previewImage` into both
+`accounts_widget_info.xml` and `quick_add_widget_info.xml`. Jetpack
+Glance has no built-in preview-generation API — this is purely an
+`AppWidgetProviderInfo`/resource concern. Confirmed on-device via the
+real widget picker screen.
+
 **Refresh bug — found 2026-08-31, root-caused and fixed 2026-09-01.**
 Surfaced by the real Play Store closed testing install (versionCode 4),
 the first genuine on-device test of this rewrite: after selecting
@@ -1007,6 +1022,17 @@ back to "You're all caught up." rather than ever showing an invented
 alert. Dashboard shortcuts are Commitments/Categories/Goals/Tags/
 Calendar/Settings only.
 
+**Net worth privacy toggle ✅ Built & Verified (2026-09-08/09).** An
+eye/eye-off icon on the Net worth card masks Net worth, Assets, and
+Debt behind `••••••`/`••••` placeholders (and hides the "Overdrawn by"
+warning and any unconverted-currencies note while masked) — Dashboard
+is the first screen shown on app open, so this guards against prying
+eyes glancing over a shoulder. Persisted via a new `settings.netWorthHidden`
+boolean column (migrations `0010`/`0011`), **defaulting to hidden** —
+first-run privacy is the safe default, not opt-in. Verified on-device:
+toggle persists across app restarts, and a fresh install opens with
+figures already masked.
+
 **Settings V2.** Grouped screen (Profile/Account, Preferences,
 Security & Legal, Backup & Restore) replacing the flat Profile tab;
 Dropbox backup/restore UI is carried over unchanged.
@@ -1104,35 +1130,36 @@ versionName 2.0.0 — closed-testing update 2 of 3.
     shortcut out of the long-press popup (instead of tapping it) is
     standard Android shortcut-pinning behavior, not something app code
     controls.
-- **New Widget B — Monthly Cash Flow. ⏸️ Deferred (2026-09-08).**
-  Current month's total inflow (positive carry-forward + income +
-  transfer-in) vs. outflow (|negative carry-forward| + expenses +
-  transfer-out), a single proportional bar showing outflow as a % of
-  inflow (explicitly handling >100% outflow and zero-inflow, no
-  division-by-zero, no silent 100% clamp), remaining, and today's
-  inflow/outflow (deliberately excluding carry-forward, which is a
-  monthly starting position, not today's activity). Whole-portfolio
-  (all accounts), base-currency — no per-widget account selection,
-  matching how the Dashboard's own monthly totals already work; no
-  config screen needed.
-  - **Paused at the user's request**, pending their decision on
-    whether to keep building B/C at all. Status at pause: the
-    transfer-double-count bug (transfers were wrongly inflating both
-    inflow and outflow) is fixed and confirmed on-device. The "Today"
-    (daily income/expense) row does **not** render — three fix
-    attempts made (raise `minHeight`/add responsive spacing; add
-    `.fillMaxWidth()` to the bottom spacer; remove the
-    flexible/weighted spacer entirely and use fixed spacing instead),
-    all falsified by on-device testing — most recently confirmed on a
-    second physical device with the widget manually resized much
-    taller than the compact-mode threshold, which still showed a
-    large empty gap with no divider and no Today row. Root cause
-    remains unknown: the app's own logcat shows no exception around
-    the widget's bind/update calls, so the failure isn't visible to
-    the app process — it's either swallowed inside Glance's
-    RemoteViews conversion or failing in the launcher's own process.
-    Unresolved when work paused; a WIP fix-attempt-3 commit is on
-    `widgets/new-suite` for whoever resumes this.
+- **New Widget B — Monthly Cash Flow. ❌ Dropped (2026-09-09).**
+  Current month's total inflow (positive carry-forward + income) vs.
+  outflow (|negative carry-forward| + expenses), a single proportional
+  bar showing outflow as a % of inflow, remaining, and today's
+  inflow/outflow. Whole-portfolio, base-currency, no config screen.
+  - **Built through the transfer-double-count fix** (transfers were
+    wrongly inflating both inflow and outflow — fixed and confirmed
+    on-device), but the "Today" (daily income/expense) row never
+    rendered — three fix attempts (raise `minHeight`/responsive
+    spacing; `.fillMaxWidth()` on the bottom spacer; remove the
+    flexible/weighted spacer entirely) were all falsified by on-device
+    testing, most tellingly on a second physical device with the
+    widget manually resized well past the compact-mode threshold,
+    which still showed a large empty gap with no divider and no Today
+    row. Root cause never found — no exception surfaced in the app's
+    own logcat around the widget's bind/update calls, so the failure
+    was either swallowed inside Glance's RemoteViews conversion or
+    happening in the launcher's own process.
+  - **Removed from the codebase 2026-09-09** at the user's explicit
+    request ("remove the cash flow widget from the app") rather than
+    shipped half-working — deleted `WidgetPortfolioReader.kt`,
+    `CashFlowBarShape.kt`, `CashFlowGlanceWidget.kt`,
+    `CashFlowGlanceWidgetReceiver.kt`, `cash_flow_widget_info.xml`;
+    unregistered its receiver from `AndroidManifest.xml`; removed the
+    native `refreshPortfolioWidgets()` bridge function and its JS call
+    site in `widgets/refresh.ts`. Confirmed gone from
+    `dumpsys appwidget` and the app still builds/runs cleanly. The
+    debugging trail above is kept here in case this is picked back up
+    from scratch later — the Glance rendering bug was never actually
+    explained, only worked around unsuccessfully.
 - **New Widget C — Net Worth & Financial Composition. ⏸️ Deferred
   (2026-09-08).** Paused alongside Widget B, at the same request —
   scope was agreed below but no code was written. Net worth in
