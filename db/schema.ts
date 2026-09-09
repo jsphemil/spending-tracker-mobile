@@ -236,6 +236,14 @@ export const settings = sqliteTable("settings", {
     .default(false),
   // "HH:MM", 24-hour, device-local time.
   expenseReminderTime: text("expense_reminder_time").notNull().default("20:00"),
+  // Dashboard privacy toggle (spec.md §5.8) — masks the Net worth card's
+  // figures behind an eye/eye-off icon since Dashboard is the first
+  // screen shown on app open. Defaults to hidden (not visible) for the
+  // same reason — first thing shown, so first-run privacy should be the
+  // safe default rather than opt-in. Persisted so it survives restarts.
+  netWorthHidden: integer("net_worth_hidden", { mode: "boolean" })
+    .notNull()
+    .default(true),
 });
 
 // Home Screen Widget (spec.md §5.11) — which accounts the "Accounts &

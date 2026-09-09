@@ -1,0 +1,1 @@
+ALTER TABLE `settings` ADD `net_worth_hidden` integer DEFAULT true NOT NULL;

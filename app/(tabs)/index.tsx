@@ -5,6 +5,7 @@ import { Icon } from "../../components/ui/Icon";
 
 import { GlobalHeader } from "../../components/GlobalHeader";
 import { UnconvertedCurrenciesNote } from "../../components/UnconvertedCurrenciesNote";
+import { updateSettings } from "../../db/actions/settings";
 import { db } from "../../db/client";
 import { useAccounts } from "../../db/queries/accounts";
 import { useCategories } from "../../db/queries/categories";
@@ -190,6 +191,14 @@ export default function DashboardScreen() {
   const card = "rounded-card border border-glass-border bg-glass p-4";
   const cardTitle = "mb-3 text-sm font-display text-fg";
 
+  // Dashboard privacy toggle (spec.md §5.8) — Dashboard is the first
+  // screen shown on app open, so Net worth/Assets/Debt can be masked from
+  // prying eyes. Persisted via settings so it survives app restarts.
+  const netWorthHidden = settings?.netWorthHidden ?? false;
+  const netWorthDisplay = netWorthHidden ? "••••••" : formatMoney(netWorthMinor, baseCurrency);
+  const assetsDisplay = netWorthHidden ? "••••" : formatMoney(assetsMinor, baseCurrency);
+  const debtDisplay = netWorthHidden ? "••••" : debtMinor > 0 ? formatMoney(debtMinor, baseCurrency) : "—";
+
   return (
     <View className="flex-1 bg-bg">
       <GlobalHeader />
@@ -203,11 +212,21 @@ export default function DashboardScreen() {
 
         {/* ---------- POSITION: Where do I stand? ---------- */}
         <View className={card}>
-          <Text className="mb-1 text-xs font-semibold uppercase tracking-wide text-fg-muted">Net worth</Text>
+          <View className="mb-1 flex-row items-center justify-between">
+            <Text className="text-xs font-semibold uppercase tracking-wide text-fg-muted">Net worth</Text>
+            <Pressable
+              onPress={() => settings && updateSettings(settings.id, { netWorthHidden: !netWorthHidden })}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel={netWorthHidden ? "Show net worth" : "Hide net worth"}
+            >
+              <Icon name={netWorthHidden ? "eye-off" : "eye"} size={18} color={colors.fgMuted} />
+            </Pressable>
+          </View>
           <Text className="font-data text-4xl font-bold tabular-nums text-fg">
-            {formatMoney(netWorthMinor, baseCurrency)}
+            {netWorthDisplay}
           </Text>
-          {netWorthMinor < 0 && (
+          {!netWorthHidden && netWorthMinor < 0 && (
             <Text className="mt-1 text-xs font-medium text-danger">
               Overdrawn by {formatMoney(Math.abs(netWorthMinor), baseCurrency)}
             </Text>
@@ -216,17 +235,17 @@ export default function DashboardScreen() {
             <View className="flex-1 rounded-card bg-surface-2 p-3">
               <Text className="text-[11px] text-fg-muted">Assets</Text>
               <Text className="font-data mt-1 text-base font-semibold tabular-nums text-success">
-                {formatMoney(assetsMinor, baseCurrency)}
+                {assetsDisplay}
               </Text>
             </View>
             <View className="flex-1 rounded-card bg-surface-2 p-3">
               <Text className="text-[11px] text-fg-muted">Debt</Text>
               <Text className="font-data mt-1 text-base font-semibold tabular-nums text-fg">
-                {debtMinor > 0 ? formatMoney(debtMinor, baseCurrency) : "—"}
+                {debtDisplay}
               </Text>
             </View>
           </View>
-          <UnconvertedCurrenciesNote currencies={unconvertedCurrencies} subject="Net worth" />
+          {!netWorthHidden && <UnconvertedCurrenciesNote currencies={unconvertedCurrencies} subject="Net worth" />}
         </View>
 
         {/* ---------- PERFORMANCE: How am I doing this month? ---------- */}

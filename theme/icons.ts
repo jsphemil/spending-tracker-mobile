@@ -24,6 +24,8 @@ import {
   CreditCard,
   Droplets,
   Dumbbell,
+  Eye,
+  EyeOff,
   Flag,
   Fuel,
   Gamepad2,
@@ -116,6 +118,8 @@ export const ICON_MAP: Record<string, LucideIcon> = {
   plus: Plus,
   close: X,
   logo: Mountain,
+  eye: Eye,
+  "eye-off": EyeOff,
   // legacy category/account icon picker options (constants/categoryIcons.ts,
   // constants/accountTypes.ts) — kept so already-persisted data renders
   shopping: ShoppingBag,
