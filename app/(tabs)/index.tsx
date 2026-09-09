@@ -3,18 +3,27 @@ import { Link } from "expo-router";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { Icon } from "../../components/ui/Icon";
 
+import { FundRow } from "../../components/FundRow";
 import { GlobalHeader } from "../../components/GlobalHeader";
 import { UnconvertedCurrenciesNote } from "../../components/UnconvertedCurrenciesNote";
 import { updateSettings } from "../../db/actions/settings";
 import { db } from "../../db/client";
 import { useAccounts } from "../../db/queries/accounts";
 import { useCategories } from "../../db/queries/categories";
+import { useFunds } from "../../db/queries/funds";
 import { useGoals } from "../../db/queries/goals";
 import { useSettings } from "../../db/queries/settings";
 import { useFilteredTransactions } from "../../db/queries/transactions";
 import { getAccountBalanceMinor, getNetWorthSeries, getPeriodTotals } from "../../services/balance";
 import { useBaseConverter } from "../../hooks/useBaseConverter";
 import { formatMoney } from "../../services/format";
+import {
+  computeFundProgress,
+  emptyFundBalance,
+  getFundBalances,
+  getFundLinkedCurrencies,
+  sumEarmarkedMinor,
+} from "../../services/funds";
 import { computeGoalProgress } from "../../services/goals";
 import {
   currentMonthPeriod,
@@ -37,8 +46,20 @@ function greeting(now: Date): string {
   return "Good evening";
 }
 
+// The most fund-relevant window: near enough to act on, far enough to
+// still be able to. Anything further out isn't "attention" yet.
+const FUND_DUE_SOON_DAYS = 30;
+const DASHBOARD_FUND_LIMIT = 3;
+
 interface Shortcut {
-  href: "/commitments" | "/categories" | "/goal" | "/tag" | "/calendar" | "/settings";
+  href:
+    | "/commitments"
+    | "/categories"
+    | "/goal"
+    | "/fund"
+    | "/tag"
+    | "/calendar"
+    | "/settings";
   icon: string;
   label: string;
 }
@@ -50,6 +71,7 @@ const SHORTCUTS: Shortcut[] = [
   { href: "/commitments", icon: "calendar-sync-outline", label: "Commitments" },
   { href: "/categories", icon: "shape-outline", label: "Categories" },
   { href: "/goal", icon: "target", label: "Goals" },
+  { href: "/fund", icon: "piggy-bank", label: "Funds" },
   { href: "/tag", icon: "tag-outline", label: "Tags" },
   { href: "/calendar", icon: "calendar-month-outline", label: "Calendar" },
   { href: "/settings", icon: "settings-outline", label: "Settings" },
@@ -65,6 +87,7 @@ export default function DashboardScreen() {
   const { data: accounts } = useAccounts();
   const { data: categories } = useCategories();
   const { data: goals } = useGoals();
+  const { data: funds } = useFunds();
 
 
   // Performance is the only month-scoped section — Position (net worth /
@@ -77,9 +100,14 @@ export default function DashboardScreen() {
     ensureMaterialized(db, { through: range.end });
   }, [range.end]);
 
-  const { toBaseMinor, unconvertedCurrencies } = useBaseConverter(
-    (accounts ?? []).map((a) => a.currency),
-  );
+  // Fund-linked expenses are recorded in their account's currency, so those
+  // currencies have to reach the converter too — otherwise a fund spent
+  // from a foreign account would silently value that spending at 0.
+  const linkedFundCurrencies = getFundLinkedCurrencies(db);
+  const { toBaseMinor, unconvertedCurrencies } = useBaseConverter([
+    ...(accounts ?? []).map((a) => a.currency),
+    ...linkedFundCurrencies,
+  ]);
 
   // ---- POSITION (as of the viewed month) ----
   // `range.end` is required, not optional polish: getAccountBalanceMinor
@@ -104,6 +132,18 @@ export default function DashboardScreen() {
       assetsMinor += baseBalance;
     }
   }
+
+  // Funds (spec.md §5.21). Same range.end cutoff as net worth above, so the
+  // three figures stay arithmetically consistent as the month-nav moves —
+  // a today-anchored Earmarked against a range.end net worth would make the
+  // subtraction on screen visibly wrong.
+  const fundBalances = getFundBalances(db, toBaseMinor, range.end);
+  const earmarkedMinor = sumEarmarkedMinor(fundBalances);
+  // Not clamped at zero: earmarking more than you have is real information,
+  // and it gets its own attention row below.
+  const unallocatedMinor = netWorthMinor - earmarkedMinor;
+  const activeFunds = (funds ?? []).filter((f) => f.status === "active");
+  const dashboardFunds = activeFunds.slice(0, DASHBOARD_FUND_LIMIT);
 
   // ---- PERFORMANCE (viewed month) ----
   // Subscribed for its re-render, not its rows: the income/expense figures
@@ -185,7 +225,40 @@ export default function DashboardScreen() {
     .map((g) => computeGoalProgress(g, netWorthToday, goalMonthlyGrowth, today))
     .filter((g) => g.isBehindTarget);
 
-  const hasAttentionItems = overBudgetCategories.length > 0 || upcomingCommitments.length > 0 || behindPaceGoals.length > 0;
+  // Both fund alerts are real, actionable and derived from real data —
+  // §5.19 forbids invented alerts, and a "you haven't contributed this
+  // month" nag would cut against Funds' deliberately non-judgemental
+  // design (contributions are irregular on purpose).
+  const fundsDueSoon = useMemo(() => {
+    const cutoff = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate() + FUND_DUE_SOON_DAYS,
+    );
+    return activeFunds
+      .filter((fund) => fund.targetDate != null && fund.targetDate <= cutoff)
+      .map((fund) => ({
+        fund,
+        progress: computeFundProgress(
+          fund.targetAmountMinor,
+          fundBalances.get(fund.id) ?? emptyFundBalance(fund.id),
+        ),
+      }))
+      .filter(({ progress }) => !progress.isFullyFunded);
+    // fundBalances is rebuilt every render from a synchronous read, so it
+    // can't be a dependency without defeating the memo; the fund rows and
+    // today are what actually change the result.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [funds, today]);
+
+  const overEarmarked = earmarkedMinor > netWorthMinor;
+
+  const hasAttentionItems =
+    overBudgetCategories.length > 0 ||
+    upcomingCommitments.length > 0 ||
+    behindPaceGoals.length > 0 ||
+    fundsDueSoon.length > 0 ||
+    overEarmarked;
 
   const displayName = settings?.displayName?.trim();
   const card = "rounded-card border border-glass-border bg-glass p-4";
@@ -198,6 +271,8 @@ export default function DashboardScreen() {
   const netWorthDisplay = netWorthHidden ? "••••••" : formatMoney(netWorthMinor, baseCurrency);
   const assetsDisplay = netWorthHidden ? "••••" : formatMoney(assetsMinor, baseCurrency);
   const debtDisplay = netWorthHidden ? "••••" : debtMinor > 0 ? formatMoney(debtMinor, baseCurrency) : "—";
+  const earmarkedDisplay = netWorthHidden ? "••••" : formatMoney(earmarkedMinor, baseCurrency);
+  const unallocatedDisplay = netWorthHidden ? "••••" : formatMoney(unallocatedMinor, baseCurrency);
 
   return (
     <View className="flex-1 bg-bg">
@@ -245,7 +320,80 @@ export default function DashboardScreen() {
               </Text>
             </View>
           </View>
+          {/* Earmarked + Unallocated only earn their space once there's
+              something earmarked — an all-zero row on a profile with no
+              funds is noise. */}
+          {earmarkedMinor !== 0 && (
+            <View className="mt-3 flex-row gap-3">
+              <View className="flex-1 rounded-card bg-surface-2 p-3">
+                <Text className="text-[11px] text-fg-muted">Earmarked</Text>
+                <Text className="font-data mt-1 text-base font-semibold tabular-nums text-accent">
+                  {earmarkedDisplay}
+                </Text>
+              </View>
+              <View className="flex-1 rounded-card bg-surface-2 p-3">
+                <Text className="text-[11px] text-fg-muted">Unallocated</Text>
+                <Text className="font-data mt-1 text-base font-semibold tabular-nums text-fg">
+                  {unallocatedDisplay}
+                </Text>
+              </View>
+            </View>
+          )}
           {!netWorthHidden && <UnconvertedCurrenciesNote currencies={unconvertedCurrencies} subject="Net worth" />}
+        </View>
+
+        {/* ---------- FUNDS: what's already spoken for ---------- */}
+        {/* Sits with the wealth story, before the month-scoped Performance
+            card — earmarking is a position, not a monthly result. */}
+        <View className={card}>
+          <View className="mb-3 flex-row items-center justify-between">
+            <Text className="text-sm font-display text-fg">Funds</Text>
+            {activeFunds.length > 0 && (
+              <Link href="/fund" asChild>
+                <Pressable hitSlop={8}>
+                  <Text className="text-xs font-medium text-accent">View all</Text>
+                </Pressable>
+              </Link>
+            )}
+          </View>
+          {activeFunds.length === 0 ? (
+            <View className="gap-3">
+              <Text className="text-sm text-fg-muted">
+                Set money aside for something specific — a laptop, a trip, next year&rsquo;s
+                insurance — without moving it out of your accounts.
+              </Text>
+              <Link href="/fund/new" asChild>
+                <Pressable className="items-center rounded-full border border-glass-border bg-glass py-2.5">
+                  <Text className="text-sm font-semibold text-accent">Create a fund</Text>
+                </Pressable>
+              </Link>
+            </View>
+          ) : (
+            <View className="gap-4">
+              {dashboardFunds.map((fund) => (
+                <FundRow
+                  key={fund.id}
+                  fund={fund}
+                  balance={fundBalances.get(fund.id) ?? emptyFundBalance(fund.id)}
+                  progress={computeFundProgress(
+                    fund.targetAmountMinor,
+                    fundBalances.get(fund.id) ?? emptyFundBalance(fund.id),
+                  )}
+                  baseCurrency={baseCurrency}
+                  hidden={netWorthHidden}
+                />
+              ))}
+              {activeFunds.length > dashboardFunds.length && (
+                <Link href="/fund" asChild>
+                  <Pressable>
+                    <Text className="text-xs font-medium text-accent">
+                      +{activeFunds.length - dashboardFunds.length} more
+                    </Text>
+                  </Pressable>
+                </Link>
+              )}
+            </View>
+          )}
         </View>
 
         {/* ---------- PERFORMANCE: How am I doing this month? ---------- */}
@@ -313,6 +461,23 @@ export default function DashboardScreen() {
                   href="/goal"
                 />
               ))}
+              {fundsDueSoon.map(({ fund, progress }) => (
+                <AttentionRow
+                  key={`fund-${fund.id}`}
+                  icon={fund.icon}
+                  tone="transfer"
+                  text={`${fund.name} is ${formatMoney(progress.remainingMinor, baseCurrency)} short, needed by ${fund.targetDate!.toLocaleDateString(undefined, { month: "short", day: "numeric" })}`}
+                  href="/fund"
+                />
+              ))}
+              {overEarmarked && (
+                <AttentionRow
+                  icon="piggy-bank"
+                  tone="danger"
+                  text="You've earmarked more than your net worth"
+                  href="/fund"
+                />
+              )}
             </View>
           )}
         </View>
@@ -342,7 +507,7 @@ function AttentionRow({
   icon: string;
   tone: "danger" | "transfer";
   text: string;
-  href: "/categories" | "/commitments" | "/goal";
+  href: "/categories" | "/commitments" | "/goal" | "/fund";
 }) {
   const colors = useThemeColors();
   const toneColor = tone === "danger" ? colors.danger : colors.transfer;
