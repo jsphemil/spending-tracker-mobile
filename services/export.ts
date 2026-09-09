@@ -1,7 +1,7 @@
 import { and, asc, eq, gte, inArray, lt, or } from "drizzle-orm";
 
 import type { Db } from "../db/client";
-import { accounts, categories, tags, transactionTags, transactions } from "../db/schema";
+import { accounts, categories, funds, tags, transactionTags, transactions } from "../db/schema";
 import { toCsv } from "./csv";
 import { minorToMajor } from "./format";
 import { toLocalDateString } from "./period";
@@ -16,6 +16,7 @@ const CSV_HEADERS = [
   "Currency",
   "Tags",
   "Recurring",
+  "Fund",
 ];
 
 export interface ExportFilters {
@@ -26,12 +27,17 @@ export interface ExportFilters {
   to: Date | null; // inclusive, unlike this app's usual exclusive-end range convention
 }
 
-// Builds the same 9-column CSV as the real web app's transaction export
-// (Date/Type/Account/Category/Description/Amount/Currency/Tags/Recurring),
-// adapted for local-first mobile: no userId scoping (single-user on-device
-// database), and a transfer's Currency column uses the source account's own
-// currency instead of a hardcoded "INR" — the real app is INR-only, but
-// this app already supports per-account currencies.
+// Builds the real web app's 9-column transaction export
+// (Date/Type/Account/Category/Description/Amount/Currency/Tags/Recurring)
+// plus a 10th Fund column, adapted for local-first mobile: no userId
+// scoping (single-user on-device database), and a transfer's Currency
+// column uses the source account's own currency instead of a hardcoded
+// "INR" — the real app is INR-only, but this app already supports
+// per-account currencies.
+//
+// Fund is blank for anything not spent from one. This is the only export
+// path that enumerates columns by hand — the Dropbox backup is a whole-file
+// VACUUM INTO snapshot, so it picked up the new tables with no change.
 export function buildTransactionsCsv(db: Db, filters: ExportFilters): string {
   const conditions = [];
   if (filters.from) conditions.push(gte(transactions.date, filters.from));
@@ -61,10 +67,12 @@ export function buildTransactionsCsv(db: Db, filters: ExportFilters): string {
 
   const allAccounts = db.select().from(accounts).all();
   const allCategories = db.select().from(categories).all();
+  const allFunds = db.select().from(funds).all();
   const accountName = (id: number | null) => allAccounts.find((a) => a.id === id)?.name ?? "";
   const accountCurrency = (id: number | null) =>
     allAccounts.find((a) => a.id === id)?.currency ?? "INR";
   const categoryName = (id: number | null) => allCategories.find((c) => c.id === id)?.name;
+  const fundName = (id: number | null) => allFunds.find((f) => f.id === id)?.name ?? "";
 
   const tagRows = db
     .select({ transactionId: transactionTags.transactionId, name: tags.name })
@@ -92,6 +100,7 @@ export function buildTransactionsCsv(db: Db, filters: ExportFilters): string {
       currency,
       (tagNamesByTransaction.get(t.id) ?? []).join("; "),
       t.recurringRuleId ? "Yes" : "No",
+      fundName(t.fundId),
     ];
   });
 

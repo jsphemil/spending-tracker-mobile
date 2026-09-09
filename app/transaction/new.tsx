@@ -65,6 +65,7 @@ export default function NewTransactionScreen() {
                 categoryId: duplicateSource.categoryId,
                 description: duplicateSource.description ?? "",
                 tagIds: duplicateTagIds,
+                fundId: duplicateSource.fundId,
               }
             : {
                 accountId: params.accountId ? Number(params.accountId) : undefined,

@@ -10,6 +10,8 @@ import { COLOR_PALETTE } from "../constants/colorPalette";
 import { createCategory } from "../db/actions/categories";
 import { useAccounts } from "../db/queries/accounts";
 import { useCategories } from "../db/queries/categories";
+import { useFunds } from "../db/queries/funds";
+import { Icon } from "./ui/Icon";
 import { RECURRENCE_UNITS, TRANSACTION_TYPES, type RecurrenceUnit, type TransactionType } from "../db/schema";
 import type { RecurringSchedule } from "../services/recurrence";
 import { evaluateExpression } from "../services/calculator";
@@ -26,6 +28,7 @@ export interface TransactionFormValues {
   categoryId: number | null;
   description: string;
   tagIds: number[];
+  fundId: number | null;
 }
 
 export interface RecurringSeriesInfo {
@@ -82,7 +85,13 @@ export function TransactionForm({
   const { data: accounts } = useAccounts();
   const [type, setType] = useState<TransactionType>(initialValues?.type ?? "expense");
   const { data: categories } = useCategories(type === "income" ? "income" : "expense");
+  const { data: funds } = useFunds();
   const colors = useThemeColors();
+
+  // Closed funds are excluded — picking one would earmark against a fund
+  // the user has already wound up. An expense already linked to a fund that
+  // was closed since keeps its link; only the picker hides it.
+  const activeFunds = (funds ?? []).filter((f) => f.status === "active");
 
   const [amountText, setAmountText] = useState(() => {
     if (initialValues?.amountMinor == null) return "";
@@ -125,6 +134,7 @@ export function TransactionForm({
   const [newCategoryName, setNewCategoryName] = useState("");
   const [description, setDescription] = useState(initialValues?.description ?? "");
   const [tagIds, setTagIds] = useState<number[]>(initialValues?.tagIds ?? []);
+  const [fundId, setFundId] = useState<number | null>(initialValues?.fundId ?? null);
   const [error, setError] = useState<string | null>(null);
 
   const isRecurringEdit = recurringInfo !== null;
@@ -225,6 +235,9 @@ export function TransactionForm({
       categoryId: type === "transfer" ? null : categoryId,
       description: description.trim(),
       tagIds,
+      // Only expenses spend from a fund; the action layer forces this null
+      // for the other types too, so switching type can't strand a link.
+      fundId: type === "expense" ? fundId : null,
     };
 
     if (isRecurringEdit) {
@@ -363,6 +376,39 @@ export function TransactionForm({
                 <Text className="text-fg">Add</Text>
               </Pressable>
             </View>
+          )}
+        </View>
+      )}
+
+      {/* Funds only apply to money going out, and only to one-off expenses
+          for now — a recurring occurrence is edited through its own flow,
+          which doesn't carry a fund link yet (spec.md §5.21). */}
+      {type === "expense" && !isRecurringEdit && activeFunds.length > 0 && (
+        <View className="gap-2">
+          <Text className="text-sm font-medium text-fg-muted">Spend from a fund (optional)</Text>
+          <View className="flex-row flex-wrap gap-2">
+            {activeFunds.map((f) => (
+              <Pressable
+                key={f.id}
+                onPress={() => setFundId(fundId === f.id ? null : f.id)}
+                className={`flex-row items-center gap-1.5 rounded-full border px-3 py-2 ${
+                  fundId === f.id ? "border-accent bg-accent-soft" : "border-glass-border bg-glass"
+                }`}
+              >
+                <Icon
+                  name={f.icon}
+                  size={14}
+                  color={fundId === f.id ? colors.accent : colors.fgMuted}
+                />
+                <Text className={fundId === f.id ? "text-accent" : "text-fg-muted"}>{f.name}</Text>
+              </Pressable>
+            ))}
+          </View>
+          {fundId !== null && (
+            <Text className="text-xs text-fg-subtle">
+              This expense will draw down that fund. Editing or deleting it later puts the money
+              back automatically.
+            </Text>
           )}
         </View>
       )}

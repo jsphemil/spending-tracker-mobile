@@ -71,6 +71,7 @@ export default function EditTransactionScreen() {
           categoryId: transaction.categoryId,
           description: transaction.description ?? "",
           tagIds,
+          fundId: transaction.fundId,
         }}
         recurringInfo={
           rule ? { scheduleLabel: describeSchedule(rule.intervalCount, rule.intervalUnit), endDate: rule.endDate } : null

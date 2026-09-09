@@ -2,6 +2,7 @@ import { Icon } from "./ui/Icon";
 import { Link } from "expo-router";
 import { Pressable, Text, View } from "react-native";
 
+import { useFunds } from "../db/queries/funds";
 import { useTransactionTagNames } from "../db/queries/tags";
 import type { transactions } from "../db/schema";
 import { useThemeColors } from "../theme/palette";
@@ -70,6 +71,13 @@ export function TransactionListItem({
 }: TransactionListItemProps) {
   const tagNames = useTransactionTagNames(transaction.id);
   const colors = useThemeColors();
+  // One live query per row, same as the tag names above — funds is a tiny
+  // table (a handful of rows), so looking the name up here keeps this row
+  // self-contained rather than threading a fund name through every screen
+  // that renders it.
+  const { data: funds } = useFunds();
+  const linkedFund =
+    transaction.fundId != null ? funds?.find((f) => f.id === transaction.fundId) : undefined;
 
   const title = transaction.isOpeningBalance
     ? "🏦 Opening balance"
@@ -146,8 +154,18 @@ export function TransactionListItem({
           <Pressable className="flex-row items-center justify-between">{rowContent}</Pressable>
         </Link>
       )}
-      {tagNames.length > 0 && (
-        <View className="mt-2 flex-row flex-wrap gap-1.5">
+      {(linkedFund || tagNames.length > 0) && (
+        <View className="mt-2 flex-row flex-wrap items-center gap-1.5">
+          {/* Accent-tinted so a fund reads as a different kind of thing
+              from the plain tag chips beside it. */}
+          {linkedFund && (
+            <Link href={`/fund/${linkedFund.id}`} asChild>
+              <Pressable className="flex-row items-center gap-1 rounded-full bg-accent-soft px-2 py-0.5">
+                <Icon name={linkedFund.icon} size={11} color={colors.accent} />
+                <Text className="text-xs text-accent">{linkedFund.name}</Text>
+              </Pressable>
+            </Link>
+          )}
           {tagNames.map((name) => (
             <Link key={name} href={`/tag/${encodeURIComponent(name)}`} asChild>
               <Pressable className="rounded-full bg-surface-2 px-2 py-0.5">

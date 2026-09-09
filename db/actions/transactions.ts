@@ -14,6 +14,12 @@ export interface TransactionInput {
   categoryId?: number | null;
   description?: string | null;
   tagIds: number[];
+  /**
+   * Spend this expense from a fund (spec.md §5.21). Expenses only — forced
+   * null for income and transfers below, the same way toAccountId and
+   * categoryId are, so a type change can't leave a stale link behind.
+   */
+  fundId?: number | null;
 }
 
 export function createTransaction(input: TransactionInput): number {
@@ -28,6 +34,7 @@ export function createTransaction(input: TransactionInput): number {
         toAccountId: input.type === "transfer" ? input.toAccountId ?? null : null,
         categoryId: input.type === "transfer" ? null : input.categoryId ?? null,
         description: input.description ?? null,
+        fundId: input.type === "expense" ? input.fundId ?? null : null,
       })
       .returning({ id: transactions.id })
       .all();
@@ -80,6 +87,7 @@ export function updateTransaction(id: number, input: TransactionInput): void {
         toAccountId: input.type === "transfer" ? input.toAccountId ?? null : null,
         categoryId: input.type === "transfer" ? null : input.categoryId ?? null,
         description: input.description ?? null,
+        fundId: input.type === "expense" ? input.fundId ?? null : null,
       })
       .where(eq(transactions.id, id))
       .run();

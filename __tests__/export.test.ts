@@ -1,4 +1,4 @@
-import { categories, tags, transactionTags, transactions } from "../db/schema";
+import { categories, funds, tags, transactionTags, transactions } from "../db/schema";
 import { buildTransactionsCsv } from "../services/export";
 import { closeTestDb, createTestDb, insertAccount, type TestDb } from "./testDb";
 
@@ -35,8 +35,47 @@ describe("buildTransactionsCsv", () => {
     const csv = buildTransactionsCsv(db, { accountIds: [], from: null, to: null });
     const lines = csv.replace(/^﻿/, "").split("\r\n");
 
-    expect(lines[0]).toBe("Date,Type,Account,Category,Description,Amount,Currency,Tags,Recurring");
-    expect(lines[1]).toBe("2026-08-15,expense,Cash,Groceries,Weekly shop,450,INR,,No");
+    expect(lines[0]).toBe(
+      "Date,Type,Account,Category,Description,Amount,Currency,Tags,Recurring,Fund",
+    );
+    // Trailing empty Fund column — this expense wasn't spent from one.
+    expect(lines[1]).toBe("2026-08-15,expense,Cash,Groceries,Weekly shop,450,INR,,No,");
+  });
+
+  it("names the fund an expense was spent from", () => {
+    const accountId = insertAccount(db, { name: "Cash" });
+    const [category] = db
+      .insert(categories)
+      .values({ name: "Electronics", kind: "expense", icon: "laptop", color: "#000" })
+      .returning({ id: categories.id })
+      .all();
+    const [fund] = db
+      .insert(funds)
+      .values({
+        name: "New laptop",
+        targetAmountMinor: 100000,
+        icon: "laptop",
+        color: "#000",
+      })
+      .returning({ id: funds.id })
+      .all();
+
+    db.insert(transactions)
+      .values({
+        type: "expense",
+        amountMinor: 45000,
+        date: new Date(2026, 7, 15),
+        accountId,
+        categoryId: category.id,
+        fundId: fund.id,
+      })
+      .run();
+
+    const [, row] = buildTransactionsCsv(db, { accountIds: [], from: null, to: null })
+      .replace(/^﻿/, "")
+      .split("\r\n");
+
+    expect(row).toBe("2026-08-15,expense,Cash,Electronics,,450,INR,,No,New laptop");
   });
 
   it("formats a transfer as \"from → to\" with no category and the source account's currency", () => {
@@ -56,7 +95,7 @@ describe("buildTransactionsCsv", () => {
     const csv = buildTransactionsCsv(db, { accountIds: [], from: null, to: null });
     const [, row] = csv.replace(/^﻿/, "").split("\r\n");
 
-    expect(row).toBe("2026-01-01,transfer,Checking → Savings,,,100,USD,,No");
+    expect(row).toBe("2026-01-01,transfer,Checking → Savings,,,100,USD,,No,");
   });
 
   it("labels an opening-balance row and joins multiple tags with a semicolon", () => {
@@ -85,7 +124,7 @@ describe("buildTransactionsCsv", () => {
     const csv = buildTransactionsCsv(db, { accountIds: [], from: null, to: null });
     const [, row] = csv.replace(/^﻿/, "").split("\r\n");
 
-    expect(row).toBe("2026-01-01,income,Wallet,Opening Balance,,5000,INR,Trip; Work,No");
+    expect(row).toBe("2026-01-01,income,Wallet,Opening Balance,,5000,INR,Trip; Work,No,");
   });
 
   it("filters by account, matching either leg of a transfer", () => {
