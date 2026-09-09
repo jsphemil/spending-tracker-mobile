@@ -9,4 +9,5 @@
     android:resizeMode="horizontal|vertical"
     android:widgetCategory="home_screen"
     android:initialLayout="@layout/glance_default_loading_layout"
+    android:previewImage="@drawable/preview_quick_add"
     android:updatePeriodMillis="0" />
