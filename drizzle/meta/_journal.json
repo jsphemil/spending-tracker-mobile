@@ -85,6 +85,13 @@
       "when": 1788881052880,
       "tag": "0011_backfill_net_worth_hidden",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "6",
+      "when": 1788966898351,
+      "tag": "0012_big_lifeguard",
+      "breakpoints": true
     }
   ]
 }

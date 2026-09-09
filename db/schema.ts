@@ -31,6 +31,9 @@ export type RecurrenceUnit = (typeof RECURRENCE_UNITS)[number];
 export const THEME_PREFERENCES = ["light", "dark", "system"] as const;
 export type ThemePreference = (typeof THEME_PREFERENCES)[number];
 
+export const FUND_STATUSES = ["active", "closed"] as const;
+export type FundStatus = (typeof FUND_STATUSES)[number];
+
 // All monetary amounts are stored as integers in the currency's smallest
 // unit (e.g. paise for INR, cents for USD) to avoid floating-point rounding
 // errors in balance/summary math.
@@ -120,6 +123,80 @@ export const recurringRuleTags = sqliteTable(
   ],
 );
 
+// Funds (spec.md §5.21) — money you still own but have earmarked for a
+// future purpose. A logical allocation layer *above* the accounting model:
+// a fund holds no money of its own, is deliberately not tied to any
+// account (the physical location of money and its intended purpose are
+// separate concepts), and earmarking never moves a balance or changes net
+// worth. Amounts are in the app's base currency, same as
+// `goals.targetAmountMinor` and `categories.monthlyBudgetMinor`.
+//
+// There is deliberately no `funded` column and no "fully funded" flag —
+// both are derived in services/funds.ts. See fundAllocations below for why.
+export const funds = sqliteTable("funds", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  name: text("name").notNull(),
+  targetAmountMinor: integer("target_amount_minor").notNull(),
+  // Optional and purely informational — it drives a "due soon and still
+  // short" nudge, never a pace projection. Fund contributions are
+  // intentionally irregular, so a trailing average would be meaningless.
+  targetDate: integer("target_date", { mode: "timestamp" }),
+  icon: text("icon").notNull(),
+  color: text("color").notNull(),
+  // Closing a fund writes a balancing release row rather than relying on
+  // this, so `status` never participates in the balance math — it is purely
+  // a UI grouping (Active / Closed).
+  status: text("status", { enum: FUND_STATUSES }).notNull().default("active"),
+  sortOrder: integer("sort_order").notNull().default(0),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .default(sql`(unixepoch())`),
+  closedAt: integer("closed_at", { mode: "timestamp" }),
+});
+
+// The ledger of manual "add to fund" / "release from fund" events. A fund's
+// balance is DERIVED from this plus its linked expenses, never stored:
+//
+//   funded = SUM(allocations) − min(SUM(allocations), SUM(linked expenses))
+//
+// Storing a running `funds.funded` instead would need write hooks on every
+// transaction create/update/delete path — including the bulk
+// `deleteFutureOccurrences` — and any future path that forgot one would
+// silently corrupt it. Deriving means editing a fund-linked expense from
+// 40000 to 35000 returns 5000 to the fund, and deleting it returns the
+// whole 40000, with no reconciliation code at all. Same derive-don't-store
+// rule as services/balance.ts; don't "optimize" this into a column.
+//
+// `amountMinor` is SIGNED (positive = added, negative = released),
+// deliberately unlike `transactions.amountMinor`, which is always absolute
+// with the sign carried by `type`. There are only two directions here and
+// the sum is the whole point, so a CASE expression would add a forgettable
+// branch for no benefit.
+//
+// `date` exists so Earmarked can be computed as of a cutoff, the same
+// exclusive-upper-bound convention as getAccountBalanceMinor — without it,
+// the Dashboard's month-nav would show a range.end net worth minus a
+// today-anchored Earmarked, arithmetic that lies.
+export const fundAllocations = sqliteTable(
+  "fund_allocations",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    fundId: integer("fund_id")
+      .notNull()
+      .references(() => funds.id, { onDelete: "cascade" }),
+    amountMinor: integer("amount_minor").notNull(),
+    date: integer("date", { mode: "timestamp" }).notNull(),
+    note: text("note"),
+    createdAt: integer("created_at", { mode: "timestamp" })
+      .notNull()
+      .default(sql`(unixepoch())`),
+  },
+  (table) => [
+    index("fund_allocations_fund_id_idx").on(table.fundId),
+    index("fund_allocations_date_idx").on(table.date),
+  ],
+);
+
 export const transactions = sqliteTable(
   "transactions",
   {
@@ -156,11 +233,20 @@ export const transactions = sqliteTable(
     isRecurringException: integer("is_recurring_exception", { mode: "boolean" })
       .notNull()
       .default(false),
+    // Spending this expense against a fund (spec.md §5.21). Only ever set on
+    // `type = 'expense'` rows — forced null otherwise in db/actions, and the
+    // consumption sum in services/funds.ts filters on type as a backstop, so
+    // a stray link can't corrupt the math. "set null" (matching categoryId)
+    // means deleting a fund never destroys the expense itself.
+    fundId: integer("fund_id").references(() => funds.id, {
+      onDelete: "set null",
+    }),
   },
   (table) => [
     index("transactions_account_id_idx").on(table.accountId),
     index("transactions_date_idx").on(table.date),
     index("transactions_category_id_idx").on(table.categoryId),
+    index("transactions_fund_id_idx").on(table.fundId),
     unique("transactions_recurring_occurrence_idx").on(
       table.recurringRuleId,
       table.occurrenceDate,
