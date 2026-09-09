@@ -140,6 +140,19 @@ export default function RootLayout() {
               name="goal/[id]/edit"
               options={{ presentation: "modal", headerShown: true, title: "Edit Goal" }}
             />
+            {/* Browse screens render their own GlobalHeader; only the
+                create/edit forms are modals, same split as the entities
+                above. */}
+            <Stack.Screen name="fund/index" />
+            <Stack.Screen name="fund/[id]/index" />
+            <Stack.Screen
+              name="fund/new"
+              options={{ presentation: "modal", headerShown: true, title: "New Fund" }}
+            />
+            <Stack.Screen
+              name="fund/[id]/edit"
+              options={{ presentation: "modal", headerShown: true, title: "Edit Fund" }}
+            />
             <Stack.Screen name="tag/index" />
             <Stack.Screen
               name="tag/[name]"

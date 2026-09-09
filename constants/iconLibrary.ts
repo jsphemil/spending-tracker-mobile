@@ -122,6 +122,7 @@ export const ICON_LIBRARY: IconGroup[] = [
     title: "Other",
     icons: [
       { key: "dots-horizontal", label: "Other" },
+      { key: "laptop", label: "Laptop" },
       { key: "star", label: "Favorite" },
       { key: "flag", label: "Goal" },
       { key: "target", label: "Target" },
