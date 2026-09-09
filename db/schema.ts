@@ -327,9 +327,10 @@ export const settings = sqliteTable("settings", {
   // screen shown on app open. Defaults to hidden (not visible) for the
   // same reason — first thing shown, so first-run privacy should be the
   // safe default rather than opt-in. Persisted so it survives restarts.
-  netWorthHidden: integer("net_worth_hidden", { mode: "boolean" })
-    .notNull()
-    .default(true),
+  // `net_worth_hidden` lived here until 2026-09-10. The Dashboard's privacy
+  // toggle is now session-scoped — always hidden on app open, a reveal
+  // lasting only until the app closes — so there is nothing to persist.
+  // See hooks/useNetWorthHidden.ts.
 });
 
 // Home Screen Widget (spec.md §5.11) — which accounts the "Accounts &

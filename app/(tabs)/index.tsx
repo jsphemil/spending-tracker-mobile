@@ -6,7 +6,6 @@ import { Icon } from "../../components/ui/Icon";
 import { FundRow } from "../../components/FundRow";
 import { GlobalHeader } from "../../components/GlobalHeader";
 import { UnconvertedCurrenciesNote } from "../../components/UnconvertedCurrenciesNote";
-import { updateSettings } from "../../db/actions/settings";
 import { db } from "../../db/client";
 import { useAccounts } from "../../db/queries/accounts";
 import { useCategories } from "../../db/queries/categories";
@@ -16,6 +15,7 @@ import { useSettings } from "../../db/queries/settings";
 import { useFilteredTransactions } from "../../db/queries/transactions";
 import { getAccountBalanceMinor, getNetWorthSeries, getPeriodTotals } from "../../services/balance";
 import { useBaseConverter } from "../../hooks/useBaseConverter";
+import { toggleNetWorthHidden, useNetWorthHidden } from "../../hooks/useNetWorthHidden";
 import { formatMoney } from "../../services/format";
 import {
   computeFundProgress,
@@ -269,14 +269,11 @@ export default function DashboardScreen() {
   const card = "rounded-card border border-glass-border bg-glass p-4";
   const cardTitle = "mb-3 text-sm font-display text-fg";
 
-  // Dashboard privacy toggle (spec.md §5.8) — Dashboard is the first
-  // screen shown on app open, so Net worth/Assets/Debt can be masked from
-  // prying eyes. Persisted via settings so it survives app restarts.
-  // Fallback matches the column's own default (true). It only applies in
-  // the brief window before settings load — app/_layout.tsx gates render on
-  // them — but defaulting to *visible* there was backwards for a privacy
-  // flag whose whole point is that Dashboard is the first screen on open.
-  const netWorthHidden = settings?.netWorthHidden ?? true;
+  // Dashboard privacy toggle (spec.md §5.19) — Dashboard is the first
+  // screen shown on app open, so Net worth/Assets/Debt start masked and a
+  // reveal lasts only for this session. See hooks/useNetWorthHidden.ts for
+  // why this isn't a persisted setting.
+  const netWorthHidden = useNetWorthHidden();
   const netWorthDisplay = netWorthHidden ? "••••••" : formatMoney(netWorthMinor, baseCurrency);
   const assetsDisplay = netWorthHidden ? "••••" : formatMoney(assetsMinor, baseCurrency);
   const debtDisplay = netWorthHidden ? "••••" : debtMinor > 0 ? formatMoney(debtMinor, baseCurrency) : "—";
@@ -299,7 +296,7 @@ export default function DashboardScreen() {
           <View className="mb-1 flex-row items-center justify-between">
             <Text className="text-xs font-semibold uppercase tracking-wide text-fg-muted">Net worth</Text>
             <Pressable
-              onPress={() => settings && updateSettings(settings.id, { netWorthHidden: !netWorthHidden })}
+              onPress={toggleNetWorthHidden}
               hitSlop={8}
               accessibilityRole="button"
               accessibilityLabel={netWorthHidden ? "Show net worth" : "Hide net worth"}

@@ -1050,11 +1050,25 @@ eye/eye-off icon on the Net worth card masks Net worth, Assets, and
 Debt behind `••••••`/`••••` placeholders (and hides the "Overdrawn by"
 warning and any unconverted-currencies note while masked) — Dashboard
 is the first screen shown on app open, so this guards against prying
-eyes glancing over a shoulder. Persisted via a new `settings.netWorthHidden`
-boolean column (migrations `0010`/`0011`), **defaulting to hidden** —
-first-run privacy is the safe default, not opt-in. Verified on-device:
-toggle persists across app restarts, and a fresh install opens with
-figures already masked.
+eyes glancing over a shoulder.
+
+**Changed 2026-09-10 to session-scoped, at the user's request.** It
+originally persisted via a `settings.netWorthHidden` column (migrations
+`0010`/`0011`) that remembered the last choice. In practice that defeated
+the point: reveal once and the app opens revealed forever after, which is
+exactly the state someone glancing at a freshly-opened phone would see.
+It now **always opens hidden**, and a reveal lasts only until the app is
+closed. A reveal still survives moving between tabs.
+
+Deliberately module state (`hooks/useNetWorthHidden.ts`) rather than a
+reset-on-startup write, for two reasons. Module scope resets exactly when
+the JS context is torn down, which *is* "app closed and reopened", for
+free. And persisting it would reintroduce the flash the feature exists to
+prevent — settings load asynchronously, so the Dashboard would paint one
+frame with the previous session's revealed figures before any reset could
+apply. Starting hidden makes that unrepresentable. The now-dead column is
+dropped in migration `0014`. Verified on-device: opens masked even when
+the previous session ended revealed, and the toggle still works.
 
 **Settings V2.** Grouped screen (Profile/Account, Preferences,
 Security & Legal, Backup & Restore) replacing the flat Profile tab;
@@ -1325,7 +1339,7 @@ linked transactions — **no duplicated financial records**; the
 allocation table holds only entries that have no other home.
 
 **Dashboard integration:** Earmarked and Unallocated join Assets/Debt in
-the Position card (masked by the same `netWorthHidden` toggle); a
+the Position card (masked by the same net worth privacy toggle); a
 dedicated **Funds card** shows the top 3 funds with progress bars and a
 "View all" link, mirroring the old §5.8 Goals card's shape; and the
 `/goal` shortcut tile becomes `/fund`.

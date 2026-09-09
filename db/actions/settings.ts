@@ -16,7 +16,6 @@ export function updateSettings(
     lastAutoBackupDate: string | null;
     expenseReminderEnabled: boolean;
     expenseReminderTime: string;
-    netWorthHidden: boolean;
   }>,
 ): void {
   db.update(settings).set(patch).where(eq(settings.id, id)).run();

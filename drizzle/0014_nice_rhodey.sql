@@ -1,0 +1,1 @@
+ALTER TABLE `settings` DROP COLUMN `net_worth_hidden`;
