@@ -330,6 +330,32 @@ All 3 required updates for the 14-day window are now shipped
 (versionCode 9, 12, 13 — see step 9 below for the production-access
 application, the next gate).
 
+**Update 4 built as versionCode 14, versionName 2.1.0 — release name
+`Erebor_WM14(2.1.0)` (2026-09-09).** First real feature release since
+the widget-suite work started: the new **Quick Add Transaction** home
+screen widget (triangular Expense/Income/Transfer, exact Figma
+transcription) plus matching app-icon long-press launcher shortcuts
+(spec.md §5.20), a **Net worth privacy toggle** on the Dashboard
+(eye/eye-off icon, masks Net worth/Assets/Debt, defaults to hidden —
+spec.md §5.19), and a fix for the widget picker showing a blank
+preview instead of the real widget for both the Accounts and Quick Add
+widgets (spec.md §5.11/§5.20). The planned **Monthly Cash Flow**
+widget (Widget B) was built, debugged extensively, and ultimately
+**removed from the codebase** before this release — its "Today" row
+never rendered and the root cause was never found; shipped without it
+rather than half-working. Built via `eas build --platform android
+--profile production --non-interactive`, which auto-incremented
+versionCode 13 → 14. **Submission to the EWM Alpha track done manually
+by the user, not through this session** — see spec.md §5.20/backlog.md
+for the full build/debug history.
+
+Release notes used (versionCode 14):
+```
+<en-GB>
+This update adds a new Quick Add home screen widget for one-tap Expense/Income/Transfer entry, plus matching long-press app icon shortcuts. The Dashboard's Net Worth card now has a privacy toggle (hidden by default) so your numbers aren't visible at a glance. Also fixed the widget picker showing a blank preview instead of the actual widget. Please keep testing and flag anything that looks off.
+</en-GB>
+```
+
 **How to push each update to the existing closed testing track (not a
 new track):**
 1. Make the code change, verify it (`tsc`, `jest`, manual check).
