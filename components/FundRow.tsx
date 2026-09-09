@@ -13,6 +13,7 @@ interface FundRowProps {
     icon: string;
     color: string;
     targetAmountMinor: number;
+    status: string;
   };
   balance: FundBalance;
   progress: FundProgress;
@@ -33,6 +34,7 @@ export function FundRow({ fund, balance, progress, baseCurrency, hidden = false 
   const colors = useThemeColors();
   const money = (amountMinor: number) =>
     hidden ? "••••" : formatMoney(amountMinor, baseCurrency);
+  const isClosed = fund.status === "closed";
 
   return (
     <Link href={`/fund/${fund.id}`} asChild>
@@ -61,8 +63,16 @@ export function FundRow({ fund, balance, progress, baseCurrency, hidden = false 
         </View>
 
         <View className="flex-row items-center justify-between">
-          <Text className="text-[11px] text-fg-muted">{progress.percent.toFixed(0)}%</Text>
-          {progress.isOverfunded ? (
+          <Text className="text-[11px] text-fg-muted">
+            {isClosed ? "Closed" : `${progress.percent.toFixed(0)}%`}
+          </Text>
+          {/* A closed fund holds nothing, so "X to go" would read as though
+              it still needed funding. Say what would actually happen. */}
+          {isClosed ? (
+            <Text className="text-[11px] text-fg-subtle">
+              {balance.heldMinor > 0 ? `${money(balance.heldMinor)} returns if reopened` : "No money set aside"}
+            </Text>
+          ) : progress.isOverfunded ? (
             <Text className="text-[11px] font-medium text-transfer">
               {money(progress.overMinor)} over target
             </Text>
