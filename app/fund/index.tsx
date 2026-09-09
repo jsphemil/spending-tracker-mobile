@@ -10,7 +10,7 @@ import { Icon } from "../../components/ui/Icon";
 import { UnconvertedCurrenciesNote } from "../../components/UnconvertedCurrenciesNote";
 import { db } from "../../db/client";
 import { useAccounts } from "../../db/queries/accounts";
-import { useFunds } from "../../db/queries/funds";
+import { useFundAllocationsSubscription, useFunds } from "../../db/queries/funds";
 import { useSettings } from "../../db/queries/settings";
 import { useFilteredTransactions } from "../../db/queries/transactions";
 import { getAccountBalanceMinor } from "../../services/balance";
@@ -50,6 +50,7 @@ export default function FundsListScreen() {
   // useFilteredTransactions call — don't "clean up" the unused result.
   const range = useMemo(() => monthRange(currentMonthPeriod()), []);
   useFilteredTransactions({ range });
+  useFundAllocationsSubscription();
 
   const balances = getFundBalances(db, toBaseMinor, range.end);
   const earmarkedMinor = sumEarmarkedMinor(balances);

@@ -54,9 +54,15 @@ export default function FundDetailScreen() {
   useFilteredTransactions({ range });
   useFundAllocations(fundId);
 
-  // No asOfDate: this screen is "where does this fund stand right now",
-  // the same today-anchored choice the Dashboard's Action section makes.
-  const balance = getFundBalances(db, toBaseMinor).get(fundId) ?? emptyFundBalance(fundId);
+  // Must pass the same range.end cutoff the Funds list and Dashboard use.
+  // Omitting it would count a future-dated linked expense as already spent,
+  // so this screen would show a *lower* funded figure than the list did for
+  // the same fund — and, worse, Close would then write a balancing release
+  // for the wrong amount. Omitting the cutoff is this codebase's oldest
+  // recurring bug (twice for account balances); __tests__/funds.test.ts
+  // pins the difference deliberately.
+  const balance =
+    getFundBalances(db, toBaseMinor, range.end).get(fundId) ?? emptyFundBalance(fundId);
   const history = getFundHistory(db, fundId);
 
   if (!fund) return <Text className="p-4 text-fg-muted">Loading…</Text>;

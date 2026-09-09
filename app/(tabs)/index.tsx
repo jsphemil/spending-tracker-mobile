@@ -10,7 +10,7 @@ import { updateSettings } from "../../db/actions/settings";
 import { db } from "../../db/client";
 import { useAccounts } from "../../db/queries/accounts";
 import { useCategories } from "../../db/queries/categories";
-import { useFunds } from "../../db/queries/funds";
+import { useFundAllocationsSubscription, useFunds } from "../../db/queries/funds";
 import { useGoals } from "../../db/queries/goals";
 import { useSettings } from "../../db/queries/settings";
 import { useFilteredTransactions } from "../../db/queries/transactions";
@@ -133,7 +133,12 @@ export default function DashboardScreen() {
     }
   }
 
-  // Funds (spec.md §5.21). Same range.end cutoff as net worth above, so the
+  // Funds (spec.md §5.21). Subscribed for the repaint, not the rows:
+  // getFundBalances is a synchronous read, and useFunds() alone only
+  // repaints when a fund row itself changes — so adding or releasing money
+  // left these figures stale until something else forced a render.
+  useFundAllocationsSubscription();
+  // Same range.end cutoff as net worth above, so the
   // three figures stay arithmetically consistent as the month-nav moves —
   // a today-anchored Earmarked against a range.end net worth would make the
   // subtraction on screen visibly wrong.
@@ -267,7 +272,11 @@ export default function DashboardScreen() {
   // Dashboard privacy toggle (spec.md §5.8) — Dashboard is the first
   // screen shown on app open, so Net worth/Assets/Debt can be masked from
   // prying eyes. Persisted via settings so it survives app restarts.
-  const netWorthHidden = settings?.netWorthHidden ?? false;
+  // Fallback matches the column's own default (true). It only applies in
+  // the brief window before settings load — app/_layout.tsx gates render on
+  // them — but defaulting to *visible* there was backwards for a privacy
+  // flag whose whole point is that Dashboard is the first screen on open.
+  const netWorthHidden = settings?.netWorthHidden ?? true;
   const netWorthDisplay = netWorthHidden ? "••••••" : formatMoney(netWorthMinor, baseCurrency);
   const assetsDisplay = netWorthHidden ? "••••" : formatMoney(assetsMinor, baseCurrency);
   const debtDisplay = netWorthHidden ? "••••" : debtMinor > 0 ? formatMoney(debtMinor, baseCurrency) : "—";

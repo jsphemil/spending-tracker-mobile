@@ -25,6 +25,18 @@ export function useFund(id: number) {
   return data?.[0] ?? null;
 }
 
+// Subscribe-only hook for screens that show fund *balances* rather than a
+// list of entries. Those balances come from services/funds.ts, a plain
+// synchronous read that isn't reactive on its own, and `useFunds()` alone
+// only repaints when the `funds` table changes — so adding or releasing
+// money left the Dashboard and the Funds list showing a stale figure until
+// something else forced a render. Call it for the subscription and ignore
+// the rows; same trick (and same reason) as the Dashboard's bare
+// useFilteredTransactions call. Don't "clean up" the unused result.
+export function useFundAllocationsSubscription() {
+  useLiveQuery(db.select({ id: fundAllocations.id }).from(fundAllocations));
+}
+
 // The manual add/release entries for one fund, newest first. The fund's
 // *spending* history lives on the transactions themselves — see
 // services/funds.ts's getFundHistory, which merges the two without
