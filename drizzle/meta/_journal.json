@@ -92,6 +92,13 @@
       "when": 1788966898351,
       "tag": "0012_big_lifeguard",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "6",
+      "when": 1788980000000,
+      "tag": "0013_drop_close_release_rows",
+      "breakpoints": true
     }
   ]
 }

@@ -86,15 +86,11 @@ export default function FundDetailScreen() {
     Alert.alert(
       "Close this fund?",
       balance.fundedMinor > 0
-        ? `${formatMoney(balance.fundedMinor, baseCurrency)} returns to your unallocated wealth. Your net worth doesn't change, and past spending stays linked.`
+        ? `${formatMoney(balance.fundedMinor, baseCurrency)} returns to your unallocated wealth. Your net worth doesn't change, past spending stays linked, and reopening puts the money back.`
         : "Past spending stays linked and your net worth doesn't change.",
       [
         { text: "Cancel", style: "cancel" },
-        {
-          text: "Close fund",
-          style: "destructive",
-          onPress: () => closeFund(fundId, balance.fundedMinor),
-        },
+        { text: "Close fund", style: "destructive", onPress: () => closeFund(fundId) },
       ],
     );
   }
@@ -139,7 +135,14 @@ export default function FundDetailScreen() {
             </View>
             <View className="flex-1">
               <Text className="text-base font-display-xbold text-fg">{fund.name}</Text>
-              {isClosed && <Text className="text-xs font-medium text-fg-muted">Closed</Text>}
+              {isClosed && (
+                <Text className="text-xs font-medium text-fg-muted">
+                  Closed
+                  {balance.heldMinor > 0
+                    ? ` · ${formatMoney(balance.heldMinor, baseCurrency)} returns if you reopen`
+                    : ""}
+                </Text>
+              )}
             </View>
             <Link href={`/fund/${fundId}/edit`} asChild>
               <Pressable hitSlop={8} accessibilityRole="button" accessibilityLabel="Edit fund">

@@ -1,0 +1,13 @@
+-- Removes the balancing "Released on close" rows an earlier version of
+-- closeFund wrote. That mechanism assumed a fund's state at close was
+-- final; deleting a linked expense afterwards un-consumed the fund and
+-- handed the money back to an already-closed fund, where it silently
+-- counted toward Earmarked again. A closed fund's zero balance is now
+-- derived from funds.closed_at instead, so these rows are not only
+-- redundant but actively wrong — they understate what a fund still holds,
+-- which is the figure shown for "returns if you reopen".
+--
+-- Narrow by design: this exact note string was only ever written by that
+-- old code path, never by the user (the Add/Release sheet's note field is
+-- free text, but nothing pre-fills it).
+DELETE FROM `fund_allocations` WHERE `note` = 'Released on close';

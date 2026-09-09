@@ -403,8 +403,12 @@ describe("computeFundProgress", () => {
 });
 
 // closeFund itself lives in db/actions (module-singleton db, not testable),
-// so these pin the *model* it relies on: a balancing release rather than a
-// status filter. That's what lets services/funds.ts ignore status entirely.
+// so these pin the *model* it relies on: a closed fund's zero balance is
+// derived from funds.closed_at, not written as a balancing ledger row.
+function close(fundId: number, at: Date): void {
+  db.update(funds).set({ status: "closed", closedAt: at }).where(eq(funds.id, fundId)).run();
+}
+
 describe("closing a fund", () => {
   it("returns its balance to unallocated while leaving net worth alone", () => {
     const accountId = insertAccount(db);
@@ -418,35 +422,78 @@ describe("closing a fund", () => {
     const cutoff = new Date(Date.now() + 60_000);
     const [netWorthBefore] = getNetWorthSeries(db, accountList, [cutoff], INR_ONLY);
 
-    // What closeFund writes.
-    allocate(fundId, -35_000, new Date(2026, 5, 1));
-    db.update(funds)
-      .set({ status: "closed", closedAt: new Date(2026, 5, 1) })
-      .where(eq(funds.id, fundId))
-      .run();
+    close(fundId, new Date(2026, 5, 1));
 
     const [netWorthAfter] = getNetWorthSeries(db, accountList, [cutoff], INR_ONLY);
     expect(netWorthAfter).toBe(netWorthBefore);
     expect(sumEarmarkedMinor(getFundBalances(db, INR_ONLY))).toBe(0);
+    // The money is still there in the ledger — closing set it aside, it
+    // didn't spend it, so reopening would bring it back.
+    expect(balanceOf(fundId).heldMinor).toBe(35_000);
   });
 
   it("still reports its old balance for a cutoff before the close", () => {
     const fundId = makeFund();
     allocate(fundId, 35_000, new Date(2026, 0, 1));
-    allocate(fundId, -35_000, new Date(2026, 5, 1));
+    close(fundId, new Date(2026, 5, 1));
 
     // Paging the Dashboard back to March must not retroactively unwind a
-    // fund that was genuinely funded then — which is exactly what a
-    // status-based filter would have got wrong.
+    // fund that was genuinely funded then — which is exactly what a plain
+    // status filter would have got wrong.
     expect(balanceOf(fundId, new Date(2026, 2, 1)).fundedMinor).toBe(35_000);
     expect(balanceOf(fundId, new Date(2026, 8, 1)).fundedMinor).toBe(0);
+  });
+
+  // The bug this mechanism replaced: closing used to write a fixed
+  // balancing release sized to whatever the fund held at that moment.
+  // Deleting a linked expense afterwards un-consumed the fund, and the
+  // money reappeared in an already-closed fund and counted toward
+  // Earmarked again. Found on-device 2026-09-09.
+  it("stays at zero when a linked expense is deleted after the close", () => {
+    const accountId = insertAccount(db);
+    const fundId = makeFund();
+    allocate(fundId, 50_000, new Date(2026, 0, 1));
+    const [expense] = db
+      .insert(transactions)
+      .values({
+        type: "expense",
+        amountMinor: 40_000,
+        date: new Date(2026, 1, 1),
+        accountId,
+        fundId,
+      })
+      .returning({ id: transactions.id })
+      .all();
+    close(fundId, new Date(2026, 5, 1));
+    expect(balanceOf(fundId).fundedMinor).toBe(0);
+
+    db.delete(transactions).where(eq(transactions.id, expense.id)).run();
+
+    expect(balanceOf(fundId).fundedMinor).toBe(0);
+    expect(sumEarmarkedMinor(getFundBalances(db, INR_ONLY))).toBe(0);
+    // It is held, and disclosed as what would come back on reopen.
+    expect(balanceOf(fundId).heldMinor).toBe(50_000);
+  });
+
+  it("resumes earmarking whatever it still holds when reopened", () => {
+    const fundId = makeFund();
+    allocate(fundId, 35_000, new Date(2026, 0, 1));
+    close(fundId, new Date(2026, 5, 1));
+    expect(balanceOf(fundId).fundedMinor).toBe(0);
+
+    db.update(funds)
+      .set({ status: "active", closedAt: null })
+      .where(eq(funds.id, fundId))
+      .run();
+
+    expect(balanceOf(fundId).fundedMinor).toBe(35_000);
   });
 
   it("absorbs a linked expense dated after the close without going negative", () => {
     const accountId = insertAccount(db);
     const fundId = makeFund();
     allocate(fundId, 35_000, new Date(2026, 0, 1));
-    allocate(fundId, -35_000, new Date(2026, 5, 1));
+    close(fundId, new Date(2026, 5, 1));
     db.insert(transactions)
       .values({ type: "expense", amountMinor: 5_000, date: new Date(2026, 6, 1), accountId, fundId })
       .run();

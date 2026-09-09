@@ -55,33 +55,25 @@ export function deleteFundAllocation(id: number): void {
   db.delete(fundAllocations).where(eq(fundAllocations.id, id)).run();
 }
 
-// Closing writes an explicit balancing release rather than relying on the
-// status flag, so a closed fund reads 0 going forward *and* still reports
-// its correct funded amount when the Dashboard is paged back to before the
-// close. That's why services/funds.ts never filters on status.
+// Just a status change. services/funds.ts derives "a closed fund holds
+// nothing from closedAt onward" from these two columns, which is what makes
+// the fund's balance return to unallocated wealth.
 //
-// `remainingFundedMinor` comes from the caller for the same currency reason
-// as addFundAllocation above.
-export function closeFund(id: number, remainingFundedMinor: number): void {
-  db.transaction((tx) => {
-    const now = new Date();
-    if (remainingFundedMinor > 0) {
-      tx.insert(fundAllocations)
-        .values({
-          fundId: id,
-          amountMinor: -remainingFundedMinor,
-          date: now,
-          note: "Released on close",
-        })
-        .run();
-    }
-    tx.update(funds).set({ status: "closed", closedAt: now }).where(eq(funds.id, id)).run();
-  });
+// This used to also write a balancing release row sized to whatever the
+// fund held at that moment. That assumed the fund's state at close was
+// final, and it wasn't: deleting a linked expense afterwards un-consumed
+// the fund and handed the money back to a fund the user had already closed,
+// where it silently counted toward Earmarked again. Found on-device.
+export function closeFund(id: number): void {
+  db.update(funds)
+    .set({ status: "closed", closedAt: new Date() })
+    .where(eq(funds.id, id))
+    .run();
 }
 
-// Money does not come back automatically — the balancing release stays in
-// the history and the user re-adds what they want. Honest, and it keeps the
-// history readable.
+// Reopening resumes earmarking whatever the ledger still holds — closing
+// never spent that money, it only stopped setting it aside, so there's
+// nothing to restore by hand.
 export function reopenFund(id: number): void {
   db.update(funds).set({ status: "active", closedAt: null }).where(eq(funds.id, id)).run();
 }

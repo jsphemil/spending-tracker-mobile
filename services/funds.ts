@@ -11,7 +11,16 @@ export interface FundBalance {
   spentMinor: number;
   /** How much of `spentMinor` the fund actually covered. */
   consumedMinor: number;
-  /** What's still earmarked. Never negative. */
+  /**
+   * What the ledger says this fund holds, ignoring whether it's closed —
+   * i.e. the amount that would come back if it were reopened.
+   */
+  heldMinor: number;
+  /**
+   * What's actually earmarked, and the only figure that feeds Earmarked.
+   * Same as `heldMinor` for an open fund; forced to 0 once a fund is
+   * closed. Never negative.
+   */
   fundedMinor: number;
   /** Spending the fund couldn't cover — it came from unallocated wealth. */
   overspentMinor: number;
@@ -21,6 +30,7 @@ const EMPTY_BALANCE = {
   allocatedMinor: 0,
   spentMinor: 0,
   consumedMinor: 0,
+  heldMinor: 0,
   fundedMinor: 0,
   overspentMinor: 0,
 };
@@ -52,9 +62,15 @@ const EMPTY_BALANCE = {
 // `toBaseMinor` is injected rather than imported so this stays a pure
 // db-level function, testable without React — same as getNetWorthSeries.
 //
-// No status filter: closing a fund writes a balancing release entry
-// instead, so a closed fund reads 0 going forward while still reporting
-// correctly for an asOfDate before it was closed.
+// A closed fund reports 0 from its closedAt onward, and its real historical
+// balance for any cutoff before that.
+//
+// Closing used to write a fixed balancing release row instead. That assumed
+// the fund's state at close was final, and it wasn't: deleting a linked
+// expense afterwards un-consumed the fund and handed the money straight
+// back to a fund the user had already closed, where it silently counted
+// toward Earmarked again. Deriving the clamp from closedAt can't drift that
+// way, however the ledger changes later.
 export function getFundBalances(
   db: Db,
   toBaseMinor: (amountMinor: number, currency: string) => number,
@@ -107,18 +123,27 @@ export function getFundBalances(
 
   // Every fund gets an entry, including ones with no activity at all, so
   // callers never have to special-case a missing key.
-  const fundIds = db.select({ id: funds.id }).from(funds).all();
+  const fundRows = db
+    .select({ id: funds.id, status: funds.status, closedAt: funds.closedAt })
+    .from(funds)
+    .all();
   const balances = new Map<number, FundBalance>();
-  for (const { id } of fundIds) {
+  for (const { id, status, closedAt } of fundRows) {
     const allocatedMinor = allocated.get(id) ?? 0;
     const spentMinor = spent.get(id) ?? 0;
     const consumedMinor = Math.min(allocatedMinor, spentMinor);
+    const heldMinor = allocatedMinor - consumedMinor;
+    // Exclusive, matching asOfDate's own semantics: a cutoff exactly at
+    // closedAt means "up to but not including the close".
+    const closedByCutoff =
+      status === "closed" && closedAt != null && (asOfDate == null || asOfDate > closedAt);
     balances.set(id, {
       fundId: id,
       allocatedMinor,
       spentMinor,
       consumedMinor,
-      fundedMinor: allocatedMinor - consumedMinor,
+      heldMinor,
+      fundedMinor: closedByCutoff ? 0 : heldMinor,
       overspentMinor: Math.max(0, spentMinor - allocatedMinor),
     });
   }
