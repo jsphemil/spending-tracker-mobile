@@ -36,12 +36,13 @@ pushed to a later phase) · ❌ Dropped (cut from scope).
 | §5.14 | CSV Export | ✅ Built & Verified | Matches the web app's account/date-filtered CSV export; required a native rebuild for `expo-file-system`/`expo-sharing` — verified on-device 2026-08-12, and re-confirmed working after all the base-currency changes (UAT checklist §12). |
 | §5.15 | In-App Info/Tips | ⏸️ Deferred | Explicitly deferred by the user to a later pass — not started. |
 | §5.16 | Commitments | ✅ Built & Verified | New tab, monthly-normalized recurring rules, % of recurring income committed. UAT checklist §7 confirms the sections and monthly-equivalent math (verified correct, not a bug — average-month normalization). Complex recurrence patterns (nth-weekday-of-month etc.) were requested then **withdrawn by the user 2026-08-21** ("it can be ignored") — not building. The "% of recurring income" line was explained to the user but never independently re-confirmed against their own live data — low-stakes, worth a glance next time it's relevant. |
-| §5.17 | Goals | ✅ Built & Verified | Goal CRUD, trailing-6-month pace projection, behind-pace flag, Dashboard card. UAT checklist §8 confirms creation, progress bar, projection text, and behind-pace warning — all pass. |
+| §5.17 | Goals | ✅ Built & Verified | Goal CRUD, trailing-6-month pace projection, behind-pace flag, Dashboard card. UAT checklist §8 confirms creation, progress bar, projection text, and behind-pace warning — all pass. **Being removed 2026-09-09** — §5.21's Funds replaces it as a more concrete wealth-allocation feature; this section's status flips to ❌ Dropped once that removal phase lands. |
 | §5.18 | Design Refresh — "Erebor" | ✅ Built & Verified | **New, 2026-08-28.** Complete visual redesign sourced from a separate Claude Design project the user built ("Erebor Wealth App Design System," dark glassy-neon fintech language), applied as a presentational-only pass on the `design-refresh` branch and merged to `master` the same day. See the full write-up below (§5.18) for what shipped, what was explicitly decided, and the one behavior change (AccountForm's icon became user-selectable, at the user's explicit request). Verified via multiple rounds of on-device testing on the user's Pixel 10, including native rebuilds for the new `expo-linear-gradient`/`expo-font` dependencies. |
 | §3 | Dropbox Backup/Restore | ✅ Built & Verified | **Built and fully verified on-device 2026-08-28.** PKCE OAuth connect flow (`services/dropbox.ts`, `expo-auth-session`+`expo-web-browser`, App-folder-scoped access), tokens in `expo-secure-store` (never the unencrypted `settings` table), `VACUUM INTO`-based consistent snapshot backup (not a raw file copy or JSON export), check-on-app-open "automatic daily" backup (a true OS background task is unreliable on mobile — see the feature's own write-up below), manual backup, and a restore picker (`app/backup/restore.tsx`) that replaces the local DB file and prompts a manual app restart. Connect, manual backup, and restore-then-restart all confirmed working on the user's phone. |
 | §5.19 | Erebor V2 Redesign | ✅ Built & Verified | **Shipped 2026-09-02.** Product/nav/UX redesign (4-tab nav, new onboarding, new Dashboard, new Settings, real Light/Dark/System theme, expense reminders, Analytics tab) reusing the existing financial engine, currency system, and Dropbox backup as-is. On-device pass covered all 8 test sections and passed; merged `redesign/erebor-v2` → `master` (22 commits) and shipped as versionCode 12, versionName 2.0.0 — closed-testing update 2 of 3. **Dashboard net worth privacy toggle added and shipped 2026-09-09 (versionCode 14)** — see §5.19 body for detail. See §5.19 for full scope and what it supersedes. |
 | — | R8/ProGuard (release build shrinking) | ✅ Built & Verified | **Shipped 2026-09-05**, versionCode 13, versionName 2.0.1 — closed-testing update 3 of 3, the last required update for the 14-day window. Isolated on `r8-test`, verified on-device against the three reflection-exposed surfaces (Dropbox connect/backup/restore, home screen widget, notifications) before merging to `master`. No ProGuard keep rules needed. See §9 for the local build-environment fix this needed (an outdated bundled `ninja` broke `assembleRelease` on Windows, unrelated to R8 itself). |
 | §5.20 | New Home Screen Widgets (Quick Add / Cash Flow / Net Worth) | ✅ Built & Verified | **Started 2026-09-05.** Widget A (Quick Add Transaction) + launcher shortcuts ✅ Built & Verified 2026-09-06, shipped 2026-09-09 as versionCode 14, release `Erebor_WM14(2.1.0)`. **Widget B (Monthly Cash Flow) ❌ Dropped 2026-09-09** — removed from the codebase entirely after its "Today" row bug went unresolved through 3 fix attempts; never shipped. **Widget C (Net Worth & Financial Composition) ❌ Dropped 2026-09-09** — scope was agreed but the user decided against building it before any code was written. See §5.20 for full scope and Widget B's debugging trail. |
+| §5.21 | Funds | 🚧 In Progress | **New, started 2026-09-09.** A new financial primitive: money you still own but have earmarked for a future purpose, sitting as a logical allocation layer *above* the accounting model. Account balances and net worth are completely unchanged; the app additionally reports **Earmarked** and **Unallocated** (net worth − earmarked). Not a budget, not an account, and deliberately not a renamed Goal — **§5.17 Goals is being removed and replaced by this**. Fund balances are **derived, never stored**, so editing or deleting a fund-linked expense reverses correctly with zero write hooks. Full plan and phasing in the §5.21 body below. |
 
 **Remaining known gaps** (everything else above is fully verified,
 carried forward unchanged from the last audit — none of these have
@@ -1101,7 +1102,7 @@ Pixel 10, `redesign/erebor-v2` was merged into `master` (22 commits,
 fast-forward), and it shipped the same day as versionCode 12,
 versionName 2.0.0 — closed-testing update 2 of 3.
 
-### 5.20 New Home Screen Widgets — Quick Add, Monthly Cash Flow, Net Worth ⏸️ Deferred
+### 5.20 New Home Screen Widgets — Quick Add, Monthly Cash Flow, Net Worth ✅ Built & Verified
 
 - **Started 2026-09-05**, direct master-prompt request (not an Inbox
   idea) — same handling as §5.19's Erebor V2 prompt. Adds **three new,
@@ -1218,6 +1219,131 @@ versionName 2.0.0 — closed-testing update 2 of 3.
   asset, so it resizes correctly too.
 - **Implementation status:** see `backlog.md`'s In Progress section for
   the live build order and per-widget verification notes.
+
+### 5.21 Funds 🚧 In Progress
+
+**New, started 2026-09-09. Replaces §5.17 Goals.**
+
+A **Fund** is money you still own but have decided not to spend on
+anything else, because it's earmarked for a specific future purpose —
+a new laptop, a vacation, an annual insurance premium, a car down
+payment, an emergency reserve. It's the flexible digital equivalent of
+a recurring deposit, without the rigidity: contribute any amount, at
+any time, or not at all.
+
+The mental model is deliberately narrow: *"This is still my money. I
+just don't want to spend it on anything else."*
+
+**Funds are not accounts, and not budgets.** They sit as a logical
+allocation layer *above* the existing accounting model. Earmarking
+money creates no transfer, moves no balance, and changes no net worth:
+
+```
+HDFC Savings  ₹80,000        Net worth     ₹1,00,000   (unchanged)
+SBI Savings   ₹20,000        Earmarked        ₹10,000
+                             Unallocated      ₹90,000
+```
+
+A Fund also never restricts spending. If a ₹40,000 fund meets a
+₹50,000 purchase, the expense is still recorded at the full ₹50,000 —
+the fund contributes ₹40,000 and the rest visibly comes from
+unallocated wealth.
+
+**Why "Unallocated" and not "Available".** The word *available* already
+carries three distinct meanings in this app — "₹X available this month"
+on the Dashboard, "Balance available" on the account ring, and
+"Available funds"/"Safe to spend" on Account Detail. A fourth would be
+a real confusion risk. *Unallocated* pairs precisely with *Earmarked*
+so the arithmetic reads itself. Note it is **unallocated net worth**,
+not spendable cash — it still includes locked deposits and illiquid
+investments, the same pre-existing liquidity blindness net worth
+already has.
+
+**Data model — derived, never stored.** This is the load-bearing
+decision. A fund's balance comes from two sums:
+
+```
+allocated  = SUM(fund_allocations.amount_minor)      -- signed: + add, − release
+spent      = SUM(linked expense transactions)        -- via transactions.fund_id
+consumed   = min(allocated, spent)                   -- can't consume more than was there
+funded     = allocated − consumed                    -- therefore never negative
+overspent  = max(0, spent − allocated)               -- came from unallocated wealth
+```
+
+Storing a `funded` column instead would need write hooks on every
+transaction create/update/delete path — including the bulk
+`deleteFutureOccurrences` — and any future path that forgot one would
+silently corrupt the figure. Deriving it means editing a fund-linked
+expense from ₹40,000 to ₹35,000 returns ₹5,000 to the fund, and
+deleting it returns the whole ₹40,000, **with no reconciliation code at
+all**. This matches how every balance in this app already works
+(`services/balance.ts`), and avoids the two-copies-of-the-truth class of
+bug that has already bitten this codebase twice.
+
+Both sums take an **`asOfDate` exclusive upper bound**, the same
+convention as `getAccountBalanceMinor` — without it, paging the
+Dashboard's month-nav would show a `range.end` net worth minus a
+today-anchored Earmarked, arithmetic that lies.
+
+**Tables:** `funds` (name, target amount, optional target date, icon,
+colour, status, timestamps) and `fund_allocations` (signed amount, date,
+optional note, cascade-deleted with its fund), plus a nullable
+`transactions.fund_id` (`ON DELETE SET NULL`, only meaningful on
+expenses). No `account_id` on a fund — the physical location of money
+and its intended purpose are separate concepts. No stored `funded`, and
+no "fully funded" flag: both are derived.
+
+**Currency.** Fund amounts are **base-currency-only** integers, matching
+`goals.targetAmountMinor` and `categories.monthlyBudgetMinor`. Earmarked
+therefore needs no conversion, so a missing exchange rate can never
+overstate Unallocated. A fund-linked expense in a foreign account does
+convert, and a missing rate there understates spending — the
+conservative direction — disclosed via `UnconvertedCurrenciesNote`.
+*Known limitation, inherited not introduced:* changing base currency
+re-labels stored base-currency integers without converting them, which
+already affects goals and category budgets.
+
+**Behaviours that need no implementation at all**, and are evidence the
+model is right: transfers between accounts leave funds untouched
+(net-worth-neutral, and a transfer can never carry a `fund_id`);
+investment gains and losses move net worth and Unallocated but never a
+fund's balance; income raises Unallocated and nothing auto-enters a
+fund.
+
+**Lifecycle.** Fully funded (`funded >= target`) is a badge, never an
+auto-close. Overfunding is allowed and shown honestly. Lowering a target
+below the funded amount releases nothing automatically — it just reads
+as overfunded. Closing a fund writes an explicit balancing release, so
+it reads ₹0 going forward, keeps its correct historical value when you
+page back, and its linked expenses keep their links. Deletion is only
+permitted for a fund with no allocations and no linked transactions,
+mirroring `deleteAccount`'s existing guard, so historical reporting
+never becomes inconsistent.
+
+**Fund history** is a merged, date-sorted view of allocation rows and
+linked transactions — **no duplicated financial records**; the
+allocation table holds only entries that have no other home.
+
+**Dashboard integration:** Earmarked and Unallocated join Assets/Debt in
+the Position card (masked by the same `netWorthHidden` toggle); a
+dedicated **Funds card** shows the top 3 funds with progress bars and a
+"View all" link, mirroring the old §5.8 Goals card's shape; and the
+`/goal` shortcut tile becomes `/fund`.
+
+**Explicitly deferred out of V1** at the user's request, to be taken up
+one at a time in later phases: fund links on recurring expenses (so an
+annual insurance premium can auto-link), refund/income linking, optional
+contribution plans, and a dedicated move-between-funds action
+(Release-then-Add already covers it). Also not building: automatic
+allocation from income, splitting one expense across multiple funds,
+pace projections or contribution streaks, per-fund currencies, funds on
+the home-screen widget, and target-date notifications. Pace metrics in
+particular are a deliberate omission — contributions are *intentionally*
+irregular, so a trailing average would be meaningless, and nagging cuts
+against the non-judgemental philosophy.
+
+- **Implementation status:** see `backlog.md`'s In Progress section for
+  the live build order and per-phase verification notes.
 
 ## 6. Explicitly out of scope for v1
 
