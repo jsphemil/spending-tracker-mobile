@@ -257,13 +257,13 @@ class AccountsGlanceWidget : GlanceAppWidget() {
       .fillMaxSize()
       .cornerRadius(24.dp)
       .background(colors.cardBg)
-      .padding(16.dp)
+      .padding(14.dp)
       .let { if (detail == null) it.clickable(actionStartActivity(openApp)) else it }
 
     Box(modifier = cardModifier) {
       Column(modifier = GlanceModifier.fillMaxSize()) {
         Header(colors, monthLabel, pickerOpen, iconBitmap, openApp)
-        Box(modifier = GlanceModifier.height(10.dp)) {}
+        Box(modifier = GlanceModifier.height(8.dp)) {}
 
         // defaultWeight() is a ColumnScope extension, so it can only be
         // called here — inside the Column — and has to be handed to the
@@ -279,7 +279,7 @@ class AccountsGlanceWidget : GlanceAppWidget() {
           AccountCard(detail, colors, bodyModifier)
         }
 
-        Box(modifier = GlanceModifier.height(10.dp)) {}
+        Box(modifier = GlanceModifier.height(8.dp)) {}
         Row(modifier = GlanceModifier.fillMaxWidth()) {
           ActionPill("Income", WIDGET_INCOME, "income", detail?.id, GlanceModifier.defaultWeight())
           Box(modifier = GlanceModifier.width(8.dp)) {}
@@ -353,8 +353,8 @@ class AccountsGlanceWidget : GlanceAppWidget() {
       ) {
         Box(
           modifier = GlanceModifier
-            .size(38.dp)
-            .cornerRadius(19.dp)
+            .size(36.dp)
+            .cornerRadius(18.dp)
             .background(parseAccountColor(detail.colorHex)),
           contentAlignment = Alignment.Center,
         ) {
@@ -372,13 +372,25 @@ class AccountsGlanceWidget : GlanceAppWidget() {
             maxLines = 1,
             style = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.Medium, color = ColorProvider(colors.textPrimary)),
           )
-          Text(
-            // The chevron is the affordance that this row is tappable —
-            // a widget has no hover or ripple to hint with.
-            text = "${accountTypeLabel(detail.type)}  ▾",
-            maxLines = 1,
-            style = TextStyle(fontSize = 12.sp, color = ColorProvider(colors.textSecondary)),
-          )
+          // The chevron is the affordance that this row is tappable — a
+          // widget has no hover or ripple to hint with. A drawable rather
+          // than a "▾" glyph: font coverage of the small geometric
+          // triangles isn't guaranteed across OEM skins, and a miss renders
+          // as a tofu box right beside the account name.
+          Row(verticalAlignment = Alignment.Vertical.CenterVertically) {
+            Text(
+              text = accountTypeLabel(detail.type),
+              maxLines = 1,
+              style = TextStyle(fontSize = 12.sp, color = ColorProvider(colors.textSecondary)),
+            )
+            Box(modifier = GlanceModifier.width(3.dp)) {}
+            Image(
+              provider = ImageProvider(R.drawable.ic_chevron_down),
+              contentDescription = null,
+              colorFilter = ColorFilter.tint(ColorProvider(colors.textSecondary)),
+              modifier = GlanceModifier.size(12.dp),
+            )
+          }
         }
         Box(modifier = GlanceModifier.width(8.dp)) {}
         Column(horizontalAlignment = Alignment.Horizontal.End) {
@@ -400,9 +412,9 @@ class AccountsGlanceWidget : GlanceAppWidget() {
         }
       }
 
-      Box(modifier = GlanceModifier.height(10.dp)) {}
+      Box(modifier = GlanceModifier.height(8.dp)) {}
       Box(modifier = GlanceModifier.fillMaxWidth().height(1.dp).background(colors.border)) {}
-      Box(modifier = GlanceModifier.height(10.dp)) {}
+      Box(modifier = GlanceModifier.height(8.dp)) {}
 
       Row(modifier = GlanceModifier.fillMaxWidth()) {
         FlowColumn("Income", formatMoney(detail.incomeMinor, detail.currency), WIDGET_INCOME, colors, GlanceModifier.defaultWeight())
@@ -534,8 +546,8 @@ class AccountsGlanceWidget : GlanceAppWidget() {
     }
     Box(
       modifier = modifier
-        .height(38.dp)
-        .cornerRadius(19.dp)
+        .height(36.dp)
+        .cornerRadius(18.dp)
         .background(accent)
         .clickable(actionStartActivity(Intent(Intent.ACTION_VIEW, Uri.parse(uri)))),
       contentAlignment = Alignment.Center,
