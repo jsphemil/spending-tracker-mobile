@@ -1,53 +1,34 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Height is fixed by design. The card shows exactly one account — header,
-  account row, flow row, action pills — so there is no list to stretch and
-  nothing useful for a vertical resize to do.
+  The widget ZOOMS. AccountsGlanceWidget draws a 300x184dp card and scales
+  every dimension — fonts, icons, padding, pills — by one factor derived
+  from the size the launcher allocates. So the range below is not choosing
+  a layout, it is choosing how large the card is drawn.
 
-  That is what retires the two resize bugs the old list version had: a blank
-  gap opening below a short account list, and shrinking clipping a row's
-  middle. Both came from a defaultWeight()-stretched LazyColumn absorbing
-  whatever height the launcher allocated. Declaring the widget
-  horizontally-resizable only, at a height matching its actual content,
-  removes the condition rather than compensating for it.
+  Two earlier approaches left visible dead space and were replaced:
+  a fixed-size layout inside a filled box pooled the slack into one void,
+  and adding/removing rows at breakpoints still left slack between them.
+  Scaling has neither problem — at every size the content exactly fills
+  the card, and the card is centred so any leftover cell stays transparent
+  rather than reading as an empty dark panel.
 
-  The numbers below are load-bearing, and getting them too small clips
-  content rather than merely looking off. Measured content height is ~190dp:
+  Note the launcher's grid always snaps: AppWidgetHost places widgets in
+  whole cells (~60dp here), and no app-side setting changes that. What the
+  wide range below buys is that every snap step lands on a *usable* scale,
+  rather than the handles refusing to move — which is what happened when
+  this was bracketed to 200-230dp, a span narrower than a single cell.
 
-    padding 14*2 = 28   header 22   gap 8   account row 36
-    gap 8 + divider 1 + gap 8       flow row ~31
-    gap 8                           pills 36
-
-  targetCellHeight="3" was tried first and starved it — on a 1080x2400
-  device three cells came out around 150dp, so the weighted body was
-  squeezed and the Income/Expense/Transfers values were clipped away
-  entirely behind the pills. Four cells lands near 200dp, just above the
-  content, which is what this needs.
-
-  minResizeHeight/minHeight are the real guarantee: they are a hard floor
-  for placement, so even a launcher that ignores targetCellHeight cannot
-  size this below its own content.
-
-  Freely resizable, and the LAYOUT adapts rather than the size being
-  pinned — see AccountsGlanceWidget's SizeMode.Exact. Two earlier attempts
-  at a fixed height both failed, in opposite directions: too small clipped
-  the flow row's values away behind the pills, too large pooled the slack
-  into one void above them.
-
-  A narrow bracket also silently disables resizing. 200-230dp was tried
-  and the handles simply would not move vertically, because that range is
-  smaller than a single grid cell (~51dp here) so there is no legal
-  intermediate size to snap to. The range below spans several cells, which
-  is what makes the handles actually usable.
+  Bounds correspond to roughly 0.7x-2.4x, matching the clamp in Content.
 -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
-    android:minWidth="250dp"
-    android:minHeight="110dp"
+    android:minWidth="220dp"
+    android:minHeight="130dp"
     android:targetCellWidth="4"
     android:targetCellHeight="4"
-    android:minResizeWidth="250dp"
-    android:minResizeHeight="110dp"
-    android:maxResizeHeight="480dp"
+    android:minResizeWidth="220dp"
+    android:minResizeHeight="130dp"
+    android:maxResizeWidth="480dp"
+    android:maxResizeHeight="440dp"
     android:resizeMode="horizontal|vertical"
     android:widgetCategory="home_screen"
     android:initialLayout="@layout/glance_default_loading_layout"

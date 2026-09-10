@@ -55,6 +55,18 @@ import java.util.Locale
 private const val DEEP_LINK_BASE = "spendingtracker://transaction/new"
 private const val TAG = "WidgetBridge"
 
+// The card's design size in dp at scale 1.0, and the only place its
+// proportions are defined. Every dimension in Content and below is a base
+// value multiplied by the scale factor derived from these, so the whole
+// card zooms as one piece.
+//
+// The height is the sum of the content at base scale — padding 14*2,
+// header 22, gap 8, account row 36, divider 1 + gap 8, flow row ~29,
+// gap 8, pills 36 — so at scale 1.0 the content fills the card exactly,
+// with no slack to distribute. Change one and the other must follow.
+private const val BASE_CARD_WIDTH = 300f
+private const val BASE_CARD_HEIGHT = 184f
+
 val WIDGET_ACCENT_CYAN = Color(0xFF48E7F5)
 
 // Matches theme/palette.ts's dark success/danger/transfer tokens — the
@@ -245,6 +257,20 @@ class AccountsGlanceWidget : GlanceAppWidget() {
     }
   }
 
+  // The card is drawn at a fixed design size and then ZOOMED to whatever
+  // the launcher allocates — every dimension below is a base value
+  // multiplied by one scale factor, fonts included. Resizing the widget
+  // makes the whole card bigger or smaller rather than reflowing it.
+  //
+  // This replaced two earlier approaches that both left visible dead space:
+  // filling the box with a fixed-size layout pooled the slack into a void,
+  // and adding/removing rows at breakpoints still left slack between them.
+  // Scaling has neither problem: the content always exactly fills the card.
+  //
+  // Aspect is preserved (scale is the smaller of the two ratios) so the
+  // card never distorts or clips, and the card is centred, so whatever the
+  // grid allocates beyond it stays transparent — invisible against the
+  // wallpaper instead of reading as an empty dark panel.
   @Composable
   private fun Content(
     uiState: AccountsUiState,
@@ -257,59 +283,54 @@ class AccountsGlanceWidget : GlanceAppWidget() {
   ) {
     val ready = uiState as? AccountsUiState.Ready
     val detail = ready?.detail
-    // fillMaxSize (not just fillMaxWidth) so the card's translucent
-    // background covers the whole launcher-allocated box — otherwise the
-    // resize handles trail past the visible card into dead transparent
-    // space whenever the allocated grid cell is taller than the content.
+
+    val size = LocalSize.current
+    // Clamped so an extreme cell can't render the card unreadably small or
+    // comically large; the provider's own min/max resize bounds keep normal
+    // use well inside this.
+    val scale = minOf(
+      size.width.value / BASE_CARD_WIDTH,
+      size.height.value / BASE_CARD_HEIGHT,
+    ).coerceIn(0.7f, 2.4f)
+
     val cardModifier = GlanceModifier
-      .fillMaxSize()
-      .cornerRadius(24.dp)
+      .width((BASE_CARD_WIDTH * scale).dp)
+      .height((BASE_CARD_HEIGHT * scale).dp)
+      .cornerRadius((24f * scale).dp)
       .background(colors.cardBg)
-      .padding(14.dp)
+      .padding((14f * scale).dp)
       .let { if (detail == null) it.clickable(actionStartActivity(openApp)) else it }
 
-    // The widget is freely resizable, so the layout adapts to whatever
-    // height the launcher actually gives it rather than assuming one.
-    // Fixed heights were tried twice and failed in both directions: too
-    // small clipped the flow row's values away behind the pills, too large
-    // pooled all the slack into a single void above them.
-    val height = LocalSize.current.height
-    // Measured content: padding 28 + header 22 + gap 8 + account row 36
-    // + (divider 1 + gap 8 + flow row 31) + gap 8 + pills 36.
-    val showFlowRow = height >= 185.dp
-    // Below this even the pills don't fit alongside the account row; the
-    // balance is what matters most, so that is what survives.
-    val showPills = height >= 140.dp
-    // The picker needs every pixel it can get — with a dozen accounts the
-    // pills would cost two visible rows, and they're meaningless while
-    // you're choosing an account anyway.
-    val showPillsNow = showPills && !pickerOpen
+    Box(
+      modifier = GlanceModifier.fillMaxSize(),
+      contentAlignment = Alignment.Center,
+    ) {
+      Box(modifier = cardModifier) {
+        Column(modifier = GlanceModifier.fillMaxSize()) {
+          Header(colors, monthLabel, pickerOpen, iconBitmap, openApp, scale)
+          Box(modifier = GlanceModifier.height((8f * scale).dp)) {}
 
-    Box(modifier = cardModifier) {
-      Column(modifier = GlanceModifier.fillMaxSize()) {
-        Header(colors, monthLabel, pickerOpen, iconBitmap, openApp)
-        Box(modifier = GlanceModifier.height(8.dp)) {}
+          val bodyModifier = GlanceModifier.fillMaxWidth().defaultWeight()
+          if (detail == null) {
+            EmptyBody(uiState, colors, scale, bodyModifier)
+          } else if (pickerOpen) {
+            // The picker takes the pills' space as well — they mean nothing
+            // while you're choosing an account, and with a dozen accounts
+            // that space is two more visible rows.
+            AccountPicker(ready.options, selectedIndex, colors, scale, bodyModifier)
+          } else {
+            AccountCard(detail, colors, scale, bodyModifier)
+          }
 
-        // defaultWeight() is a ColumnScope extension, so it can only be
-        // called here — inside the Column — and has to be handed to the
-        // body composables rather than applied inside them.
-        val bodyModifier = GlanceModifier.fillMaxWidth().defaultWeight()
-        if (detail == null) {
-          EmptyBody(uiState, colors, bodyModifier)
-        } else if (pickerOpen) {
-          AccountPicker(ready.options, selectedIndex, colors, bodyModifier)
-        } else {
-          AccountCard(detail, colors, showFlowRow, bodyModifier)
-        }
-
-        if (showPillsNow) {
-          Box(modifier = GlanceModifier.height(8.dp)) {}
-          Row(modifier = GlanceModifier.fillMaxWidth()) {
-            ActionPill("Income", WIDGET_INCOME, "income", detail?.id, GlanceModifier.defaultWeight())
-            Box(modifier = GlanceModifier.width(8.dp)) {}
-            ActionPill("Expense", WIDGET_EXPENSE, "expense", detail?.id, GlanceModifier.defaultWeight())
-            Box(modifier = GlanceModifier.width(8.dp)) {}
-            ActionPill("Transfer", WIDGET_TRANSFER, "transfer", detail?.id, GlanceModifier.defaultWeight())
+          if (!pickerOpen) {
+            Box(modifier = GlanceModifier.height((8f * scale).dp)) {}
+            Row(modifier = GlanceModifier.fillMaxWidth()) {
+              ActionPill("Income", WIDGET_INCOME, "income", detail?.id, scale, GlanceModifier.defaultWeight())
+              Box(modifier = GlanceModifier.width((8f * scale).dp)) {}
+              ActionPill("Expense", WIDGET_EXPENSE, "expense", detail?.id, scale, GlanceModifier.defaultWeight())
+              Box(modifier = GlanceModifier.width((8f * scale).dp)) {}
+              ActionPill("Transfer", WIDGET_TRANSFER, "transfer", detail?.id, scale, GlanceModifier.defaultWeight())
+            }
           }
         }
       }
@@ -326,6 +347,7 @@ class AccountsGlanceWidget : GlanceAppWidget() {
     pickerOpen: Boolean,
     iconBitmap: Bitmap,
     openApp: Intent,
+    scale: Float,
   ) {
     Row(
       modifier = GlanceModifier
@@ -339,15 +361,16 @@ class AccountsGlanceWidget : GlanceAppWidget() {
         provider = ImageProvider(iconBitmap),
         contentDescription = null,
         modifier = GlanceModifier
-          .size(22.dp)
-          .cornerRadius(6.dp)
+          .size((22f * scale).dp)
+          .cornerRadius((6f * scale).dp)
           .let { if (pickerOpen) it else it.clickable(actionStartActivity(openApp)) },
       )
-      Box(modifier = GlanceModifier.width(7.dp)) {}
+      Box(modifier = GlanceModifier.width((7f * scale).dp)) {}
       Text(
         text = "Erebor",
+        maxLines = 1,
         style = TextStyle(
-          fontSize = 13.sp,
+          fontSize = (13f * scale).sp,
           fontWeight = FontWeight.Bold,
           color = ColorProvider(colors.textPrimary),
         ),
@@ -355,7 +378,8 @@ class AccountsGlanceWidget : GlanceAppWidget() {
       )
       Text(
         text = if (pickerOpen) "Tap to close" else monthLabel,
-        style = TextStyle(fontSize = 12.sp, fontWeight = FontWeight.Medium, color = ColorProvider(colors.textSecondary)),
+        maxLines = 1,
+        style = TextStyle(fontSize = (12f * scale).sp, color = ColorProvider(colors.textSecondary)),
       )
     }
   }
@@ -365,7 +389,7 @@ class AccountsGlanceWidget : GlanceAppWidget() {
   private fun AccountCard(
     detail: WidgetAccountDetail,
     colors: WidgetColors,
-    showFlowRow: Boolean,
+    scale: Float,
     modifier: GlanceModifier,
   ) {
     Column(modifier = modifier) {
@@ -379,8 +403,8 @@ class AccountsGlanceWidget : GlanceAppWidget() {
       ) {
         Box(
           modifier = GlanceModifier
-            .size(36.dp)
-            .cornerRadius(18.dp)
+            .size((36f * scale).dp)
+            .cornerRadius((18f * scale).dp)
             .background(parseAccountColor(detail.colorHex)),
           contentAlignment = Alignment.Center,
         ) {
@@ -388,15 +412,19 @@ class AccountsGlanceWidget : GlanceAppWidget() {
             provider = ImageProvider(accountTypeIcon(detail.type)),
             contentDescription = null,
             colorFilter = ColorFilter.tint(ColorProvider(Color.White)),
-            modifier = GlanceModifier.size(18.dp),
+            modifier = GlanceModifier.size((18f * scale).dp),
           )
         }
-        Box(modifier = GlanceModifier.width(10.dp)) {}
+        Box(modifier = GlanceModifier.width((10f * scale).dp)) {}
         Column(modifier = GlanceModifier.defaultWeight()) {
           Text(
             text = detail.name,
             maxLines = 1,
-            style = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.Medium, color = ColorProvider(colors.textPrimary)),
+            style = TextStyle(
+              fontSize = (15f * scale).sp,
+              fontWeight = FontWeight.Medium,
+              color = ColorProvider(colors.textPrimary),
+            ),
           )
           // The chevron is the affordance that this row is tappable — a
           // widget has no hover or ripple to hint with. A drawable rather
@@ -407,23 +435,27 @@ class AccountsGlanceWidget : GlanceAppWidget() {
             Text(
               text = accountTypeLabel(detail.type),
               maxLines = 1,
-              style = TextStyle(fontSize = 12.sp, color = ColorProvider(colors.textSecondary)),
+              style = TextStyle(fontSize = (12f * scale).sp, color = ColorProvider(colors.textSecondary)),
             )
-            Box(modifier = GlanceModifier.width(3.dp)) {}
+            Box(modifier = GlanceModifier.width((3f * scale).dp)) {}
             Image(
               provider = ImageProvider(R.drawable.ic_chevron_down),
               contentDescription = null,
               colorFilter = ColorFilter.tint(ColorProvider(colors.textSecondary)),
-              modifier = GlanceModifier.size(12.dp),
+              modifier = GlanceModifier.size((12f * scale).dp),
             )
           }
         }
-        Box(modifier = GlanceModifier.width(8.dp)) {}
+        Box(modifier = GlanceModifier.width((8f * scale).dp)) {}
         Column(horizontalAlignment = Alignment.Horizontal.End) {
           Text(
             text = formatMoney(detail.balanceMinor, detail.currency),
             maxLines = 1,
-            style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Bold, color = ColorProvider(colors.textPrimary)),
+            style = TextStyle(
+              fontSize = (16f * scale).sp,
+              fontWeight = FontWeight.Bold,
+              color = ColorProvider(colors.textPrimary),
+            ),
           )
           // Stacked rather than inline (CurrencyAmount's other form) because
           // a widget row is far narrower than the app's, and "AED 450.00 ·
@@ -432,27 +464,36 @@ class AccountsGlanceWidget : GlanceAppWidget() {
             Text(
               text = "≈ ${formatMoney(detail.baseEquivalentMinor, detail.baseCurrency)}",
               maxLines = 1,
-              style = TextStyle(fontSize = 11.sp, color = ColorProvider(colors.textSubtle)),
+              style = TextStyle(fontSize = (11f * scale).sp, color = ColorProvider(colors.textSubtle)),
             )
           }
         }
       }
 
-      if (!showFlowRow) return@Column
-
-      // Two weighted spacers rather than one. Any height the launcher gives
-      // beyond the content gets split above and below the divider, so a
-      // taller widget reads as a comfortably spaced card instead of the
-      // single void that pooling all the slack in one place produced.
+      // Weighted, so the divider and flow row sit against the bottom of the
+      // card's body no matter how the scaled text rounds off. There is no
+      // slack to pool here — the card is sized to this content.
       Box(modifier = GlanceModifier.defaultWeight()) {}
-      Box(modifier = GlanceModifier.height(8.dp)) {}
       Box(modifier = GlanceModifier.fillMaxWidth().height(1.dp).background(colors.border)) {}
-      Box(modifier = GlanceModifier.height(8.dp)) {}
-      Box(modifier = GlanceModifier.defaultWeight()) {}
+      Box(modifier = GlanceModifier.height((8f * scale).dp)) {}
 
       Row(modifier = GlanceModifier.fillMaxWidth()) {
-        FlowColumn("Income", formatMoney(detail.incomeMinor, detail.currency), WIDGET_INCOME, colors, GlanceModifier.defaultWeight())
-        FlowColumn("Expense", formatMoney(detail.expenseMinor, detail.currency), WIDGET_EXPENSE, colors, GlanceModifier.defaultWeight())
+        FlowColumn(
+          "Income",
+          formatMoney(detail.incomeMinor, detail.currency),
+          WIDGET_INCOME,
+          colors,
+          scale,
+          GlanceModifier.defaultWeight(),
+        )
+        FlowColumn(
+          "Expense",
+          formatMoney(detail.expenseMinor, detail.currency),
+          WIDGET_EXPENSE,
+          colors,
+          scale,
+          GlanceModifier.defaultWeight(),
+        )
         FlowColumn(
           "Transfers",
           // Net in − out, with an explicit "+" when non-negative, matching
@@ -460,6 +501,7 @@ class AccountsGlanceWidget : GlanceAppWidget() {
           (if (detail.netTransferMinor >= 0) "+" else "") + formatMoney(detail.netTransferMinor, detail.currency),
           if (detail.netTransferMinor >= 0) WIDGET_ACCENT_CYAN else WIDGET_EXPENSE,
           colors,
+          scale,
           GlanceModifier.defaultWeight(),
         )
       }
@@ -472,29 +514,36 @@ class AccountsGlanceWidget : GlanceAppWidget() {
     value: String,
     valueColor: Color,
     colors: WidgetColors,
+    scale: Float,
     modifier: GlanceModifier,
   ) {
     Column(modifier = modifier) {
       Text(
         text = label,
-        style = TextStyle(fontSize = 11.sp, color = ColorProvider(colors.textSecondary)),
+        maxLines = 1,
+        style = TextStyle(fontSize = (11f * scale).sp, color = ColorProvider(colors.textSecondary)),
       )
       Text(
         text = value,
         maxLines = 1,
-        style = TextStyle(fontSize = 12.sp, fontWeight = FontWeight.Medium, color = ColorProvider(valueColor)),
+        style = TextStyle(
+          fontSize = (12f * scale).sp,
+          fontWeight = FontWeight.Medium,
+          color = ColorProvider(valueColor),
+        ),
       )
     }
   }
 
   // The switcher. A LazyColumn because this is a transient mode where
-  // scrolling is acceptable — unlike the resting card, whose fixed height is
-  // the whole reason the old list widget's resize bugs are gone.
+  // scrolling is acceptable — unlike the resting card, whose content is
+  // exactly the card's size.
   @Composable
   private fun AccountPicker(
     options: List<WidgetAccountBalance>,
     selectedIndex: Int,
     colors: WidgetColors,
+    scale: Float,
     modifier: GlanceModifier,
   ) {
     LazyColumn(modifier = modifier) {
@@ -505,11 +554,10 @@ class AccountsGlanceWidget : GlanceAppWidget() {
           }
           Row(
             // Tighter than the card's rhythm on purpose: with a dozen
-            // accounts every dp of row height costs a visible entry, and
-            // the picker hides the action pills to buy back two more.
+            // accounts every dp of row height costs a visible entry.
             modifier = GlanceModifier
               .fillMaxWidth()
-              .padding(vertical = 6.dp)
+              .padding(vertical = (6f * scale).dp)
               .clickable(actionRunCallback<SelectAccountAction>(accountIndexParams(index))),
             verticalAlignment = Alignment.Vertical.CenterVertically,
           ) {
@@ -517,7 +565,7 @@ class AccountsGlanceWidget : GlanceAppWidget() {
               text = if (index == selectedIndex) "●  ${acct.name}" else "    ${acct.name}",
               maxLines = 1,
               style = TextStyle(
-                fontSize = 14.sp,
+                fontSize = (14f * scale).sp,
                 fontWeight = if (index == selectedIndex) FontWeight.Bold else FontWeight.Normal,
                 color = ColorProvider(if (index == selectedIndex) WIDGET_ACCENT_CYAN else colors.textPrimary),
               ),
@@ -526,7 +574,7 @@ class AccountsGlanceWidget : GlanceAppWidget() {
             Text(
               text = formatMoney(acct.balanceMinor, acct.currency),
               maxLines = 1,
-              style = TextStyle(fontSize = 13.sp, color = ColorProvider(colors.textSecondary)),
+              style = TextStyle(fontSize = (13f * scale).sp, color = ColorProvider(colors.textSecondary)),
             )
           }
         }
@@ -538,6 +586,7 @@ class AccountsGlanceWidget : GlanceAppWidget() {
   private fun EmptyBody(
     uiState: AccountsUiState,
     colors: WidgetColors,
+    scale: Float,
     modifier: GlanceModifier,
   ) {
     Column(
@@ -559,7 +608,7 @@ class AccountsGlanceWidget : GlanceAppWidget() {
       if (message != null) {
         Text(
           text = message,
-          style = TextStyle(fontSize = 13.sp, color = ColorProvider(colors.textSecondary)),
+          style = TextStyle(fontSize = (13f * scale).sp, color = ColorProvider(colors.textSecondary)),
         )
       }
     }
@@ -574,6 +623,7 @@ class AccountsGlanceWidget : GlanceAppWidget() {
     accent: Color,
     type: String,
     accountId: Long?,
+    scale: Float,
     modifier: GlanceModifier,
   ) {
     val uri = if (accountId != null) {
@@ -583,15 +633,20 @@ class AccountsGlanceWidget : GlanceAppWidget() {
     }
     Box(
       modifier = modifier
-        .height(36.dp)
-        .cornerRadius(18.dp)
+        .height((36f * scale).dp)
+        .cornerRadius((18f * scale).dp)
         .background(accent)
         .clickable(actionStartActivity(Intent(Intent.ACTION_VIEW, Uri.parse(uri)))),
       contentAlignment = Alignment.Center,
     ) {
       Text(
         text = "+ $label",
-        style = TextStyle(fontSize = 13.sp, fontWeight = FontWeight.Bold, color = ColorProvider(Color.White)),
+        maxLines = 1,
+        style = TextStyle(
+          fontSize = (13f * scale).sp,
+          fontWeight = FontWeight.Bold,
+          color = ColorProvider(Color.White),
+        ),
       )
     }
   }
