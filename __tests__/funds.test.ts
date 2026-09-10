@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 
-import { fundAllocations, funds, transactions } from "../db/schema";
+import { fundAllocations, funds, recurringRules, transactions } from "../db/schema";
 import { getAccountBalanceMinor, getNetWorthSeries } from "../services/balance";
 import {
   computeFundProgress,
@@ -499,6 +499,78 @@ describe("closing a fund", () => {
       .run();
 
     expect(balanceOf(fundId).fundedMinor).toBe(0);
+  });
+});
+
+// The scenario that prompted rule-level fund links: pre-fund a commitment,
+// then watch it draw down as instalments land, rather than all at once.
+describe("recurring expenses linked to a fund", () => {
+  it("draws down month by month instead of consuming the fund up front", () => {
+    const accountId = insertAccount(db);
+    const fundId = makeFund({ name: "Car EMI", targetAmountMinor: 100_000 });
+    allocate(fundId, 100_000, new Date(2026, 0, 1));
+
+    const [rule] = db
+      .insert(recurringRules)
+      .values({
+        type: "expense",
+        amountMinor: 8_000,
+        accountId,
+        fundId,
+        intervalCount: 1,
+        intervalUnit: "month",
+        startDate: new Date(2026, 0, 15),
+      })
+      .returning({ id: recurringRules.id })
+      .all();
+
+    // Ten instalments, all materialized ahead of time the way the engine
+    // does — the fund must not treat them as already spent.
+    for (let i = 0; i < 10; i++) {
+      const date = new Date(2026, i, 15);
+      db.insert(transactions)
+        .values({
+          type: "expense",
+          amountMinor: 8_000,
+          date,
+          accountId,
+          fundId,
+          recurringRuleId: rule.id,
+          occurrenceDate: date,
+          isRecurringGenerated: true,
+        })
+        .run();
+    }
+
+    // As of February, only January's instalment has landed.
+    expect(balanceOf(fundId, new Date(2026, 1, 1)).fundedMinor).toBe(92_000);
+    // By June, five have.
+    expect(balanceOf(fundId, new Date(2026, 5, 1)).fundedMinor).toBe(60_000);
+    // Once every instalment is in the past, the fund is spent down.
+    expect(balanceOf(fundId, new Date(2027, 0, 1)).fundedMinor).toBe(20_000);
+  });
+
+  it("marks instalments past the cutoff as upcoming in the history", () => {
+    const accountId = insertAccount(db);
+    const fundId = makeFund();
+    allocate(fundId, 100_000, new Date(2026, 0, 1));
+    for (const month of [0, 6]) {
+      db.insert(transactions)
+        .values({
+          type: "expense",
+          amountMinor: 8_000,
+          date: new Date(2026, month, 15),
+          accountId,
+          fundId,
+        })
+        .run();
+    }
+
+    const history = getFundHistory(db, fundId, new Date(2026, 1, 1));
+    const spends = history.filter((entry) => entry.kind === "spend");
+    // The July instalment is listed but flagged, so the list can't appear
+    // to contradict a funded figure that hasn't subtracted it.
+    expect(spends.map((entry) => entry.kind === "spend" && entry.isUpcoming)).toEqual([true, false]);
   });
 });
 

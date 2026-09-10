@@ -1,6 +1,6 @@
 import { and, eq, gte, lt } from "drizzle-orm";
 
-import { recurringRules, tags, transactionTags, transactions } from "../db/schema";
+import { funds, recurringRules, tags, transactionTags, transactions } from "../db/schema";
 import { toLocalDateString } from "../services/period";
 import {
   createRecurringSeries,
@@ -355,5 +355,115 @@ describe("monthlyEquivalent", () => {
     expect(monthlyEquivalent(120000, 1, "year")).toBeCloseTo(10000);
     expect(monthlyEquivalent(700, 1, "week")).toBeCloseTo(700 * (365.25 / 12 / 7));
     expect(monthlyEquivalent(100, 1, "day")).toBeCloseTo(100 * (365.25 / 12));
+  });
+});
+
+// Rule-level fund links (spec.md §5.21). The fund lives on the rule so a
+// pre-funded commitment keeps drawing down as later instalments
+// materialize, rather than needing each one linked by hand.
+describe("fund links on recurring rules", () => {
+  function makeFund(db: TestDb): number {
+    const [row] = db
+      .insert(funds)
+      .values({ name: "Car EMI", targetAmountMinor: 100000, icon: "car", color: "#000" })
+      .returning({ id: funds.id })
+      .all();
+    return row.id;
+  }
+
+  it("carries the fund from the rule onto every materialized occurrence", () => {
+    const accountId = insertAccount(db);
+    const fundId = makeFund(db);
+
+    createRecurringSeries(db, baseInput({ accountId, fundId }), {
+      intervalCount: 1,
+      intervalUnit: "month",
+      endDate: null,
+    });
+
+    const rows = db.select().from(transactions).all();
+    expect(rows.length).toBeGreaterThan(1);
+    expect(rows.every((row) => row.fundId === fundId)).toBe(true);
+  });
+
+  it("forces the fund null on a non-expense rule", () => {
+    const accountId = insertAccount(db);
+    const toAccountId = insertAccount(db, { name: "B" });
+    const fundId = makeFund(db);
+
+    createRecurringSeries(
+      db,
+      baseInput({ type: "transfer", accountId, toAccountId, categoryId: null, fundId }),
+      { intervalCount: 1, intervalUnit: "month", endDate: null },
+    );
+
+    expect(db.select().from(recurringRules).get()!.fundId).toBeNull();
+    expect(db.select().from(transactions).all().every((row) => row.fundId === null)).toBe(true);
+  });
+
+  it("keeps the fund on the new rule after a this-and-all-future edit", () => {
+    const accountId = insertAccount(db);
+    const fundId = makeFund(db);
+    createRecurringSeries(db, baseInput({ accountId, fundId }), {
+      intervalCount: 1,
+      intervalUnit: "month",
+      endDate: null,
+    });
+
+    const second = db
+      .select()
+      .from(transactions)
+      .orderBy(transactions.date)
+      .all()[1];
+
+    // Editing only the amount must not silently stop the remaining
+    // instalments drawing from the fund.
+    editFutureOccurrences(
+      db,
+      {
+        id: second.id,
+        recurringRuleId: second.recurringRuleId!,
+        occurrenceDate: second.occurrenceDate!,
+      },
+      baseInput({ accountId, fundId, amountMinor: 60000, date: second.date }),
+      null,
+    );
+
+    const newRule = db.select().from(recurringRules).all().find((rule) => rule.isActive)!;
+    expect(newRule.fundId).toBe(fundId);
+    const regenerated = db
+      .select()
+      .from(transactions)
+      .all()
+      .filter((row) => row.recurringRuleId === newRule.id);
+    expect(regenerated.length).toBeGreaterThan(0);
+    expect(regenerated.every((row) => row.fundId === fundId)).toBe(true);
+  });
+
+  it("changes the fund on one occurrence only, via a just-this-one edit", () => {
+    const accountId = insertAccount(db);
+    const fundId = makeFund(db);
+    createRecurringSeries(db, baseInput({ accountId, fundId }), {
+      intervalCount: 1,
+      intervalUnit: "month",
+      endDate: null,
+    });
+
+    const first = db.select().from(transactions).orderBy(transactions.date).all()[0];
+    editSingleOccurrence(
+      db,
+      {
+        id: first.id,
+        recurringRuleId: first.recurringRuleId!,
+        occurrenceDate: first.occurrenceDate!,
+      },
+      baseInput({ accountId, fundId: null, date: first.date }),
+    );
+
+    const rows = db.select().from(transactions).orderBy(transactions.date).all();
+    expect(rows[0].fundId).toBeNull();
+    expect(rows.slice(1).every((row) => row.fundId === fundId)).toBe(true);
+    // The rule itself is untouched — that is what "just this one" means.
+    expect(db.select().from(recurringRules).get()!.fundId).toBe(fundId);
   });
 });

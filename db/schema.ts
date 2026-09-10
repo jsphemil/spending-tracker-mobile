@@ -106,6 +106,18 @@ export const recurringRules = sqliteTable("recurring_rules", {
     (): AnySQLiteColumn => recurringRules.id,
     { onDelete: "set null" },
   ),
+  // The fund every occurrence of this rule spends from (spec.md §5.21).
+  // Expenses only, forced null otherwise in services/recurrence.ts.
+  //
+  // Lives on the rule rather than only on each materialized row so a
+  // pre-funded commitment — an EMI, say — keeps drawing down the fund as
+  // future instalments materialize, instead of needing each one linked by
+  // hand. Occurrences inherit it at materialization, and because fund
+  // consumption respects the month cutoff, instalments dated ahead don't
+  // eat the fund early: it falls month by month as they actually land.
+  fundId: integer("fund_id").references((): AnySQLiteColumn => funds.id, {
+    onDelete: "set null",
+  }),
 });
 
 export const recurringRuleTags = sqliteTable(

@@ -1,7 +1,7 @@
 import { eq, sql } from "drizzle-orm";
 
 import { db } from "../client";
-import { fundAllocations, funds, transactions } from "../schema";
+import { fundAllocations, funds, recurringRules, transactions } from "../schema";
 
 // None of these call refreshAccountsWidget(): earmarking money changes no
 // account balance and no net worth (spec.md §5.21), so the home screen
@@ -93,9 +93,17 @@ export function deleteFund(id: number): void {
     .from(transactions)
     .where(eq(transactions.fundId, id))
     .get();
+  // Recurring rules count too. Without this, deleting a fund would leave a
+  // commitment silently unlinked ("set null") and every future instalment
+  // would quietly stop drawing from it.
+  const ruleCount = db
+    .select({ count: sql<number>`count(*)` })
+    .from(recurringRules)
+    .where(eq(recurringRules.fundId, id))
+    .get();
 
   const allocations = allocationCount?.count ?? 0;
-  const linked = linkedCount?.count ?? 0;
+  const linked = (linkedCount?.count ?? 0) + (ruleCount?.count ?? 0);
   if (allocations > 0 || linked > 0) {
     throw new Error(
       "This fund already has history — close it instead, which returns its balance to unallocated and keeps past spending intact.",

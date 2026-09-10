@@ -220,6 +220,13 @@ export type FundHistoryEntry =
       amountMinor: number;
       currency: string;
       description: string | null;
+      /**
+       * Dated at or beyond the balance cutoff, so it has NOT been taken out
+       * of the fund yet. Recurring commitments materialize months ahead, so
+       * without flagging these the history would list ten instalments the
+       * funded figure hasn't counted and appear not to add up.
+       */
+      isUpcoming: boolean;
     };
 
 // How a fund reached its current amount, newest first. Deliberately a merge
@@ -231,7 +238,7 @@ export type FundHistoryEntry =
 // Spend amounts stay in the expense's own currency here — this is a display
 // list, so showing what was actually spent beats showing a converted
 // figure that would silently change with tomorrow's exchange rate.
-export function getFundHistory(db: Db, fundId: number): FundHistoryEntry[] {
+export function getFundHistory(db: Db, fundId: number, asOfDate?: Date): FundHistoryEntry[] {
   const allocationRows = db
     .select()
     .from(fundAllocations)
@@ -266,6 +273,9 @@ export function getFundHistory(db: Db, fundId: number): FundHistoryEntry[] {
       amountMinor: row.amountMinor,
       currency: row.currency,
       description: row.description,
+      // Same cutoff getFundBalances uses, so what the list marks as still
+      // to come is exactly what the funded figure hasn't subtracted.
+      isUpcoming: asOfDate != null && row.date >= asOfDate,
     })),
   ];
 

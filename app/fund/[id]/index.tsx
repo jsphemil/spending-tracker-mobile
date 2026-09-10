@@ -63,7 +63,7 @@ export default function FundDetailScreen() {
   // pins the difference deliberately.
   const balance =
     getFundBalances(db, toBaseMinor, range.end).get(fundId) ?? emptyFundBalance(fundId);
-  const history = getFundHistory(db, fundId);
+  const history = getFundHistory(db, fundId, range.end);
 
   if (!fund) return <Text className="p-4 text-fg-muted">Loading…</Text>;
 
@@ -272,12 +272,18 @@ export default function FundDetailScreen() {
                         month: "short",
                         year: "numeric",
                       })}
+                      {/* A recurring commitment materializes months ahead.
+                          Saying so keeps the list honest against the funded
+                          figure, which hasn't subtracted these yet. */}
+                      {entry.kind === "spend" && entry.isUpcoming ? " · scheduled" : ""}
                     </Text>
                   </View>
                   <Text
                     className={`font-data text-sm font-medium tabular-nums ${
                       entry.kind === "spend"
-                        ? "text-danger"
+                        ? entry.isUpcoming
+                          ? "text-fg-subtle"
+                          : "text-danger"
                         : entry.amountMinor >= 0
                           ? "text-success"
                           : "text-fg-muted"

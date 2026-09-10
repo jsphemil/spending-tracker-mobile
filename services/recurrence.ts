@@ -73,6 +73,12 @@ function buildOccurrenceData(rule: RecurringRule, occurrenceDate: Date) {
     recurringRuleId: rule.id,
     occurrenceDate,
     isRecurringGenerated: true,
+    // Inherited from the rule, so a pre-funded commitment keeps drawing
+    // down its fund as later instalments materialize. Already-materialized
+    // rows keep whatever fund they were created with — the "this and all
+    // future" edit path is what changes a fund going forward, by opening a
+    // new rule rather than rewriting existing rows.
+    fundId: rule.fundId,
   };
 }
 
@@ -189,6 +195,7 @@ export function createRecurringSeries(
         toAccountId: input.type === "transfer" ? input.toAccountId ?? null : null,
         categoryId: input.type === "transfer" ? null : input.categoryId ?? null,
         description: input.description ?? null,
+        fundId: input.type === "expense" ? input.fundId ?? null : null,
         intervalCount: schedule.intervalCount,
         intervalUnit: schedule.intervalUnit,
         startDate: input.date,
@@ -229,6 +236,10 @@ export function editSingleOccurrence(db: Db, existing: RecurringTransactionRef, 
         toAccountId: input.type === "transfer" ? input.toAccountId ?? null : null,
         categoryId: input.type === "transfer" ? null : input.categoryId ?? null,
         description: input.description ?? null,
+        // Changing the fund on a single occurrence affects only that row —
+        // the rule keeps its own fund for every other instalment, which is
+        // what "just this one" means everywhere else in this engine.
+        fundId: input.type === "expense" ? input.fundId ?? null : null,
         isRecurringException: true,
       })
       .where(eq(transactions.id, existing.id))
@@ -277,6 +288,12 @@ export function editFutureOccurrences(
         toAccountId: input.type === "transfer" ? input.toAccountId ?? null : null,
         categoryId: input.type === "transfer" ? null : input.categoryId ?? null,
         description: input.description ?? null,
+        // Carried onto the new rule, so editing "this and all future" on a
+        // fund-linked commitment doesn't silently stop the remaining
+        // instalments drawing from it. The form pre-fills the existing
+        // fund, so the value arrives here even when the user only meant to
+        // change the amount.
+        fundId: input.type === "expense" ? input.fundId ?? null : null,
         intervalCount: oldRule.intervalCount,
         intervalUnit: oldRule.intervalUnit,
         startDate: input.date,

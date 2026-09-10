@@ -6,6 +6,7 @@ import { EmptyState } from "../components/ui/EmptyState";
 import { GlobalHeader } from "../components/GlobalHeader";
 import { useAccounts } from "../db/queries/accounts";
 import { useCategories } from "../db/queries/categories";
+import { useFunds } from "../db/queries/funds";
 import { useActiveRecurringRules } from "../db/queries/recurringRules";
 import { useSettings } from "../db/queries/settings";
 import { formatMoney } from "../services/format";
@@ -26,9 +27,12 @@ export default function CommitmentsScreen() {
   const { data: rules } = useActiveRecurringRules();
   const { data: accounts } = useAccounts();
   const { data: categories } = useCategories();
+  const { data: funds } = useFunds();
 
   const accountName = (id: number | null) => accounts?.find((a) => a.id === id)?.name ?? "?";
   const categoryInfo = (id: number | null) => categories?.find((c) => c.id === id);
+  const fundName = (id: number | null) =>
+    id == null ? null : (funds?.find((f) => f.id === id)?.name ?? null);
 
   const rows = (rules ?? []).map((rule) => ({
     rule,
@@ -112,6 +116,13 @@ export default function CommitmentsScreen() {
                   {describeSchedule(rule.intervalCount, rule.intervalUnit)}
                   {rule.description ? ` · ${rule.description}` : ""}
                 </Text>
+                {/* Commitments is where you look to see what a rule does, so
+                    it's where "and it draws from this fund" belongs. */}
+                {fundName(rule.fundId) && (
+                  <Text className="mt-0.5 text-xs text-accent">
+                    Draws from {fundName(rule.fundId)}
+                  </Text>
+                )}
               </View>
             ))}
           </View>

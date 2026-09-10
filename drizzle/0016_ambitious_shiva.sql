@@ -1,0 +1,1 @@
+ALTER TABLE `recurring_rules` ADD `fund_id` integer REFERENCES funds(id);

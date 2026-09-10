@@ -380,10 +380,10 @@ export function TransactionForm({
         </View>
       )}
 
-      {/* Funds only apply to money going out, and only to one-off expenses
-          for now — a recurring occurrence is edited through its own flow,
-          which doesn't carry a fund link yet (spec.md §5.21). */}
-      {type === "expense" && !isRecurringEdit && activeFunds.length > 0 && (
+      {/* Funds only apply to money going out. Recurring expenses can link
+          too (spec.md §5.21): the fund lives on the rule, so a pre-funded
+          commitment keeps drawing down as instalments land. */}
+      {type === "expense" && activeFunds.length > 0 && (
         <View className="gap-2">
           <Text className="text-sm font-medium text-fg-muted">Spend from a fund (optional)</Text>
           <View className="flex-row flex-wrap gap-2">
@@ -406,8 +406,9 @@ export function TransactionForm({
           </View>
           {fundId !== null && (
             <Text className="text-xs text-fg-subtle">
-              This expense will draw down that fund. Editing or deleting it later puts the money
-              back automatically.
+              {isRecurringEdit || recurring
+                ? "Each occurrence draws down that fund as its date arrives — future ones don't take the money early."
+                : "This expense will draw down that fund. Editing or deleting it later puts the money back automatically."}
             </Text>
           )}
         </View>
