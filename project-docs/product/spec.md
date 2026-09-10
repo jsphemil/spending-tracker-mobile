@@ -30,7 +30,7 @@ pushed to a later phase) · ❌ Dropped (cut from scope).
 | §5.8 | Dashboard (V1 shape, superseded) | ✅ Built & Verified | V1 build (net worth gauge, trend chart, asset allocation donut, over-budget banner, embedded calendar, Accounts/Goals/Recent Transactions/Tags cards) was ✅ Built & Verified — UAT checklist §9 all pass. **Superseded 2026-09-02 by §5.19's Position/Performance/Action rebuild, which itself shipped and was verified on-device 2026-09-02 (versionCode 12, 2.0.0).** Kept here for history. |
 | §5.9 | Navigation (V1 shape, superseded) | ✅ Built & Verified | V1 (6 tabs: Dashboard, Accounts, Transactions, Commitments, Categories, Profile) was ✅ Built & Verified — UAT checklist §14. **Superseded 2026-09-02 by §5.19's 4-tab shell, shipped and verified on-device the same day (versionCode 12, 2.0.0).** Kept here for history. |
 | §5.10 | Profile Page (V1 shape, superseded) | ✅ Built & Verified | V1 was ✅ Built & Verified — display name, global switches, Base Currency, Dropbox section all confirmed via UAT checklist §13. **Superseded 2026-09-02 by §5.19's grouped Settings screen, shipped and verified on-device the same day.** The Light/Dark/System theme toggle removed 2026-08-28 (§5.18's dark-only decision) was **reinstated** as part of V2 and confirmed working — see §5.19's Theme V2. |
-| §5.11 | Home Screen Widget | 🚧 In Progress | Two separate selectable widgets, Android-only, matching the iOS-deferred decision. **Widget 1 (Accounts & Quick Add) built & verified 2026-08-29** — rewritten natively as Kotlin + Jetpack Glance (`modules/widget-bridge/`), replacing an earlier `react-native-android-widget` JS-library implementation entirely (that library turned out to be a classic bitmap-swap `AppWidgetProvider`, not real Glance). Selected accounts' balances + Income/Expense/Transfer quick-add pills, matching the app's real dark palette and semantic success/danger/transfer colors. A refresh-timing bug (shipped as versionCode 9) and a balance-cutoff bug — the widget showed a "now"-only balance instead of the same "Balance available" figure the Account Detail screen shows — were found and fixed 2026-09-01/02, both verified on-device (versionCode 10). Widget-picker preview image fixed and shipped 2026-09-09 (versionCode 14). **Two real resize bugs found 2026-09-09 (blank gap below a short account list; shrinking the widget clips a row) — investigated, fix deferred**, see §5.20's In Progress note in backlog.md. **Widget 2 (Portfolio Rings & Allocation) — ❌ Dropped 2026-09-09** — its successor, §5.20's Widget C (Net Worth & Financial Composition), was never started and the user has now decided not to build it. |
+| §5.11 | Home Screen Widget | 🚧 In Progress | Two separate selectable widgets, Android-only, matching the iOS-deferred decision. **Widget 1 (Accounts & Quick Add) built & verified 2026-08-29** — rewritten natively as Kotlin + Jetpack Glance (`modules/widget-bridge/`), replacing an earlier `react-native-android-widget` JS-library implementation entirely (that library turned out to be a classic bitmap-swap `AppWidgetProvider`, not real Glance). Selected accounts' balances + Income/Expense/Transfer quick-add pills, matching the app's real dark palette and semantic success/danger/transfer colors. A refresh-timing bug (shipped as versionCode 9) and a balance-cutoff bug — the widget showed a "now"-only balance instead of the same "Balance available" figure the Account Detail screen shows — were found and fixed 2026-09-01/02, both verified on-device (versionCode 10). Widget-picker preview image fixed and shipped 2026-09-09 (versionCode 14). **Rebuilt 2026-09-10 as a single-account zooming card, which resolved both deferred resize bugs** — it now shows one account at a time (icon, name, type, balance with the `≈` base-currency equivalent, and this month's Income/Expense/Transfers), tapping the account name flips the widget in place into a picker list, and resizing scales the whole card rather than reflowing it. See §5.11's body for why the earlier fixed-height attempts couldn't reach "no empty space". **Widget 2 (Portfolio Rings & Allocation) — ❌ Dropped 2026-09-09** — its successor, §5.20's Widget C (Net Worth & Financial Composition), was never started and the user has now decided not to build it. |
 | §5.12 | Visual Design System (superseded) | ✅ Built & Verified | The dark-first token theme / monospace-tabular / gauge-over-pie system described here shipped and was verified (Phases 1-3, UAT checklist §15). **Superseded 2026-08-28 by §5.18** — the token *values*, glass-card ask from UAT §15 ("a glass effect would be nice"), and the whole visual language were replaced wholesale by the Erebor redesign. Kept here for history; §5.18 is now the authoritative visual-design status. |
 | §5.13 | First-Run Onboarding & Base Currency | ✅ Built & Verified | Onboarding flow + gate, live per-install base currency (not hardcoded INR), searchable ~170-currency picker. UAT checklist §1 confirms every step, the currency-picker search, and base-currency-change recalculation across the whole app — all pass (including the 2026-08-21 SafeAreaView fix for the onboarding-flush-to-top bug). |
 | §5.14 | CSV Export | ✅ Built & Verified | Matches the web app's account/date-filtered CSV export; required a native rebuild for `expo-file-system`/`expo-sharing` — verified on-device 2026-08-12, and re-confirmed working after all the base-currency changes (UAT checklist §12). |
@@ -547,6 +547,47 @@ now stale and kept only for history.
   consistent with every other icon in the app.
 
 ### 5.11 Mobile Home Screen Widget 🚧 In Progress
+
+**Accounts widget rebuilt 2026-09-10 as a single-account zooming card.**
+It shows one account at a time in the shape of a row from the Accounts
+screen — coloured type icon, name, type label, balance with the `≈`
+base-currency equivalent, and this month's Income / Expense / Transfers —
+with the Erebor mark and month above and the quick-add pills below.
+Tapping the account name flips the widget **in place** into a picker
+list; tapping a row returns to that account, tapping the header backs out
+unchanged. The pills now pass `accountId`, so the add screen opens with
+the shown account already selected.
+
+This retired **both resize bugs deferred on 2026-09-09**, and how it got
+there is worth recording, because the first two attempts failed:
+
+- The bugs came from a `defaultWeight()`-stretched `LazyColumn` absorbing
+  whatever height the launcher allocated. Showing one account removes the
+  list, so neither bug has a mechanism any more.
+- A **fixed height** was tried twice and failed in both directions.
+  `targetCellHeight="3"` gave ~150dp against ~190dp of content, clipping
+  the flow row's values away behind the pills; raising it opened a large
+  void above them instead. A fixed-size layout inside a variable-size box
+  cannot reach "no empty space" in either direction.
+- **Breakpoints** that dropped the flow row and pills at small sizes still
+  left slack between whatever remained.
+- What works is **zooming**: the card is drawn at a 300×184dp design size
+  and every dimension — fonts, icons, padding, pills — is multiplied by
+  one factor derived from the allocated size. 184 is the exact sum of the
+  content at scale 1, so the content fills the card at every size and
+  there is no slack anywhere. The card is centred, so leftover cell space
+  is transparent rather than a dark panel with a hole in it.
+
+Two constraints found the hard way and worth not rediscovering: **grid
+snapping cannot be removed** (`AppWidgetHost` places widgets in whole
+cells, ~60dp on the test device, and no app-side setting changes it); and
+**a resize range narrower than one cell silently disables the handles** —
+a 200–230dp bracket left them inert because no legal intermediate size
+exists.
+
+Icons are five bundled vector drawables chosen by `accounts.type`, since
+the app's Lucide icons have no Android equivalent; an account with a
+custom icon shows its type's icon in the widget.
 
 **Scope expanded 2026-08-28 to two separate, independently-selectable
 widgets** — full original build plan lived in `homescreen-widget-guide.md`;
