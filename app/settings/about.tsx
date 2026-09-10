@@ -8,7 +8,7 @@ export default function AboutScreen() {
       <Text className="text-sm text-fg-subtle">v{Constants.expoConfig?.version ?? "1.0.0"}</Text>
       <Text className="mt-4 text-center text-sm text-fg-muted">
         A local-first app for understanding where you stand, how you're doing this month, and
-        what needs your attention — across accounts, spending, goals and commitments.
+        what needs your attention — across accounts, spending, funds and commitments.
       </Text>
     </ScrollView>
   );

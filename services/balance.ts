@@ -103,9 +103,9 @@ export interface DebtPayoffProjection {
 
 // Anchored to today's real balance regardless of whichever month the
 // Account Detail page is otherwise browsing — "am I paying this off" is a
-// today question, same reasoning as Goals using today's real net worth
-// rather than a viewed month's. Trailing 6-month pace, same window as
-// Goals' growth-rate projection.
+// today question, not a question about the month you happen to be looking
+// at. Trailing 6-month pace: long enough to smooth out one unusual month,
+// short enough to still describe current behaviour.
 export function getDebtPayoffProjection(db: Db, accountId: number): DebtPayoffProjection | null {
   const now = new Date();
   const todayCutoff = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
@@ -127,8 +127,9 @@ export function getDebtPayoffProjection(db: Db, accountId: number): DebtPayoffPr
 }
 
 // Net worth at each cutoff date, converted to the app's base currency —
-// powers Goals' progress/pace projection and (later) the Dashboard's net
-// worth trend chart. The real web app folds one query pass over every
+// powers Analytics' net worth trend chart. (It was written for Goals'
+// pace projection too; Goals was removed in favour of §5.21's Funds, but
+// Analytics still depends on this.) The real web app folds one query pass over every
 // transaction incrementally per cutoff to avoid O(accounts × cutoffs)
 // queries; this instead calls the already-tested getAccountBalanceMinor
 // per account per cutoff. At this app's actual scale (one local user, a

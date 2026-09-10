@@ -4,7 +4,7 @@ import { BottomNavBar } from "../../components/BottomNavBar";
 import { Icon } from "../../components/ui/Icon";
 
 // Exactly 4 destinations (spec.md §5.19 "Navigation V2"): Dashboard,
-// Accounts, Transactions, Analytics. Commitments/Categories/Goals/Tags/
+// Accounts, Transactions, Analytics. Commitments/Categories/Funds/Tags/
 // Calendar/Settings moved out to top-level shortcut routes, reachable from
 // the Dashboard's shortcut row and/or the global header — never duplicated
 // here. Every tab hides its own header now; each screen renders the shared

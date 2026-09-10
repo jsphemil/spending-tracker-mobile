@@ -10,10 +10,9 @@ import { db } from "../../db/client";
 import { useAccounts } from "../../db/queries/accounts";
 import { useCategories } from "../../db/queries/categories";
 import { useFundAllocationsSubscription, useFunds } from "../../db/queries/funds";
-import { useGoals } from "../../db/queries/goals";
 import { useSettings } from "../../db/queries/settings";
 import { useFilteredTransactions } from "../../db/queries/transactions";
-import { getAccountBalanceMinor, getNetWorthSeries, getPeriodTotals } from "../../services/balance";
+import { getAccountBalanceMinor, getPeriodTotals } from "../../services/balance";
 import { useBaseConverter } from "../../hooks/useBaseConverter";
 import { toggleNetWorthHidden, useNetWorthHidden } from "../../hooks/useNetWorthHidden";
 import { formatMoney } from "../../services/format";
@@ -24,7 +23,6 @@ import {
   getFundLinkedCurrencies,
   sumEarmarkedMinor,
 } from "../../services/funds";
-import { computeGoalProgress } from "../../services/goals";
 import {
   currentMonthPeriod,
   monthLabel,
@@ -37,7 +35,6 @@ import { useThemeColors } from "../../theme/palette";
 
 const ASSET_TYPES = ["savings", "wallet", "deposit", "investment"] as const;
 const COMMITMENT_LOOKAHEAD_DAYS = 7;
-const GOAL_TRAILING_MONTHS = 6;
 
 function greeting(now: Date): string {
   const hour = now.getHours();
@@ -52,14 +49,7 @@ const FUND_DUE_SOON_DAYS = 30;
 const DASHBOARD_FUND_LIMIT = 3;
 
 interface Shortcut {
-  href:
-    | "/commitments"
-    | "/categories"
-    | "/goal"
-    | "/fund"
-    | "/tag"
-    | "/calendar"
-    | "/settings";
+  href: "/commitments" | "/categories" | "/fund" | "/tag" | "/calendar" | "/settings";
   icon: string;
   label: string;
 }
@@ -70,7 +60,6 @@ interface Shortcut {
 const SHORTCUTS: Shortcut[] = [
   { href: "/commitments", icon: "calendar-sync-outline", label: "Commitments" },
   { href: "/categories", icon: "shape-outline", label: "Categories" },
-  { href: "/goal", icon: "target", label: "Goals" },
   { href: "/fund", icon: "piggy-bank", label: "Funds" },
   { href: "/tag", icon: "tag-outline", label: "Tags" },
   { href: "/calendar", icon: "calendar-month-outline", label: "Calendar" },
@@ -86,7 +75,6 @@ export default function DashboardScreen() {
   const baseCurrency = settings?.baseCurrency ?? "INR";
   const { data: accounts } = useAccounts();
   const { data: categories } = useCategories();
-  const { data: goals } = useGoals();
   const { data: funds } = useFunds();
 
 
@@ -218,18 +206,6 @@ export default function DashboardScreen() {
     return rows;
   }, [upcomingTx, accounts, categories]);
 
-  const sixMonthsAgo = useMemo(
-    () => new Date(today.getFullYear(), today.getMonth() - GOAL_TRAILING_MONTHS, today.getDate()),
-    [today],
-  );
-  const [netWorthPast, netWorthToday] = accounts
-    ? getNetWorthSeries(db, accounts.map((a) => ({ id: a.id, currency: a.currency })), [sixMonthsAgo, today], toBaseMinor)
-    : [0, 0];
-  const goalMonthlyGrowth = (netWorthToday - netWorthPast) / GOAL_TRAILING_MONTHS;
-  const behindPaceGoals = (goals ?? [])
-    .map((g) => computeGoalProgress(g, netWorthToday, goalMonthlyGrowth, today))
-    .filter((g) => g.isBehindTarget);
-
   // Both fund alerts are real, actionable and derived from real data —
   // §5.19 forbids invented alerts, and a "you haven't contributed this
   // month" nag would cut against Funds' deliberately non-judgemental
@@ -261,7 +237,6 @@ export default function DashboardScreen() {
   const hasAttentionItems =
     overBudgetCategories.length > 0 ||
     upcomingCommitments.length > 0 ||
-    behindPaceGoals.length > 0 ||
     fundsDueSoon.length > 0 ||
     overEarmarked;
 
@@ -458,15 +433,6 @@ export default function DashboardScreen() {
                   href="/commitments"
                 />
               ))}
-              {behindPaceGoals.map(({ goal }) => (
-                <AttentionRow
-                  key={`goal-${goal.id}`}
-                  icon="target"
-                  tone="danger"
-                  text={`${goal.name} is behind pace for its target date`}
-                  href="/goal"
-                />
-              ))}
               {fundsDueSoon.map(({ fund, progress }) => (
                 <AttentionRow
                   key={`fund-${fund.id}`}
@@ -513,7 +479,7 @@ function AttentionRow({
   icon: string;
   tone: "danger" | "transfer";
   text: string;
-  href: "/categories" | "/commitments" | "/goal" | "/fund";
+  href: "/categories" | "/commitments" | "/fund";
 }) {
   const colors = useThemeColors();
   const toneColor = tone === "danger" ? colors.danger : colors.transfer;

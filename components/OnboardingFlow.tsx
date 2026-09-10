@@ -53,7 +53,7 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
         Take control of your money. Build your wealth.
       </Text>
       <Text className="text-base text-fg-muted">
-        Erebor brings your accounts, spending, investments, goals and commitments into one clear
+        Erebor brings your accounts, spending, investments, funds and commitments into one clear
         picture — so you can make better decisions with your money.
       </Text>
 
@@ -68,7 +68,7 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
         />
         <PrincipleRow
           title="Build your wealth"
-          body="Set goals, manage commitments and watch your financial position grow over time."
+          body="Earmark money for what's coming, manage commitments and watch your financial position grow over time."
         />
       </View>
 
@@ -91,7 +91,7 @@ const FEATURE_CARDS = [
   { icon: "wallet-outline", title: "Accounts", body: "Keep your bank accounts, savings, investments, deposits, cash and credit cards organized in one place." },
   { icon: "swap-horizontal", title: "Transactions", body: "Record income, expenses and transfers as they happen." },
   { icon: "chart-line", title: "Wealth", body: "See your net worth and how your financial position changes over time." },
-  { icon: "target", title: "Goals", body: "Turn financial intentions into measurable targets and track your progress." },
+  { icon: "piggy-bank", title: "Funds", body: "Set money aside for a laptop, a trip or next year's insurance — without moving it out of your accounts." },
   { icon: "calendar-sync-outline", title: "Commitments", body: "Keep recurring expenses, income and investments visible so you know what's coming." },
   { icon: "shape-outline", title: "Analytics", body: "Understand your spending patterns, income, categories, assets and long-term trends." },
   { icon: "shield", title: "Backup & Restore", body: "Keep your financial data safe and restore it when you need it." },

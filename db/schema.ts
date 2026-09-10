@@ -267,17 +267,10 @@ export const transactionTags = sqliteTable(
   (table) => [primaryKey({ columns: [table.transactionId, table.tagId] })],
 );
 
-// Net-worth targets, tracked against the whole portfolio (not any one
-// account) — always in the app's base currency, same as category budgets.
-export const goals = sqliteTable("goals", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
-  name: text("name").notNull(),
-  targetAmountMinor: integer("target_amount_minor").notNull(),
-  targetDate: integer("target_date", { mode: "timestamp" }),
-  createdAt: integer("created_at", { mode: "timestamp" })
-    .notNull()
-    .default(sql`(unixepoch())`),
-});
+// `goals` lived here until 2026-09-10 (spec.md §5.17, dropped in migration
+// 0015). It held net-worth targets scored against the whole portfolio, so
+// every goal shared one number and none could hold money independently.
+// §5.21's Funds replaces it with a primitive that actually allocates.
 
 // Single-row table (id is always 1) holding global app preferences.
 export const settings = sqliteTable("settings", {

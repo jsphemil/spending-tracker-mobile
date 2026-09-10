@@ -11,7 +11,7 @@ export default function PrivacySecurityScreen() {
       <View className="gap-2">
         <Text className="text-base font-semibold text-fg">Your data stays on your device</Text>
         <Text className="text-sm text-fg-muted">
-          Erebor is local-first: every account, transaction, category, goal and commitment you
+          Erebor is local-first: every account, transaction, category, fund and commitment you
           record lives in a database on this device. Nothing is sent to a server this app's
           developer hosts or can see.
         </Text>

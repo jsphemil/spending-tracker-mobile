@@ -131,15 +131,6 @@ export default function RootLayout() {
               name="category/[id]/edit"
               options={{ presentation: "modal", headerShown: true, title: "Edit Category" }}
             />
-            <Stack.Screen name="goal/index" />
-            <Stack.Screen
-              name="goal/new"
-              options={{ presentation: "modal", headerShown: true, title: "New Goal" }}
-            />
-            <Stack.Screen
-              name="goal/[id]/edit"
-              options={{ presentation: "modal", headerShown: true, title: "Edit Goal" }}
-            />
             {/* Browse screens render their own GlobalHeader; only the
                 create/edit forms are modals, same split as the entities
                 above. */}
