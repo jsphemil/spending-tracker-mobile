@@ -330,6 +330,47 @@ All 3 required updates for the 14-day window are now shipped
 (versionCode 9, 12, 13 — see step 9 below for the production-access
 application, the next gate).
 
+**Update 5 built as versionCode 15, versionName 2.2.0 — release name
+`Erebor_WM15(2.2.0)` (2026-09-10).** Introduces **Funds** (spec.md
+§5.21), a new financial primitive: money you still own but have
+earmarked for a specific future purpose, sitting as a logical
+allocation layer *above* the accounting model. Account balances and net
+worth are completely unchanged; the Dashboard additionally reports
+**Earmarked** and **Unallocated**, with a dedicated Funds card showing
+the top 3. An expense can be spent straight from a fund, and editing or
+deleting that expense reverses it exactly — fund balances are derived
+from an allocation ledger plus a nullable `transactions.fund_id`, never
+stored, so there are no write hooks to forget.
+
+**This release removes Goals** (spec.md §5.17). Every goal was scored
+against the same portfolio-wide net-worth number, so multiple goals were
+just multiple thresholds on one figure and none could hold money
+independently. Migration `0015` drops the table — **any tester who
+created goals will lose them**, which is why the release notes say so
+plainly rather than letting it be discovered. No data was migrated: a
+goal's target is a net-worth threshold and a fund's is a purchase cost,
+so converting would have produced misleading nonsense.
+
+Also in this release: the **net worth privacy toggle became
+session-scoped** (spec.md §5.19) — always hidden on app open, a reveal
+lasting only until the app closes, replacing the remembered preference
+that defeated its own purpose.
+
+Four migrations ship here (`0012`–`0015`). A device upgrading from
+versionCode 14 runs them in order, which is exactly the sequence
+exercised on the test device against a real database. Verified on-device
+across 7 test groups plus a Dropbox backup→restore round trip. Built via
+`npx eas-cli build --platform android --profile production
+--non-interactive`, which auto-incremented versionCode 14 → 15.
+**Submission to the EWM Alpha track done manually by the user.**
+
+Release notes used (versionCode 15):
+```
+<en-GB>
+New: Funds. Set money aside for something specific - a laptop, a trip, next year's insurance - without moving it between accounts. Your net worth doesn't change; the Dashboard now also shows what's Earmarked and what's Unallocated. Spend an expense straight from a fund and it draws down automatically. Goals has been replaced by Funds, so any goals you set will no longer appear. Net worth is now hidden each time you open the app.
+</en-GB>
+```
+
 **Update 4 built as versionCode 14, versionName 2.1.0 — release name
 `Erebor_WM14(2.1.0)` (2026-09-09).** First real feature release since
 the widget-suite work started: the new **Quick Add Transaction** home
