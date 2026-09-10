@@ -19,6 +19,31 @@ data class WidgetAccountOption(
   val balanceMinor: Long,
 )
 
+// Everything the single-account card needs, mirroring one row of the app's
+// Accounts screen (app/(tabs)/accounts/index.tsx).
+//
+// `baseEquivalentMinor` is null whenever there is nothing useful to show —
+// either the account is already in the base currency, or no cached rate
+// exists for the pair. A widget can't sensibly hit the network, so a cache
+// miss omits the "≈" line rather than inventing a number.
+data class WidgetAccountDetail(
+  val id: Long,
+  val name: String,
+  val type: String,
+  val colorHex: String,
+  val currency: String,
+  val balanceMinor: Long,
+  val incomeMinor: Long,
+  val expenseMinor: Long,
+  val transferInMinor: Long,
+  val transferOutMinor: Long,
+  val baseCurrency: String,
+  val baseEquivalentMinor: Long?,
+) {
+  /** Net transfers, the figure the app's account card shows. */
+  val netTransferMinor: Long get() = transferInMinor - transferOutMinor
+}
+
 data class WidgetConfig(val accountIds: List<Long>, val opacityPct: Int)
 
 private fun dbFile(context: Context): File = File(context.filesDir, "SQLite/spending-tracker.db")
@@ -84,6 +109,153 @@ private fun startOfNextMonthEpochSeconds(): Long {
   cal.set(java.util.Calendar.SECOND, 0)
   cal.set(java.util.Calendar.MILLISECOND, 0)
   return cal.timeInMillis / 1000
+}
+
+// Inclusive lower bound of the current calendar month — the native
+// equivalent of services/period.ts's `monthRange(currentMonthPeriod()).start`,
+// pairing with startOfNextMonthEpochSeconds() above to give the same
+// half-open [start, end) range the app's month figures use.
+private fun startOfCurrentMonthEpochSeconds(): Long {
+  val cal = java.util.Calendar.getInstance()
+  cal.set(java.util.Calendar.DAY_OF_MONTH, 1)
+  cal.set(java.util.Calendar.HOUR_OF_DAY, 0)
+  cal.set(java.util.Calendar.MINUTE, 0)
+  cal.set(java.util.Calendar.SECOND, 0)
+  cal.set(java.util.Calendar.MILLISECOND, 0)
+  return cal.timeInMillis / 1000
+}
+
+// This month's income / expense / transfers for one account, mirroring the
+// per-account loop in app/(tabs)/accounts/index.tsx — NOT
+// services/balance.ts's getPeriodTotals, which deliberately excludes
+// transfers entirely and so can't produce the card's third column.
+//
+// Transfers are attributed from the transaction's own perspective, exactly
+// as that loop does: the row's own account is the "out" side, its
+// to_account_id the "in" side.
+private data class MonthFlows(
+  val incomeMinor: Long,
+  val expenseMinor: Long,
+  val transferInMinor: Long,
+  val transferOutMinor: Long,
+)
+
+private fun getMonthFlows(db: SQLiteDatabase, accountId: Long): MonthFlows {
+  val start = startOfCurrentMonthEpochSeconds().toString()
+  val end = startOfNextMonthEpochSeconds().toString()
+  val id = accountId.toString()
+
+  val own = db.rawQuery(
+    """
+    SELECT
+      COALESCE(SUM(CASE WHEN type = 'income'   THEN amount_minor ELSE 0 END), 0),
+      COALESCE(SUM(CASE WHEN type = 'expense'  THEN amount_minor ELSE 0 END), 0),
+      COALESCE(SUM(CASE WHEN type = 'transfer' THEN amount_minor ELSE 0 END), 0)
+    FROM transactions
+    WHERE account_id = ? AND date >= ? AND date < ?
+    """.trimIndent(),
+    arrayOf(id, start, end),
+  ).use { cursor ->
+    if (cursor.moveToFirst()) {
+      Triple(cursor.getLong(0), cursor.getLong(1), cursor.getLong(2))
+    } else {
+      Triple(0L, 0L, 0L)
+    }
+  }
+
+  val transferIn = db.rawQuery(
+    """
+    SELECT COALESCE(SUM(amount_minor), 0)
+    FROM transactions
+    WHERE type = 'transfer' AND to_account_id = ? AND date >= ? AND date < ?
+    """.trimIndent(),
+    arrayOf(id, start, end),
+  ).use { cursor -> if (cursor.moveToFirst()) cursor.getLong(0) else 0L }
+
+  return MonthFlows(own.first, own.second, transferIn, own.third)
+}
+
+private fun getBaseCurrency(db: SQLiteDatabase): String =
+  db.rawQuery("SELECT base_currency FROM settings LIMIT 1", null).use { cursor ->
+    if (cursor.moveToFirst()) cursor.getString(0) ?: "INR" else "INR"
+  }
+
+// Cache-only conversion into the app's base currency.
+//
+// Note exchange_rate_cache's columns read backwards from their names:
+// services/currency.ts stores rows with base_currency = the FOREIGN
+// currency, target_currency = the app's base, and rate meaning
+// "1 foreign = rate base". Newest row wins; a miss returns null and the
+// caller omits the "≈" line, because a widget has no business making a
+// network call and a stale-guess figure is worse than none.
+private fun getBaseEquivalentMinor(
+  db: SQLiteDatabase,
+  amountMinor: Long,
+  currency: String,
+  baseCurrency: String,
+): Long? {
+  if (currency.equals(baseCurrency, ignoreCase = true)) return null
+  val rate = db.rawQuery(
+    """
+    SELECT rate FROM exchange_rate_cache
+    WHERE base_currency = ? AND target_currency = ?
+    ORDER BY fetched_at DESC LIMIT 1
+    """.trimIndent(),
+    arrayOf(currency, baseCurrency),
+  ).use { cursor -> if (cursor.moveToFirst()) cursor.getDouble(0) else null } ?: return null
+
+  // Round-trips through major units the same way hooks/useBaseCurrencyEquivalent
+  // does, so a zero-decimal currency scales correctly in both directions.
+  val major = amountMinor / Math.pow(10.0, minorUnitsFor(currency).toDouble())
+  val baseMajor = major * rate
+  return Math.round(baseMajor * Math.pow(10.0, minorUnitsFor(baseCurrency).toDouble()))
+}
+
+// The full card for one account. Returns null when the database can't be
+// read or the account no longer exists — the caller distinguishes that from
+// "no accounts configured", same reasoning as getAccountsForWidget below.
+fun getAccountDetailForWidget(context: Context, accountId: Long): WidgetAccountDetail? {
+  val db = openReadOnlyDb(context) ?: return null
+  try {
+    val row = db.rawQuery(
+      "SELECT id, name, type, color, currency FROM accounts WHERE id = ?",
+      arrayOf(accountId.toString()),
+    ).use { cursor ->
+      if (!cursor.moveToFirst()) return null
+      listOf(
+        cursor.getLong(0).toString(),
+        cursor.getString(1),
+        cursor.getString(2),
+        cursor.getString(3),
+        cursor.getString(4),
+      )
+    }
+
+    val currency = row[4]
+    val balance = getAccountBalanceMinor(db, accountId, startOfNextMonthEpochSeconds())
+    val flows = getMonthFlows(db, accountId)
+    val baseCurrency = getBaseCurrency(db)
+
+    return WidgetAccountDetail(
+      id = accountId,
+      name = row[1],
+      type = row[2],
+      colorHex = row[3],
+      currency = currency,
+      balanceMinor = balance,
+      incomeMinor = flows.incomeMinor,
+      expenseMinor = flows.expenseMinor,
+      transferInMinor = flows.transferInMinor,
+      transferOutMinor = flows.transferOutMinor,
+      baseCurrency = baseCurrency,
+      baseEquivalentMinor = getBaseEquivalentMinor(db, balance, currency, baseCurrency),
+    )
+  } catch (error: Exception) {
+    Log.w("WidgetBridge", "Could not load account detail for id=$accountId", error)
+    return null
+  } finally {
+    db.close()
+  }
 }
 
 // Preserves the order accountIds was given in (the user's picked order

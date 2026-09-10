@@ -87,8 +87,8 @@ class AccountsWidgetConfigActivity : ComponentActivity() {
         stored
       } else {
         getLegacyWidgetConfig(this@AccountsWidgetConfigActivity, appWidgetId)
-          ?.let { WidgetSelection(true, it.accountIds, it.opacityPct) }
-          ?: WidgetSelection(false, emptyList(), DEFAULT_OPACITY_PCT)
+          ?.let { WidgetSelection(true, it.accountIds, it.opacityPct, 0, false) }
+          ?: WidgetSelection(false, emptyList(), DEFAULT_OPACITY_PCT, 0, false)
       }
       val accounts = withContext(Dispatchers.IO) {
         getAllAccountsForConfig(this@AccountsWidgetConfigActivity)
@@ -228,7 +228,13 @@ private fun ConfigScreen(
           .fillMaxWidth()
           .clip(RoundedCornerShape(14.dp))
           .background(AccentGradient)
-          .clickable { onSave(selected.toList(), opacityPct.toInt()) }
+          // Ordered by this screen's own list (sort_order ASC, id ASC)
+          // rather than by `selected.toList()`. KEY_ACCOUNT_IDS is a
+          // comma-joined String specifically to preserve order, but a Set
+          // has none — toggling an account off and back on used to move it
+          // to the end, which the account picker would show as rows
+          // jumping around for no visible reason.
+          .clickable { onSave(accounts.map { it.id }.filter { it in selected }, opacityPct.toInt()) }
           .padding(vertical = 14.dp),
         horizontalArrangement = Arrangement.Center,
       ) {

@@ -1,11 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  Height is fixed by design. The card shows exactly one account — header,
+  account row, flow row, action pills — so there is no list to stretch and
+  nothing useful for a vertical resize to do.
+
+  That is what retires the two resize bugs the old list version had: a blank
+  gap opening below a short account list, and shrinking clipping a row's
+  middle. Both came from a defaultWeight()-stretched LazyColumn absorbing
+  whatever height the launcher allocated. Declaring the widget
+  horizontally-resizable only, at a height matching its actual content,
+  removes the condition rather than compensating for it.
+
+  targetCellHeight 3 (~190dp on a typical grid) is the natural content
+  height; minHeight/maxResizeHeight bracket it tightly so a launcher that
+  ignores resizeMode still can't stretch it into emptiness.
+-->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:minWidth="250dp"
-    android:minHeight="140dp"
+    android:minHeight="170dp"
     android:targetCellWidth="4"
-    android:targetCellHeight="4"
-    android:maxResizeHeight="500dp"
-    android:resizeMode="horizontal|vertical"
+    android:targetCellHeight="3"
+    android:minResizeWidth="250dp"
+    android:maxResizeHeight="220dp"
+    android:resizeMode="horizontal"
     android:widgetCategory="home_screen"
     android:initialLayout="@layout/glance_default_loading_layout"
     android:previewImage="@drawable/preview_accounts"
