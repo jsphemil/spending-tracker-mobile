@@ -1,10 +1,34 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  The widget ZOOMS. AccountsGlanceWidget draws a 300x184dp card and scales
+  every dimension — fonts, icons, padding, pills — by one factor derived
+  from the size the launcher allocates. So the range below is not choosing
+  a layout, it is choosing how large the card is drawn.
+
+  Two earlier approaches left visible dead space and were replaced:
+  a fixed-size layout inside a filled box pooled the slack into one void,
+  and adding/removing rows at breakpoints still left slack between them.
+  Scaling has neither problem — at every size the content exactly fills
+  the card, and the card is centred so any leftover cell stays transparent
+  rather than reading as an empty dark panel.
+
+  Note the launcher's grid always snaps: AppWidgetHost places widgets in
+  whole cells (~60dp here), and no app-side setting changes that. What the
+  wide range below buys is that every snap step lands on a *usable* scale,
+  rather than the handles refusing to move — which is what happened when
+  this was bracketed to 200-230dp, a span narrower than a single cell.
+
+  Bounds correspond to roughly 0.7x-2.4x, matching the clamp in Content.
+-->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
-    android:minWidth="250dp"
-    android:minHeight="140dp"
+    android:minWidth="220dp"
+    android:minHeight="130dp"
     android:targetCellWidth="4"
     android:targetCellHeight="4"
-    android:maxResizeHeight="500dp"
+    android:minResizeWidth="220dp"
+    android:minResizeHeight="130dp"
+    android:maxResizeWidth="480dp"
+    android:maxResizeHeight="440dp"
     android:resizeMode="horizontal|vertical"
     android:widgetCategory="home_screen"
     android:initialLayout="@layout/glance_default_loading_layout"

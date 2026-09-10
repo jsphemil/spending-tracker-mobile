@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Tap affordance for the account name row. A drawable rather than a "▾"
+     text glyph: Roboto's coverage of the small geometric-shape triangles
+     isn't guaranteed across OEM skins, and a missing glyph renders as a
+     tofu box right next to the account name. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+  <path
+      android:fillColor="#FFFFFF"
+      android:pathData="M7.41,8.59L12,13.17L16.59,8.59L18,10L12,16L6,10L7.41,8.59Z" />
+</vector>

@@ -59,6 +59,17 @@ internal val KEY_OPACITY_PCT = intPreferencesKey("opacity_pct")
 // and forces a re-read of SQLite.
 internal val KEY_DATA_VERSION = intPreferencesKey("data_version")
 
+// Which of `accountIds` the card is currently showing. An INDEX rather than
+// an account id on purpose: an index degrades by clamping when the
+// configured list shrinks, whereas a stored id can dangle after the account
+// is deleted and needs a lookup-plus-fallback on every read.
+internal val KEY_SELECTED_INDEX = intPreferencesKey("selected_index")
+
+// True while the card is showing the account picker instead of the account.
+// The picker is a mode of the same widget, not a separate surface, so
+// tapping a name never leaves the home screen.
+internal val KEY_PICKER_OPEN = booleanPreferencesKey("picker_open")
+
 internal fun encodeAccountIds(ids: List<Long>): String = ids.joinToString(",")
 
 internal fun decodeAccountIds(raw: String?): List<Long> =
@@ -68,19 +79,54 @@ internal data class WidgetSelection(
   val configured: Boolean,
   val accountIds: List<Long>,
   val opacityPct: Int,
-)
+  val selectedIndex: Int,
+  val pickerOpen: Boolean,
+) {
+  /** The account to render, or null when nothing is selectable. */
+  val selectedAccountId: Long? get() = accountIds.getOrNull(selectedIndex)
+}
 
-internal fun Preferences.readSelection(): WidgetSelection = WidgetSelection(
-  configured = this[KEY_CONFIGURED] ?: false,
-  accountIds = decodeAccountIds(this[KEY_ACCOUNT_IDS]),
-  opacityPct = this[KEY_OPACITY_PCT] ?: DEFAULT_OPACITY_PCT,
-)
+internal fun Preferences.readSelection(): WidgetSelection {
+  val ids = decodeAccountIds(this[KEY_ACCOUNT_IDS])
+  // Clamped on read as well as reset on write: a widget restored from a
+  // backup, or left over from a previous configuration, can carry an index
+  // past the end of a shorter list, and an out-of-range index would render
+  // an empty card rather than an account.
+  val index = (this[KEY_SELECTED_INDEX] ?: 0).coerceIn(0, maxOf(0, ids.lastIndex))
+  return WidgetSelection(
+    configured = this[KEY_CONFIGURED] ?: false,
+    accountIds = ids,
+    opacityPct = this[KEY_OPACITY_PCT] ?: DEFAULT_OPACITY_PCT,
+    selectedIndex = index,
+    pickerOpen = this[KEY_PICKER_OPEN] ?: false,
+  )
+}
 
 internal fun MutablePreferences.writeSelection(accountIds: List<Long>, opacityPct: Int) {
   this[KEY_CONFIGURED] = true
   this[KEY_ACCOUNT_IDS] = encodeAccountIds(accountIds)
   this[KEY_OPACITY_PCT] = opacityPct
+  // Reconfiguring replaces the list, so any previously selected position is
+  // meaningless — reset rather than leave it pointing at a different account
+  // than the user last chose.
+  this[KEY_SELECTED_INDEX] = 0
+  this[KEY_PICKER_OPEN] = false
   bumpDataVersion()
+}
+
+// Switching account writes ONLY the index. It deliberately does not bump the
+// data version: that key is what invalidates the SQLite read, and the
+// account list is already loaded, so a plain index write repaints from state
+// that's in hand instead of re-querying on every tap.
+internal suspend fun saveSelectedIndex(context: Context, glanceId: GlanceId, index: Int) {
+  updateAppWidgetState(context, glanceId) { prefs ->
+    prefs[KEY_SELECTED_INDEX] = index
+    prefs[KEY_PICKER_OPEN] = false
+  }
+}
+
+internal suspend fun savePickerOpen(context: Context, glanceId: GlanceId, open: Boolean) {
+  updateAppWidgetState(context, glanceId) { prefs -> prefs[KEY_PICKER_OPEN] = open }
 }
 
 internal fun MutablePreferences.bumpDataVersion() {
