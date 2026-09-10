@@ -330,6 +330,45 @@ All 3 required updates for the 14-day window are now shipped
 (versionCode 9, 12, 13 — see step 9 below for the production-access
 application, the next gate).
 
+**Update 6 built as versionCode 16, versionName 2.3.0 — release name
+`Erebor_WM16(2.3.0)` (2026-09-10).** Two changes, both found by the user
+testing the previous release on a second device.
+
+**Recurring expenses can now draw from a Fund** (spec.md §5.21). An EMI
+simulation — a Fund pre-funded to ₹1,00,000, one ₹20,000 one-off plus
+₹8,000 × 10 months recurring — could not link the recurring half at all.
+The fund now lives on the recurring *rule* (migration `0016`), so
+occurrences inherit it as they materialize instead of needing each one
+linked by hand, and because fund consumption already respects the month
+cutoff, instalments materialized months ahead don't eat the fund early —
+it falls month by month as each one lands. The same code path had a
+second defect regardless of the feature: the fund picker stayed visible
+after toggling "Make recurring", but the selection was silently
+discarded on save.
+
+**The Accounts home screen widget is rebuilt** (spec.md §5.11) as a
+single-account zooming card: one account at a time in the shape of an
+Accounts-screen row, tap the name to flip the widget in place into a
+picker, and resize to scale the whole card rather than reflow it. This
+retired both resize bugs deferred on 2026-09-09 — they came from a
+weight-stretched list absorbing the launcher's allocated height, and
+there is no list any more. Two fixed-height attempts failed first (too
+small clipped the figures, too large opened a void), which is what
+argued for zooming; see §5.11 for the full trail, including two Android
+constraints worth not rediscovering.
+
+Verified on-device across both features before merging. Built via
+`npx eas-cli build --platform android --profile production
+--non-interactive`, which auto-incremented versionCode 15 → 16.
+**Submission to the EWM Alpha track done manually by the user.**
+
+Release notes used (versionCode 16):
+```
+<en-GB>
+The Accounts home screen widget is rebuilt. It now shows one account at a time with its balance and this month's income, spending and transfers - tap the account name to switch between accounts, and resize it to zoom the whole card. Recurring expenses can now be paid from a Fund, so a pre-funded commitment like an EMI draws the fund down month by month as each instalment lands. Please keep testing and flag anything that looks off.
+</en-GB>
+```
+
 **Update 5 built as versionCode 15, versionName 2.2.0 — release name
 `Erebor_WM15(2.2.0)` (2026-09-10).** Introduces **Funds** (spec.md
 §5.21), a new financial primitive: money you still own but have
