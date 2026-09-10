@@ -22,6 +22,8 @@ import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.Image
 import androidx.glance.ImageProvider
+import androidx.glance.LocalSize
+import androidx.glance.appwidget.SizeMode
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.action.actionRunCallback
@@ -184,6 +186,12 @@ class AccountsGlanceWidget : GlanceAppWidget() {
   // ever show data captured at session start.
   override val stateDefinition = PreferencesGlanceStateDefinition
 
+  // Exact, not Single: the layout adapts to the launcher's actual
+  // allocation (see Content), which is what lets this be freely resizable
+  // instead of correct at exactly one height. LocalSize.current only
+  // reports the real size under this mode.
+  override val sizeMode = SizeMode.Exact
+
   override suspend fun provideGlance(context: Context, id: GlanceId) {
     val appWidgetId = GlanceAppWidgetManager(context).getAppWidgetId(id)
     migrateLegacySelectionIfNeeded(context, id, appWidgetId)
@@ -260,6 +268,23 @@ class AccountsGlanceWidget : GlanceAppWidget() {
       .padding(14.dp)
       .let { if (detail == null) it.clickable(actionStartActivity(openApp)) else it }
 
+    // The widget is freely resizable, so the layout adapts to whatever
+    // height the launcher actually gives it rather than assuming one.
+    // Fixed heights were tried twice and failed in both directions: too
+    // small clipped the flow row's values away behind the pills, too large
+    // pooled all the slack into a single void above them.
+    val height = LocalSize.current.height
+    // Measured content: padding 28 + header 22 + gap 8 + account row 36
+    // + (divider 1 + gap 8 + flow row 31) + gap 8 + pills 36.
+    val showFlowRow = height >= 185.dp
+    // Below this even the pills don't fit alongside the account row; the
+    // balance is what matters most, so that is what survives.
+    val showPills = height >= 140.dp
+    // The picker needs every pixel it can get — with a dozen accounts the
+    // pills would cost two visible rows, and they're meaningless while
+    // you're choosing an account anyway.
+    val showPillsNow = showPills && !pickerOpen
+
     Box(modifier = cardModifier) {
       Column(modifier = GlanceModifier.fillMaxSize()) {
         Header(colors, monthLabel, pickerOpen, iconBitmap, openApp)
@@ -267,25 +292,25 @@ class AccountsGlanceWidget : GlanceAppWidget() {
 
         // defaultWeight() is a ColumnScope extension, so it can only be
         // called here — inside the Column — and has to be handed to the
-        // body composables rather than applied inside them. It makes the
-        // body absorb any slack height, keeping the header pinned to the
-        // top and the pills to the bottom.
+        // body composables rather than applied inside them.
         val bodyModifier = GlanceModifier.fillMaxWidth().defaultWeight()
         if (detail == null) {
           EmptyBody(uiState, colors, bodyModifier)
         } else if (pickerOpen) {
           AccountPicker(ready.options, selectedIndex, colors, bodyModifier)
         } else {
-          AccountCard(detail, colors, bodyModifier)
+          AccountCard(detail, colors, showFlowRow, bodyModifier)
         }
 
-        Box(modifier = GlanceModifier.height(8.dp)) {}
-        Row(modifier = GlanceModifier.fillMaxWidth()) {
-          ActionPill("Income", WIDGET_INCOME, "income", detail?.id, GlanceModifier.defaultWeight())
-          Box(modifier = GlanceModifier.width(8.dp)) {}
-          ActionPill("Expense", WIDGET_EXPENSE, "expense", detail?.id, GlanceModifier.defaultWeight())
-          Box(modifier = GlanceModifier.width(8.dp)) {}
-          ActionPill("Transfer", WIDGET_TRANSFER, "transfer", detail?.id, GlanceModifier.defaultWeight())
+        if (showPillsNow) {
+          Box(modifier = GlanceModifier.height(8.dp)) {}
+          Row(modifier = GlanceModifier.fillMaxWidth()) {
+            ActionPill("Income", WIDGET_INCOME, "income", detail?.id, GlanceModifier.defaultWeight())
+            Box(modifier = GlanceModifier.width(8.dp)) {}
+            ActionPill("Expense", WIDGET_EXPENSE, "expense", detail?.id, GlanceModifier.defaultWeight())
+            Box(modifier = GlanceModifier.width(8.dp)) {}
+            ActionPill("Transfer", WIDGET_TRANSFER, "transfer", detail?.id, GlanceModifier.defaultWeight())
+          }
         }
       }
     }
@@ -340,6 +365,7 @@ class AccountsGlanceWidget : GlanceAppWidget() {
   private fun AccountCard(
     detail: WidgetAccountDetail,
     colors: WidgetColors,
+    showFlowRow: Boolean,
     modifier: GlanceModifier,
   ) {
     Column(modifier = modifier) {
@@ -412,9 +438,17 @@ class AccountsGlanceWidget : GlanceAppWidget() {
         }
       }
 
+      if (!showFlowRow) return@Column
+
+      // Two weighted spacers rather than one. Any height the launcher gives
+      // beyond the content gets split above and below the divider, so a
+      // taller widget reads as a comfortably spaced card instead of the
+      // single void that pooling all the slack in one place produced.
+      Box(modifier = GlanceModifier.defaultWeight()) {}
       Box(modifier = GlanceModifier.height(8.dp)) {}
       Box(modifier = GlanceModifier.fillMaxWidth().height(1.dp).background(colors.border)) {}
       Box(modifier = GlanceModifier.height(8.dp)) {}
+      Box(modifier = GlanceModifier.defaultWeight()) {}
 
       Row(modifier = GlanceModifier.fillMaxWidth()) {
         FlowColumn("Income", formatMoney(detail.incomeMinor, detail.currency), WIDGET_INCOME, colors, GlanceModifier.defaultWeight())
@@ -470,9 +504,12 @@ class AccountsGlanceWidget : GlanceAppWidget() {
             Box(modifier = GlanceModifier.fillMaxWidth().height(1.dp).background(colors.border)) {}
           }
           Row(
+            // Tighter than the card's rhythm on purpose: with a dozen
+            // accounts every dp of row height costs a visible entry, and
+            // the picker hides the action pills to buy back two more.
             modifier = GlanceModifier
               .fillMaxWidth()
-              .padding(vertical = 8.dp)
+              .padding(vertical = 6.dp)
               .clickable(actionRunCallback<SelectAccountAction>(accountIndexParams(index))),
             verticalAlignment = Alignment.Vertical.CenterVertically,
           ) {

@@ -28,22 +28,26 @@
   for placement, so even a launcher that ignores targetCellHeight cannot
   size this below its own content.
 
-  Vertical resize stays ENABLED, but bracketed to 200-230dp. Disabling it
-  outright was tried and is worse: a widget already placed at an older,
-  shorter size keeps that size across an app update, and with vertical
-  resize off the user has no way to drag it taller — they have to delete
-  and re-add it. The bracket is what actually prevents the two old bugs
-  (it cannot shrink below its content, nor stretch far enough to open a
-  meaningful gap), so the escape hatch costs nothing.
+  Freely resizable, and the LAYOUT adapts rather than the size being
+  pinned — see AccountsGlanceWidget's SizeMode.Exact. Two earlier attempts
+  at a fixed height both failed, in opposite directions: too small clipped
+  the flow row's values away behind the pills, too large pooled the slack
+  into one void above them.
+
+  A narrow bracket also silently disables resizing. 200-230dp was tried
+  and the handles simply would not move vertically, because that range is
+  smaller than a single grid cell (~51dp here) so there is no legal
+  intermediate size to snap to. The range below spans several cells, which
+  is what makes the handles actually usable.
 -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:minWidth="250dp"
-    android:minHeight="200dp"
+    android:minHeight="110dp"
     android:targetCellWidth="4"
     android:targetCellHeight="4"
     android:minResizeWidth="250dp"
-    android:minResizeHeight="200dp"
-    android:maxResizeHeight="230dp"
+    android:minResizeHeight="110dp"
+    android:maxResizeHeight="480dp"
     android:resizeMode="horizontal|vertical"
     android:widgetCategory="home_screen"
     android:initialLayout="@layout/glance_default_loading_layout"
