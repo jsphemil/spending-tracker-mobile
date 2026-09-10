@@ -361,7 +361,9 @@ versionCode 14 runs them in order, which is exactly the sequence
 exercised on the test device against a real database. Verified on-device
 across 7 test groups plus a Dropbox backup→restore round trip. Built via
 `npx eas-cli build --platform android --profile production
---non-interactive`, which auto-incremented versionCode 14 → 15.
+--non-interactive`, which auto-incremented versionCode 14 → 15. Build
+`667e6e1a-5288-4bd0-8952-c7cfb75e2fa7`, finished in 16m31s; AAB at
+`https://expo.dev/artifacts/eas/hr-VurJKa9cKtXsabUZUtBJpikp5VRkiQ_ZDhaQ4y4w.aab`.
 **Submission to the EWM Alpha track done manually by the user.**
 
 Release notes used (versionCode 15):
