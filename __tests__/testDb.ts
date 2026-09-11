@@ -23,7 +23,21 @@ export function createTestDb() {
 
   const journal = JSON.parse(
     fs.readFileSync(path.join(__dirname, "../drizzle/meta/_journal.json"), "utf-8"),
-  ) as { entries: { tag: string }[] };
+  ) as { entries: { tag: string; when: number }[] };
+
+  // The production migrator only runs entries whose `when` is newer than the
+  // newest one already applied, so a hand-stamped entry that is *older* than
+  // its predecessor silently never runs on upgraded installs (this bit
+  // 0013/0014 in September 2026). Fail loudly here instead.
+  for (let i = 1; i < journal.entries.length; i++) {
+    const prev = journal.entries[i - 1];
+    const cur = journal.entries[i];
+    if (!(cur.when > prev.when)) {
+      throw new Error(
+        `Migration journal is not strictly increasing: ${cur.tag} (${cur.when}) is not newer than ${prev.tag} (${prev.when})`,
+      );
+    }
+  }
 
   for (const entry of journal.entries) {
     const migrationSql = fs.readFileSync(

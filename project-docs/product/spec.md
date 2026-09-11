@@ -10,7 +10,7 @@
 ## Status Dashboard
 
 _Kept current per CLAUDE.md's Idea Backlog Protocol — updated the
-moment a status genuinely changes, not batched. Last updated: 2026-09-05._
+moment a status genuinely changes, not batched. Last updated: 2026-09-11._
 
 **Legend:** ✅ Built & Verified (built *and* confirmed working on a
 real device/build) · 🚧 In Progress (code exists, not yet verified, or
@@ -34,7 +34,7 @@ pushed to a later phase) · ❌ Dropped (cut from scope).
 | §5.12 | Visual Design System (superseded) | ✅ Built & Verified | The dark-first token theme / monospace-tabular / gauge-over-pie system described here shipped and was verified (Phases 1-3, UAT checklist §15). **Superseded 2026-08-28 by §5.18** — the token *values*, glass-card ask from UAT §15 ("a glass effect would be nice"), and the whole visual language were replaced wholesale by the Erebor redesign. Kept here for history; §5.18 is now the authoritative visual-design status. |
 | §5.13 | First-Run Onboarding & Base Currency | ✅ Built & Verified | Onboarding flow + gate, live per-install base currency (not hardcoded INR), searchable ~170-currency picker. UAT checklist §1 confirms every step, the currency-picker search, and base-currency-change recalculation across the whole app — all pass (including the 2026-08-21 SafeAreaView fix for the onboarding-flush-to-top bug). |
 | §5.14 | CSV Export | ✅ Built & Verified | Matches the web app's account/date-filtered CSV export; required a native rebuild for `expo-file-system`/`expo-sharing` — verified on-device 2026-08-12, and re-confirmed working after all the base-currency changes (UAT checklist §12). |
-| §5.15 | In-App Info/Tips | ⏸️ Deferred | Explicitly deferred by the user to a later pass — not started. |
+| §5.15 | In-App Info/Tips | 🚧 In Progress | Deferred 2026-08-12; **picked up 2026-09-11 as §5.22's FAQ + Send feedback page** — the Help & Support screen becomes the always-available reference this section described. |
 | §5.16 | Commitments | ✅ Built & Verified | New tab, monthly-normalized recurring rules, % of recurring income committed. UAT checklist §7 confirms the sections and monthly-equivalent math (verified correct, not a bug — average-month normalization). Complex recurrence patterns (nth-weekday-of-month etc.) were requested then **withdrawn by the user 2026-08-21** ("it can be ignored") — not building. The "% of recurring income" line was explained to the user but never independently re-confirmed against their own live data — low-stakes, worth a glance next time it's relevant. |
 | §5.17 | Goals | ❌ Dropped | Built and verified 2026-08 (goal CRUD, trailing-6-month pace projection, behind-pace flag, Dashboard card; UAT checklist §8 all pass). **Removed entirely 2026-09-10** (shipped as versionCode 15) once §5.21's Funds was verified on-device, replacing it with a primitive that actually allocates money. Every goal was scored against the *same* portfolio-wide net-worth number, so N goals were just N thresholds on one figure and none could hold money independently. Table dropped in migration `0015`; no data migration — a goal's target is a net-worth threshold and a fund's is a purchase cost, so converting would have produced misleading nonsense. |
 | §5.18 | Design Refresh — "Erebor" | ✅ Built & Verified | **New, 2026-08-28.** Complete visual redesign sourced from a separate Claude Design project the user built ("Erebor Wealth App Design System," dark glassy-neon fintech language), applied as a presentational-only pass on the `design-refresh` branch and merged to `master` the same day. See the full write-up below (§5.18) for what shipped, what was explicitly decided, and the one behavior change (AccountForm's icon became user-selectable, at the user's explicit request). Verified via multiple rounds of on-device testing on the user's Pixel 10, including native rebuilds for the new `expo-linear-gradient`/`expo-font` dependencies. |
@@ -43,6 +43,8 @@ pushed to a later phase) · ❌ Dropped (cut from scope).
 | — | R8/ProGuard (release build shrinking) | ✅ Built & Verified | **Shipped 2026-09-05**, versionCode 13, versionName 2.0.1 — closed-testing update 3 of 3, the last required update for the 14-day window. Isolated on `r8-test`, verified on-device against the three reflection-exposed surfaces (Dropbox connect/backup/restore, home screen widget, notifications) before merging to `master`. No ProGuard keep rules needed. See §9 for the local build-environment fix this needed (an outdated bundled `ninja` broke `assembleRelease` on Windows, unrelated to R8 itself). |
 | §5.20 | New Home Screen Widgets (Quick Add / Cash Flow / Net Worth) | ✅ Built & Verified | **Started 2026-09-05.** Widget A (Quick Add Transaction) + launcher shortcuts ✅ Built & Verified 2026-09-06, shipped 2026-09-09 as versionCode 14, release `Erebor_WM14(2.1.0)`. **Widget B (Monthly Cash Flow) ❌ Dropped 2026-09-09** — removed from the codebase entirely after its "Today" row bug went unresolved through 3 fix attempts; never shipped. **Widget C (Net Worth & Financial Composition) ❌ Dropped 2026-09-09** — scope was agreed but the user decided against building it before any code was written. See §5.20 for full scope and Widget B's debugging trail. |
 | §5.21 | Funds | ✅ Built & Verified | **New, built 2026-09-09, verified on-device 2026-09-10** across 7 test groups (cold open, live refresh, earmarking leaving net worth untouched, spend/edit/delete, overspend and overfunding, close/reopen, and a full regression sweep), plus a Dropbox backup→restore round trip. **Shipped as versionCode 15, versionName 2.2.0** — closed-testing update 5. A new financial primitive: money you still own but have earmarked for a future purpose, sitting as a logical allocation layer *above* the accounting model. Account balances and net worth are completely unchanged; the app additionally reports **Earmarked** and **Unallocated** (net worth − earmarked). Not a budget, not an account, and deliberately not a renamed Goal — **§5.17 Goals is being removed and replaced by this**. Fund balances are **derived, never stored**, so editing or deleting a fund-linked expense reverses correctly with zero write hooks. Full plan and phasing in the §5.21 body below. |
+| §5.22 | Version 3 — Testers Community round | 🚧 In Progress | **Started 2026-09-11** on `v3/tester-feedback`. Six enhancement suggestions from a paid tester pass (no bugs found): FAQ + Send feedback (closes §5.15), What's new, first-visit hints + replayable intro, Dashboard customisation, three Analytics chart changes. Two suggestions (Google/email sign-in) declined as contrary to §3/§4. One migration (`0017`). |
+| §5.23 | Biometric App Lock | 🚧 In Progress | **Started 2026-09-11**, user's addition to 3.0. `expo-local-authentication`, device PIN/pattern fallback allowed, 30 s background grace, lock screen rendered instead of the navigator. Code complete; awaiting the native rebuild and on-device verification. |
 
 **Remaining known gaps** (everything else above is fully verified,
 carried forward unchanged from the last audit — none of these have
@@ -202,6 +204,7 @@ password. Identity is simply tied to the device itself.
 
 - A PIN/passcode lock (already planned as a later feature, section 6)
   can still protect the app locally without needing any account system
+  — **built as the biometric app lock in 3.0, see §5.23** (2026-09-11)
 - Dropbox connection (for backup) has its own separate login/OAuth step
   when the user chooses to set it up — that's Dropbox's login, not the
   app's, and stays completely independent of this decision
@@ -893,7 +896,7 @@ this pass, follows the same native Glance pattern later as a second
   opened the CSV, and confirmed a transfer row, an opening-balance row,
   and a tagged transaction all matched the expected column values.
 
-### 5.15 In-App Info/Tips ⏸️ Deferred
+### 5.15 In-App Info/Tips 🚧 In Progress
 - **Decided 2026-08-12, explicitly deferred by the user** ("later we
   will build") — a reference page in Profile explaining the app's
   features in more depth than the one-time onboarding intro (§5.13) does.
@@ -1412,6 +1415,99 @@ against the non-judgemental philosophy.
 
 - **Implementation status:** see `backlog.md`'s In Progress section for
   the live build order and per-phase verification notes.
+
+### 5.22 Version 3 — the Testers Community round 🚧 In Progress
+
+- **Origin (2026-09-11):** a paid Testers Community pass on the Play
+  closed-testing build found **no crashes and no bugs** — every function
+  worked as intended across their devices. The report
+  (`project-docs/product/erebor_feedback (1).pdf`) is eight enhancement
+  suggestions. Two — Google Sign-in and email/password accounts with
+  sync — were **declined** the same day: they cut against §3/§4's
+  local-first, no-server decision, which the Dropbox whole-file backup
+  already serves for cross-device continuity. The other six are this
+  section, planned together as **3.0.0** on branch `v3/tester-feedback`,
+  with the user's own addition, §5.23's biometric lock, going in first
+  because it is the only native change.
+- **Decisions taken up front, with the user:** the walkthrough is
+  first-visit hint cards on each main screen plus "Replay the intro" in
+  Settings — no spotlight/coach-marks overlay; feedback is a `mailto:`
+  to the address the privacy policy already publishes, with version and
+  device prefilled and never any financial data; the chart work is a
+  smoothed net-worth trend, an earmarked-funds marker on the asset
+  allocation ring and a new cumulative-spend chart (this month vs last)
+  — not an income-vs-spending bar chart; Dashboard customisation is
+  hide/show + reorder with Net worth pinned, plus choosing which
+  shortcuts appear.
+- **Data:** four columns on `settings` in one migration, `0017` —
+  `app_lock_enabled`, `last_seen_version`, and two JSON text columns,
+  `dashboard_layout` and `hints_seen`, each read only through a
+  sanitiser that tolerates null, garbage and unknown ids. No backfill:
+  a null `last_seen_version` on an install that has already completed
+  onboarding is exactly the "just upgraded to 3.0" case.
+- **What already existed and is extended rather than duplicated:** the
+  4-step first-run intro and the header's ⓘ replay of its how-to copy
+  (§5.13/§5.19), the three-question Help & Support page, Analytics'
+  hand-drawn SVG charts, and the Dashboard's five fixed cards.
+- **Features, in build order after §5.23:**
+  1. **Help & Support → FAQ + Send feedback** — closes §5.15.
+  2. **What's new** — a bundled changelog, a Settings screen, and a
+     one-time sheet on the first launch after an update.
+  3. **Walkthrough** — first-visit hint cards on seven screens, a replay
+     route that also re-arms the hints, and the header's duplicated
+     how-to copy retired in favour of the shared module.
+  4. **Dashboard customisation** — a Settings screen with per-card
+     eye toggles and ▲/▼ ordering; the Dashboard renders cards from the
+     saved order with every calculation left where it is.
+  5. **Analytics** — monotone-cubic smoothing (not Catmull-Rom, which
+     would invent dips between months), the earmarked inner arc with a
+     legend row that agrees with the Dashboard for the same month, and
+     the cumulative-spend chart with a today marker.
+- **Implementation status:** see `backlog.md`'s In Progress section.
+
+### 5.23 Biometric App Lock 🚧 In Progress
+
+- **Added by the user 2026-09-11** alongside §5.22. This is the
+  "PIN/passcode lock" §4 always anticipated — a device lock on local
+  data, **not a login**, so it doesn't reintroduce the account model
+  the testers suggested and the user declined.
+- **Dependency:** `expo-local-authentication` (`~57.0.2`), the only new
+  native module in 3.0 — hence a native rebuild, and hence it goes in
+  first so every later phase tests on a binary that already has it.
+  Its config plugin adds `USE_BIOMETRIC`/`USE_FINGERPRINT`.
+- **Model:** nothing is stored by the app — no secret, no hash. The OS
+  `BiometricPrompt` answers "is this the device owner?" and the root
+  layout gates on the answer. `disableDeviceFallback` is left false so
+  the device PIN/pattern is accepted when biometrics fail (a wet finger
+  must not lock someone out of their finances) — on Android the module
+  then requests `BIOMETRIC_WEAK | DEVICE_CREDENTIAL`, which is also why
+  no custom cancel label is passed: the prompt ignores it whenever
+  device credentials are allowed (verified in the module's Kotlin, not
+  just the docs, which list the option as iOS-only).
+- **Where it lives:** Settings → Privacy & Security → "Unlock with
+  biometrics". Turning it on runs one prompt first and only persists on
+  success, so it can never be enabled into a lock-out; with nothing
+  enrolled the toggle is disabled with a "set up fingerprint or face
+  unlock in your phone's settings first" line.
+- **The gate** (`hooks/useAppLock.ts`, `components/LockScreen.tsx`,
+  `app/_layout.tsx`): locked on cold start whenever enabled, re-locked
+  when the app returns from the background after a fixed **30-second
+  grace** (switching to the mail app to send feedback and back must not
+  re-prompt). The lock screen renders *instead of* the navigator, not
+  over it, so nothing underneath renders or can be captured; widget
+  Quick Add and launcher shortcuts deep-link through the root layout,
+  so they open after the unlock. `locked` starts true — "locked until
+  proven otherwise" — because settings load asynchronously and an
+  effect would paint one unlocked frame first; the undefined→true
+  transition on a cold start keeps it locked, while false→true (the
+  user just switched it on, so they are demonstrably inside the app)
+  does not.
+- **Decided:** the Accounts home-screen widget keeps showing balances
+  while the app is locked — the home screen is already behind the
+  phone's own lock — and the FAQ says so. No app-defined PIN, no
+  per-screen locks, no timeout setting.
+- **Tests:** the re-lock decision is a pure function (`shouldRelock`)
+  with five cases; the native prompt itself is verified on-device.
 
 ## 6. Explicitly out of scope for v1
 

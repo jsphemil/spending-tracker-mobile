@@ -336,6 +336,25 @@ export const settings = sqliteTable("settings", {
   // toggle is now session-scoped — always hidden on app open, a reveal
   // lasting only until the app closes — so there is nothing to persist.
   // See hooks/useNetWorthHidden.ts.
+  //
+  // ---- v3 (spec.md §5.22 / §5.23), all added in migration 0017 ----
+  // Biometric app lock. Nothing secret is stored — the OS answers "is this
+  // the device owner?" and the root layout gates on the answer.
+  appLockEnabled: integer("app_lock_enabled", { mode: "boolean" })
+    .notNull()
+    .default(false),
+  // versionName last acknowledged in "What's new". Null on an install that
+  // has already completed onboarding is exactly the "just upgraded to 3.0"
+  // case, so there is deliberately no backfill; onboarding's finish writes
+  // the current version so fresh installs never see a what's-new sheet.
+  lastSeenVersion: text("last_seen_version"),
+  // JSON — see constants/dashboardCards.ts's parseDashboardLayout. One
+  // value the Dashboard reads whole rather than a column per card, because
+  // the card set will change again. Always read through the sanitiser.
+  dashboardLayout: text("dashboard_layout"),
+  // JSON array of HintId — see constants/hints.ts's parseHintsSeen. Grows
+  // with every screen that gains a first-visit hint.
+  hintsSeen: text("hints_seen"),
 });
 
 // Home Screen Widget (spec.md §5.11) — which accounts the "Accounts &
