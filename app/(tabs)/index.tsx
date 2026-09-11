@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Link } from "expo-router";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { Icon } from "../../components/ui/Icon";
@@ -8,6 +8,7 @@ import { GlobalHeader } from "../../components/GlobalHeader";
 import { FirstVisitHint } from "../../components/FirstVisitHint";
 import { WhatsNewSheet } from "../../components/WhatsNewSheet";
 import { shouldShowWhatsNew } from "../../constants/changelog";
+import { parseDashboardLayout, type CardId } from "../../constants/dashboardCards";
 import { updateSettings } from "../../db/actions/settings";
 import { UnconvertedCurrenciesNote } from "../../components/UnconvertedCurrenciesNote";
 import { db } from "../../db/client";
@@ -265,7 +266,214 @@ export default function DashboardScreen() {
   // and dismissing it writes that column — so a fresh install (onboarding
   // writes it) and an already-acknowledged version never see it.
   const { appVersion } = appVersionLabel();
+  const layout = parseDashboardLayout(settings?.dashboardLayout);
   const whatsNewVisible = settings ? shouldShowWhatsNew(settings, appVersion) : false;
+
+  // Dashboard customisation (spec.md §5.22): each card is a value in this
+  // map and the saved layout decides order and visibility. Every
+  // calculation above is untouched — this is a render-order change only.
+  const cards: Record<CardId, ReactNode> = {
+    netWorth: (
+      <View className={card}>
+        <View className="mb-1 flex-row items-center justify-between">
+          <Text className="text-xs font-semibold uppercase tracking-wide text-fg-muted">Net worth</Text>
+          <Pressable
+            onPress={toggleNetWorthHidden}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel={netWorthHidden ? "Show net worth" : "Hide net worth"}
+          >
+            <Icon name={netWorthHidden ? "eye-off" : "eye"} size={18} color={colors.fgMuted} />
+          </Pressable>
+        </View>
+        <Text className="font-data text-4xl font-bold tabular-nums text-fg">
+          {netWorthDisplay}
+        </Text>
+        {!netWorthHidden && netWorthMinor < 0 && (
+          <Text className="mt-1 text-xs font-medium text-danger">
+            Overdrawn by {formatMoney(Math.abs(netWorthMinor), baseCurrency)}
+          </Text>
+        )}
+        <View className="mt-4 flex-row gap-3">
+          <View className="flex-1 rounded-card bg-surface-2 p-3">
+            <Text className="text-[11px] text-fg-muted">Assets</Text>
+            <Text className="font-data mt-1 text-base font-semibold tabular-nums text-success">
+              {assetsDisplay}
+            </Text>
+          </View>
+          <View className="flex-1 rounded-card bg-surface-2 p-3">
+            <Text className="text-[11px] text-fg-muted">Debt</Text>
+            <Text className="font-data mt-1 text-base font-semibold tabular-nums text-fg">
+              {debtDisplay}
+            </Text>
+          </View>
+        </View>
+        {/* Earmarked + Unallocated only earn their space once there's
+            something earmarked — an all-zero row on a profile with no
+            funds is noise. */}
+        {earmarkedMinor !== 0 && (
+          <View className="mt-3 flex-row gap-3">
+            <View className="flex-1 rounded-card bg-surface-2 p-3">
+              <Text className="text-[11px] text-fg-muted">Earmarked</Text>
+              <Text className="font-data mt-1 text-base font-semibold tabular-nums text-accent">
+                {earmarkedDisplay}
+              </Text>
+            </View>
+            <View className="flex-1 rounded-card bg-surface-2 p-3">
+              <Text className="text-[11px] text-fg-muted">Unallocated</Text>
+              <Text className="font-data mt-1 text-base font-semibold tabular-nums text-fg">
+                {unallocatedDisplay}
+              </Text>
+            </View>
+          </View>
+        )}
+        {!netWorthHidden && <UnconvertedCurrenciesNote currencies={unconvertedCurrencies} subject="Net worth" />}
+      </View>
+    ),
+    // Default order puts this with the wealth story, before the month-scoped
+    // Performance card — earmarking is a position, not a monthly result.
+    funds: (
+      <View className={card}>
+        <View className="mb-3 flex-row items-center justify-between">
+          <Text className="text-sm font-display text-fg">Funds</Text>
+          {activeFunds.length > 0 && (
+            <Link href="/fund" asChild>
+              <Pressable hitSlop={8}>
+                <Text className="text-xs font-medium text-accent">View all</Text>
+              </Pressable>
+            </Link>
+          )}
+        </View>
+        {activeFunds.length === 0 ? (
+          <View className="gap-3">
+            <Text className="text-sm text-fg-muted">
+              Set money aside for something specific — a laptop, a trip, next year&rsquo;s
+              insurance — without moving it out of your accounts.
+            </Text>
+            <Link href="/fund/new" asChild>
+              <Pressable className="items-center rounded-full border border-glass-border bg-glass py-2.5">
+                <Text className="text-sm font-semibold text-accent">Create a fund</Text>
+              </Pressable>
+            </Link>
+          </View>
+        ) : (
+          <View className="gap-4">
+            {dashboardFunds.map((fund) => (
+              <FundRow
+                key={fund.id}
+                fund={fund}
+                balance={fundBalances.get(fund.id) ?? emptyFundBalance(fund.id)}
+                progress={computeFundProgress(
+                  fund.targetAmountMinor,
+                  fundBalances.get(fund.id) ?? emptyFundBalance(fund.id),
+                )}
+                baseCurrency={baseCurrency}
+                hidden={netWorthHidden}
+              />
+            ))}
+            {activeFunds.length > dashboardFunds.length && (
+              <Link href="/fund" asChild>
+                <Pressable>
+                  <Text className="text-xs font-medium text-accent">
+                    +{activeFunds.length - dashboardFunds.length} more
+                  </Text>
+                </Pressable>
+              </Link>
+            )}
+          </View>
+        )}
+      </View>
+    ),
+    month: (
+      <View className={card}>
+        <View className="mb-3 flex-row items-center justify-between">
+          <Pressable onPress={() => setPeriod((p) => shiftMonth(p, -1))} className="p-2" hitSlop={8}>
+            <Icon name="chevron-left" size={22} color={colors.fg} />
+          </Pressable>
+          <Text className={cardTitle}>{monthLabel(period)}</Text>
+          <Pressable onPress={() => setPeriod((p) => shiftMonth(p, 1))} className="p-2" hitSlop={8}>
+            <Icon name="chevron-right" size={22} color={colors.fg} />
+          </Pressable>
+        </View>
+        <View className="flex-row gap-3">
+          <View className="flex-1 rounded-card bg-surface-2 p-3.5">
+            <Text className="text-[11px] text-fg-muted">Actual income</Text>
+            <Text className="font-data mt-1.5 text-lg font-semibold tabular-nums text-success">
+              +{formatMoney(incomeMinor, baseCurrency)}
+            </Text>
+          </View>
+          <View className="flex-1 rounded-card bg-surface-2 p-3.5">
+            <Text className="text-[11px] text-fg-muted">Actual spending</Text>
+            <Text className="font-data mt-1.5 text-lg font-semibold tabular-nums text-danger">
+              −{formatMoney(expenseMinor, baseCurrency)}
+            </Text>
+          </View>
+        </View>
+        <Text className="mt-3 text-xs text-fg-muted">
+          {formatMoney(availableThisMonthMinor, baseCurrency)} available this month (carry forward
+          + income − spending, transfers not counted as spending)
+        </Text>
+      </View>
+    ),
+    attention: (
+      <View className={card}>
+        <Text className={cardTitle}>What needs my attention</Text>
+        {!hasAttentionItems ? (
+          <Text className="text-sm text-fg-muted">You&rsquo;re all caught up.</Text>
+        ) : (
+          <View className="gap-3">
+            {overBudgetCategories.map((c) => (
+              <AttentionRow
+                key={`budget-${c.id}`}
+                icon="shape-outline"
+                tone="danger"
+                text={`${c.name} is ${formatMoney(c.spentMinor - c.monthlyBudgetMinor!, baseCurrency)} over its ${formatMoney(c.monthlyBudgetMinor!, baseCurrency)}/mo budget`}
+                href="/categories"
+              />
+            ))}
+            {upcomingCommitments.slice(0, 3).map((row) => (
+              <AttentionRow
+                key={`commitment-${row.id}`}
+                icon="calendar-sync-outline"
+                tone="transfer"
+                text={`${row.label} due ${row.date.toLocaleDateString(undefined, { month: "short", day: "numeric" })}`}
+                href="/commitments"
+              />
+            ))}
+            {fundsDueSoon.map(({ fund, progress }) => (
+              <AttentionRow
+                key={`fund-${fund.id}`}
+                icon={fund.icon}
+                tone="transfer"
+                text={`${fund.name} is ${formatMoney(progress.remainingMinor, baseCurrency)} short, needed by ${fund.targetDate!.toLocaleDateString(undefined, { month: "short", day: "numeric" })}`}
+                href="/fund"
+              />
+            ))}
+            {overEarmarked && (
+              <AttentionRow
+                icon="piggy-bank"
+                tone="danger"
+                text="You've earmarked more than your net worth"
+                href="/fund"
+              />
+            )}
+          </View>
+        )}
+      </View>
+    ),
+    shortcuts: (
+      <View className="flex-row flex-wrap gap-3">
+        {SHORTCUTS.filter((s) => layout.shortcuts.includes(s.href)).map((s) => (
+          <Link key={s.href} href={s.href} asChild>
+            <Pressable className="min-w-[30%] flex-1 items-center gap-2 rounded-card border border-glass-border bg-glass py-4">
+              <Icon name={s.icon} size={20} color={colors.accent} />
+              <Text className="text-xs font-medium text-fg">{s.label}</Text>
+            </Pressable>
+          </Link>
+        ))}
+      </View>
+    ),
+  };
 
   return (
     <View className="flex-1 bg-bg">
@@ -286,205 +494,14 @@ export default function DashboardScreen() {
           <Text className="text-sm text-fg-muted">Here&rsquo;s your financial picture at a glance.</Text>
         </View>
 
-        {/* ---------- POSITION: Where do I stand? ---------- */}
-        <View className={card}>
-          <View className="mb-1 flex-row items-center justify-between">
-            <Text className="text-xs font-semibold uppercase tracking-wide text-fg-muted">Net worth</Text>
-            <Pressable
-              onPress={toggleNetWorthHidden}
-              hitSlop={8}
-              accessibilityRole="button"
-              accessibilityLabel={netWorthHidden ? "Show net worth" : "Hide net worth"}
-            >
-              <Icon name={netWorthHidden ? "eye-off" : "eye"} size={18} color={colors.fgMuted} />
-            </Pressable>
-          </View>
-          <Text className="font-data text-4xl font-bold tabular-nums text-fg">
-            {netWorthDisplay}
-          </Text>
-          {!netWorthHidden && netWorthMinor < 0 && (
-            <Text className="mt-1 text-xs font-medium text-danger">
-              Overdrawn by {formatMoney(Math.abs(netWorthMinor), baseCurrency)}
-            </Text>
-          )}
-          <View className="mt-4 flex-row gap-3">
-            <View className="flex-1 rounded-card bg-surface-2 p-3">
-              <Text className="text-[11px] text-fg-muted">Assets</Text>
-              <Text className="font-data mt-1 text-base font-semibold tabular-nums text-success">
-                {assetsDisplay}
-              </Text>
-            </View>
-            <View className="flex-1 rounded-card bg-surface-2 p-3">
-              <Text className="text-[11px] text-fg-muted">Debt</Text>
-              <Text className="font-data mt-1 text-base font-semibold tabular-nums text-fg">
-                {debtDisplay}
-              </Text>
-            </View>
-          </View>
-          {/* Earmarked + Unallocated only earn their space once there's
-              something earmarked — an all-zero row on a profile with no
-              funds is noise. */}
-          {earmarkedMinor !== 0 && (
-            <View className="mt-3 flex-row gap-3">
-              <View className="flex-1 rounded-card bg-surface-2 p-3">
-                <Text className="text-[11px] text-fg-muted">Earmarked</Text>
-                <Text className="font-data mt-1 text-base font-semibold tabular-nums text-accent">
-                  {earmarkedDisplay}
-                </Text>
-              </View>
-              <View className="flex-1 rounded-card bg-surface-2 p-3">
-                <Text className="text-[11px] text-fg-muted">Unallocated</Text>
-                <Text className="font-data mt-1 text-base font-semibold tabular-nums text-fg">
-                  {unallocatedDisplay}
-                </Text>
-              </View>
-            </View>
-          )}
-          {!netWorthHidden && <UnconvertedCurrenciesNote currencies={unconvertedCurrencies} subject="Net worth" />}
-        </View>
-
-        {/* ---------- FUNDS: what's already spoken for ---------- */}
-        {/* Sits with the wealth story, before the month-scoped Performance
-            card — earmarking is a position, not a monthly result. */}
-        <View className={card}>
-          <View className="mb-3 flex-row items-center justify-between">
-            <Text className="text-sm font-display text-fg">Funds</Text>
-            {activeFunds.length > 0 && (
-              <Link href="/fund" asChild>
-                <Pressable hitSlop={8}>
-                  <Text className="text-xs font-medium text-accent">View all</Text>
-                </Pressable>
-              </Link>
-            )}
-          </View>
-          {activeFunds.length === 0 ? (
-            <View className="gap-3">
-              <Text className="text-sm text-fg-muted">
-                Set money aside for something specific — a laptop, a trip, next year&rsquo;s
-                insurance — without moving it out of your accounts.
-              </Text>
-              <Link href="/fund/new" asChild>
-                <Pressable className="items-center rounded-full border border-glass-border bg-glass py-2.5">
-                  <Text className="text-sm font-semibold text-accent">Create a fund</Text>
-                </Pressable>
-              </Link>
-            </View>
-          ) : (
-            <View className="gap-4">
-              {dashboardFunds.map((fund) => (
-                <FundRow
-                  key={fund.id}
-                  fund={fund}
-                  balance={fundBalances.get(fund.id) ?? emptyFundBalance(fund.id)}
-                  progress={computeFundProgress(
-                    fund.targetAmountMinor,
-                    fundBalances.get(fund.id) ?? emptyFundBalance(fund.id),
-                  )}
-                  baseCurrency={baseCurrency}
-                  hidden={netWorthHidden}
-                />
-              ))}
-              {activeFunds.length > dashboardFunds.length && (
-                <Link href="/fund" asChild>
-                  <Pressable>
-                    <Text className="text-xs font-medium text-accent">
-                      +{activeFunds.length - dashboardFunds.length} more
-                    </Text>
-                  </Pressable>
-                </Link>
-              )}
-            </View>
-          )}
-        </View>
-
-        {/* ---------- PERFORMANCE: How am I doing this month? ---------- */}
-        <View className={card}>
-          <View className="mb-3 flex-row items-center justify-between">
-            <Pressable onPress={() => setPeriod((p) => shiftMonth(p, -1))} className="p-2" hitSlop={8}>
-              <Icon name="chevron-left" size={22} color={colors.fg} />
-            </Pressable>
-            <Text className={cardTitle}>{monthLabel(period)}</Text>
-            <Pressable onPress={() => setPeriod((p) => shiftMonth(p, 1))} className="p-2" hitSlop={8}>
-              <Icon name="chevron-right" size={22} color={colors.fg} />
-            </Pressable>
-          </View>
-          <View className="flex-row gap-3">
-            <View className="flex-1 rounded-card bg-surface-2 p-3.5">
-              <Text className="text-[11px] text-fg-muted">Actual income</Text>
-              <Text className="font-data mt-1.5 text-lg font-semibold tabular-nums text-success">
-                +{formatMoney(incomeMinor, baseCurrency)}
-              </Text>
-            </View>
-            <View className="flex-1 rounded-card bg-surface-2 p-3.5">
-              <Text className="text-[11px] text-fg-muted">Actual spending</Text>
-              <Text className="font-data mt-1.5 text-lg font-semibold tabular-nums text-danger">
-                −{formatMoney(expenseMinor, baseCurrency)}
-              </Text>
-            </View>
-          </View>
-          <Text className="mt-3 text-xs text-fg-muted">
-            {formatMoney(availableThisMonthMinor, baseCurrency)} available this month (carry forward
-            + income − spending, transfers not counted as spending)
-          </Text>
-        </View>
-
-        {/* ---------- ACTION: What needs my attention? ---------- */}
-        <View className={card}>
-          <Text className={cardTitle}>What needs my attention</Text>
-          {!hasAttentionItems ? (
-            <Text className="text-sm text-fg-muted">You&rsquo;re all caught up.</Text>
-          ) : (
-            <View className="gap-3">
-              {overBudgetCategories.map((c) => (
-                <AttentionRow
-                  key={`budget-${c.id}`}
-                  icon="shape-outline"
-                  tone="danger"
-                  text={`${c.name} is ${formatMoney(c.spentMinor - c.monthlyBudgetMinor!, baseCurrency)} over its ${formatMoney(c.monthlyBudgetMinor!, baseCurrency)}/mo budget`}
-                  href="/categories"
-                />
-              ))}
-              {upcomingCommitments.slice(0, 3).map((row) => (
-                <AttentionRow
-                  key={`commitment-${row.id}`}
-                  icon="calendar-sync-outline"
-                  tone="transfer"
-                  text={`${row.label} due ${row.date.toLocaleDateString(undefined, { month: "short", day: "numeric" })}`}
-                  href="/commitments"
-                />
-              ))}
-              {fundsDueSoon.map(({ fund, progress }) => (
-                <AttentionRow
-                  key={`fund-${fund.id}`}
-                  icon={fund.icon}
-                  tone="transfer"
-                  text={`${fund.name} is ${formatMoney(progress.remainingMinor, baseCurrency)} short, needed by ${fund.targetDate!.toLocaleDateString(undefined, { month: "short", day: "numeric" })}`}
-                  href="/fund"
-                />
-              ))}
-              {overEarmarked && (
-                <AttentionRow
-                  icon="piggy-bank"
-                  tone="danger"
-                  text="You've earmarked more than your net worth"
-                  href="/fund"
-                />
-              )}
-            </View>
-          )}
-        </View>
-
-        {/* ---------- Shortcuts (no dedicated tab) ---------- */}
-        <View className="flex-row flex-wrap gap-3">
-          {SHORTCUTS.map((s) => (
-            <Link key={s.href} href={s.href} asChild>
-              <Pressable className="min-w-[30%] flex-1 items-center gap-2 rounded-card border border-glass-border bg-glass py-4">
-                <Icon name={s.icon} size={20} color={colors.accent} />
-                <Text className="text-xs font-medium text-fg">{s.label}</Text>
-              </Pressable>
-            </Link>
+        {layout.order
+          .filter((id) => !layout.hidden.includes(id))
+          // A shortcuts card with every tile unticked would be an empty row
+          // plus a gap; treat it as hidden.
+          .filter((id) => id !== "shortcuts" || layout.shortcuts.length > 0)
+          .map((id) => (
+            <Fragment key={id}>{cards[id]}</Fragment>
           ))}
-        </View>
       </ScrollView>
     </View>
   );

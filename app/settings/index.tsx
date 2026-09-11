@@ -30,7 +30,14 @@ export default function SettingsScreen() {
           href="/settings/currency"
         />
         <SettingsRow icon="information-outline" label="Notifications" href="/settings/notifications" />
-        <SettingsRow icon="settings-outline" label="Appearance" href="/settings/appearance" last />
+        <SettingsRow icon="settings-outline" label="Appearance" href="/settings/appearance" />
+        <SettingsRow
+          icon="view-dashboard-outline"
+          label="Customise Dashboard"
+          sublabel="Which cards and shortcuts appear, and in what order"
+          href="/settings/dashboard"
+          last
+        />
       </SettingsSection>
 
       <SettingsSection title="Security & Legal">

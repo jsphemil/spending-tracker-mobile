@@ -23,6 +23,7 @@ export default function SettingsLayout() {
       <Stack.Screen name="currency" options={{ title: "Default Currency" }} />
       <Stack.Screen name="notifications" options={{ title: "Notifications" }} />
       <Stack.Screen name="appearance" options={{ title: "Appearance" }} />
+      <Stack.Screen name="dashboard" options={{ title: "Customise Dashboard" }} />
       <Stack.Screen name="privacy" options={{ title: "Privacy & Security" }} />
       <Stack.Screen name="support" options={{ title: "Help & Support" }} />
       <Stack.Screen name="intro" options={{ title: "Introduction" }} />
