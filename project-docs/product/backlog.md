@@ -1,6 +1,15 @@
 # Idea Backlog
 
 ## Inbox
+- **Testers Community feedback (2026-09-11) — six suggestions taken up, two declined.** A paid testing round on the Play closed-testing build (report at `project-docs/product/erebor_feedback (1).pdf`) found **no crashes, no bugs, and every function working as intended** across their devices; everything below is an enhancement suggestion, not a defect. Their items 2 and 3 (Google Sign-in; email/password accounts with sync) were **declined by the user the same day** — they cut against the app's local-first, no-server philosophy, which the Dropbox whole-file backup already serves for cross-device continuity. The rest, grouped as they were raised:
+  1. **Dynamic walkthrough for new users.** Their only observation that reads as specific to Erebor: there is no first-run tour. Suggested an interactive tutorial that highlights key features as the user first moves through the app, contextual tooltips the first time a feature is met, a skip option, and a way to replay it later from Settings. *Overlaps* the one-time feature-intro screen in the existing onboarding (spec.md §5.13) and the deferred Info/Tips page (§5.15).
+  2. **In-app feedback mechanism** — a way to suggest improvements or report issues from inside the app.
+  3. **"What's new" section** — an in-app place listing new features and changes per release.
+  4. **Enhanced data visualisation** — advanced charts/graphs of spending habits and financial trends "at a glance".
+  5. **FAQ / support section** — self-serve help for common questions. *Overlaps* the deferred Info/Tips page (§5.15).
+  6. **Dashboard customisation** — let the user choose which financial information the Dashboard highlights.
+  Items 2–6 are generic recommendations that name nothing specific to the app. All six are to be planned together as **version 3** on a new branch.
+
 ## Triaged
 - **Transactions list gained a Recurring/Transfers type filter**, on top of the existing Account/Category ones. Requested 2026-08-21: "it now shows account and all accounts, categories and all categories, but it does not have an option to filter only the - recurring transactions, opening balances, carry forwards." First built as "All Types" / "Recurring" / "Opening Balance," but the user's follow-up narrowed the final set: "leave carry forward, only give filters to for recurring transactions, transfers" — swapped "Opening Balance" out for "Transfers": "All Types" / "Recurring" (`recurringRuleId != null`) / "Transfers" (`type === "transfer"`), applied client-side over the already-fetched rows (same layering pattern as the future-hiding filter), and — unlike future-hiding — this does affect the SummaryBand totals, since it's a real filter the user is choosing, not a declutter toggle. "Carry forward" explicitly dropped, not built. `tsc`/`jest` (45/45) clean. On-device verification pending.
 - **UAT round (2026-08-20), Navigation & Theming section — 2 fixed, 1 flagged for a scope decision.**
