@@ -1,6 +1,7 @@
 import { Text, View } from "react-native";
-import Svg, { Circle, Line, Polyline } from "react-native-svg";
+import Svg, { Circle, Line, Path } from "react-native-svg";
 
+import { monotoneCubicPath, niceCeiling } from "../../services/chartPath";
 import { formatCompactMoney } from "../../services/format";
 import { useThemeColors } from "../../theme/palette";
 
@@ -17,7 +18,7 @@ const RIGHT_PADDING = 8;
 const TOP_PADDING = 8;
 const BOTTOM_PADDING = 20;
 
-// A simple line chart over an SVG viewBox (so it scales to whatever width
+// A line chart over an SVG viewBox (so it scales to whatever width
 // its parent gives it via width="100%", no onLayout measurement needed).
 // Y-axis rounds up to a "nice" ceiling above the largest value so gridlines
 // land on round compact numbers (₹14L, ₹10.5L, ...), matching the real
@@ -63,12 +64,18 @@ export function NetWorthTrendChart({ data, currency, height = 180 }: NetWorthTre
           );
         })}
 
+        {/* Smoothed with monotone cubic interpolation (spec.md §5.22) —
+            the curve passes through every month's dot and never bends
+            above or below its neighbours, so it can't imply a value
+            between months that the data doesn't contain. */}
         {points.length > 1 && (
-          <Polyline
-            points={points.map((p) => `${p.x},${p.y}`).join(" ")}
+          <Path
+            d={monotoneCubicPath(points)}
             fill="none"
             stroke={colors.accent}
             strokeWidth={2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
           />
         )}
         {points.map((p, i) => (
@@ -95,15 +102,4 @@ export function NetWorthTrendChart({ data, currency, height = 180 }: NetWorthTre
       </View>
     </View>
   );
-}
-
-// Rounds a value up to a "nice" number for the axis ceiling (1/2/5 × a
-// power of 10) so gridlines land on readable figures instead of an
-// arbitrary max like ₹12,04,549.
-function niceCeiling(value: number): number {
-  if (value <= 0) return 0;
-  const magnitude = 10 ** Math.floor(Math.log10(value));
-  const normalized = value / magnitude;
-  const niceNormalized = normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10;
-  return niceNormalized * magnitude;
 }
