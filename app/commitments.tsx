@@ -4,6 +4,7 @@ import { Icon } from "../components/ui/Icon";
 
 import { EmptyState } from "../components/ui/EmptyState";
 import { GlobalHeader } from "../components/GlobalHeader";
+import { FirstVisitHint } from "../components/FirstVisitHint";
 import { useAccounts } from "../db/queries/accounts";
 import { useCategories } from "../db/queries/categories";
 import { useFunds } from "../db/queries/funds";
@@ -63,6 +64,7 @@ export default function CommitmentsScreen() {
         className="flex-1 bg-bg"
         contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 96, gap: 16 }}
       >
+      <FirstVisitHint id="commitments" />
       <Text className="text-sm text-fg-muted">
         Everything you&rsquo;re locked into every month, normalized from each rule&rsquo;s own
         cadence — a yearly charge and a weekly one both roll into one monthly figure here.

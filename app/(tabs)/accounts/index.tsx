@@ -14,6 +14,7 @@ import { ensureMaterialized } from "../../../services/recurrence";
 import { CurrencyAmount } from "../../../components/CurrencyAmount";
 import { EmptyState } from "../../../components/ui/EmptyState";
 import { GlobalHeader } from "../../../components/GlobalHeader";
+import { FirstVisitHint } from "../../../components/FirstVisitHint";
 import { TAB_BAR_CLEARANCE } from "../../../theme/tabBar";
 import { useThemeColors } from "../../../theme/palette";
 
@@ -76,7 +77,9 @@ export default function AccountsListScreen() {
         keyExtractor={(item) => String(item.id)}
         contentContainerStyle={{ padding: 16, paddingBottom: TAB_BAR_CLEARANCE, gap: 12 }}
         ListHeaderComponent={
-          <View className="mb-3 flex-row items-center justify-between gap-2">
+          <View className="gap-3">
+            <FirstVisitHint id="accounts" />
+            <View className="mb-3 flex-row items-center justify-between gap-2">
             <Pressable onPress={() => setPeriod((p) => shiftMonth(p, -1))} className="p-3" hitSlop={8}>
               <Icon name="chevron-left" size={28} color={colors.fg} />
             </Pressable>
@@ -93,6 +96,7 @@ export default function AccountsListScreen() {
                 <Icon name="plus" size={18} color={colors.fg} />
               </Pressable>
             </Link>
+            </View>
           </View>
         }
         ListEmptyComponent={<EmptyState message="No accounts yet." />}

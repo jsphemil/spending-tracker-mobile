@@ -7,6 +7,7 @@ import { AssetAllocationChart } from "../../components/charts/AssetAllocationCha
 import { NetWorthTrendChart } from "../../components/charts/NetWorthTrendChart";
 import { UnconvertedCurrenciesNote } from "../../components/UnconvertedCurrenciesNote";
 import { GlobalHeader } from "../../components/GlobalHeader";
+import { FirstVisitHint } from "../../components/FirstVisitHint";
 import { db } from "../../db/client";
 import { useAccounts } from "../../db/queries/accounts";
 import { useCategories } from "../../db/queries/categories";
@@ -118,6 +119,7 @@ export default function AnalyticsScreen() {
     <View className="flex-1 bg-bg">
       <GlobalHeader />
       <ScrollView className="flex-1 bg-bg" contentContainerStyle={{ padding: 16, paddingBottom: TAB_BAR_CLEARANCE, gap: 12 }}>
+        <FirstVisitHint id="analytics" />
         <View className="flex-row items-center justify-between">
           <Pressable onPress={() => setPeriod((p) => shiftMonth(p, -1))} className="p-3" hitSlop={8}>
             <Icon name="chevron-left" size={28} color={colors.fg} />

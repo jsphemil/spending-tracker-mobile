@@ -43,6 +43,12 @@ export default function HelpSupportScreen() {
           onPress={() => {
             sendFeedback();
           }}
+        />
+        <SettingsRow
+          icon="sparkles"
+          label="Replay the intro"
+          sublabel="The welcome slides again, and the one-time hints on each screen come back"
+          href="/settings/intro"
           last
         />
       </SettingsSection>

@@ -5,6 +5,7 @@ import { Icon } from "../../components/ui/Icon";
 
 import { FundRow } from "../../components/FundRow";
 import { GlobalHeader } from "../../components/GlobalHeader";
+import { FirstVisitHint } from "../../components/FirstVisitHint";
 import { WhatsNewSheet } from "../../components/WhatsNewSheet";
 import { shouldShowWhatsNew } from "../../constants/changelog";
 import { updateSettings } from "../../db/actions/settings";
@@ -277,6 +278,7 @@ export default function DashboardScreen() {
         />
       )}
       <ScrollView className="flex-1 bg-bg" contentContainerStyle={{ padding: 16, paddingBottom: TAB_BAR_CLEARANCE, gap: 16 }}>
+        <FirstVisitHint id="dashboard" />
         <View>
           <Text className="text-lg font-display-xbold text-fg">
             {displayName ? `${greeting(new Date())}, ${displayName}` : greeting(new Date())}

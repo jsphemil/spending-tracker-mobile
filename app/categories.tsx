@@ -11,6 +11,7 @@ import { useFilteredTransactions } from "../db/queries/transactions";
 import type { CategoryKind } from "../db/schema";
 import { db } from "../db/client";
 import { GlobalHeader } from "../components/GlobalHeader";
+import { FirstVisitHint } from "../components/FirstVisitHint";
 import { useBaseConverter } from "../hooks/useBaseConverter";
 import { formatMoney } from "../services/format";
 import { currentMonthPeriod, monthRange } from "../services/period";
@@ -83,6 +84,7 @@ export default function CategoriesScreen() {
         data={categories ?? []}
         keyExtractor={(item) => String(item.id)}
         contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 96, gap: 8 }}
+        ListHeaderComponent={<FirstVisitHint id="categories" className="mb-3" />}
         ListEmptyComponent={<EmptyState message="No categories yet." />}
         renderItem={({ item }) => {
           const spentMinor = spentByCategoryMinor.get(item.id) ?? 0;

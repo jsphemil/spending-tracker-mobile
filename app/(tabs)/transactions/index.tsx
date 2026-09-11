@@ -5,6 +5,7 @@ import { Icon } from "../../../components/ui/Icon";
 
 import { confirmDeleteTransaction } from "../../../components/confirmDeleteTransaction";
 import { GlobalHeader } from "../../../components/GlobalHeader";
+import { FirstVisitHint } from "../../../components/FirstVisitHint";
 import { SummaryBand } from "../../../components/SummaryBand";
 import { UnconvertedCurrenciesNote } from "../../../components/UnconvertedCurrenciesNote";
 import { TransactionListItem } from "../../../components/TransactionListItem";
@@ -316,6 +317,7 @@ export default function TransactionsListScreen() {
         data={visibleRows}
         keyExtractor={(item) => String(item.id)}
         contentContainerStyle={{ padding: 16, paddingBottom: TAB_BAR_CLEARANCE }}
+        ListHeaderComponent={<FirstVisitHint id="transactions" className="mb-3" />}
         ListEmptyComponent={<EmptyState message="No transactions for this filter." />}
         renderItem={({ item }) => (
           <TransactionListItem
