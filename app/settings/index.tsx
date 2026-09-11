@@ -36,7 +36,8 @@ export default function SettingsScreen() {
       <SettingsSection title="Security & Legal">
         <SettingsRow icon="shield" label="Privacy & Security" href="/settings/privacy" />
         <SettingsRow icon="book-open" label="Help & Support" href="/settings/support" />
-        <SettingsRow icon="information-outline" label="About Erebor" href="/settings/about" last />
+        <SettingsRow icon="information-outline" label="About Erebor" href="/settings/about" />
+        <SettingsRow icon="sparkles" label="What's New" href="/settings/whats-new" last />
       </SettingsSection>
 
       <View className="gap-2">

@@ -5,6 +5,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { CurrencyPicker } from "./CurrencyPicker";
 import { Icon } from "./ui/Icon";
 import { updateSettings } from "../db/actions/settings";
+import { appVersionLabel } from "../services/feedbackLink";
 import type { settings as settingsTable } from "../db/schema";
 import { Button } from "./ui/Button";
 
@@ -22,7 +23,12 @@ export function OnboardingFlow({ settings }: { settings: Settings }) {
   const [step, setStep] = useState(0);
 
   function finish() {
-    updateSettings(settings.id, { onboardingCompleted: true });
+    // lastSeenVersion is written here so a fresh install never gets the
+    // "What's new" sheet for the version it was installed with (§5.22).
+    updateSettings(settings.id, {
+      onboardingCompleted: true,
+      lastSeenVersion: appVersionLabel().appVersion,
+    });
   }
 
   return (

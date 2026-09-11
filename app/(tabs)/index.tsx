@@ -5,6 +5,9 @@ import { Icon } from "../../components/ui/Icon";
 
 import { FundRow } from "../../components/FundRow";
 import { GlobalHeader } from "../../components/GlobalHeader";
+import { WhatsNewSheet } from "../../components/WhatsNewSheet";
+import { shouldShowWhatsNew } from "../../constants/changelog";
+import { updateSettings } from "../../db/actions/settings";
 import { UnconvertedCurrenciesNote } from "../../components/UnconvertedCurrenciesNote";
 import { db } from "../../db/client";
 import { useAccounts } from "../../db/queries/accounts";
@@ -32,6 +35,7 @@ import {
 import { ensureMaterialized } from "../../services/recurrence";
 import { TAB_BAR_CLEARANCE } from "../../theme/tabBar";
 import { useThemeColors } from "../../theme/palette";
+import { appVersionLabel } from "../../services/feedbackLink";
 
 const ASSET_TYPES = ["savings", "wallet", "deposit", "investment"] as const;
 const COMMITMENT_LOOKAHEAD_DAYS = 7;
@@ -255,9 +259,23 @@ export default function DashboardScreen() {
   const earmarkedDisplay = netWorthHidden ? "••••" : formatMoney(earmarkedMinor, baseCurrency);
   const unallocatedDisplay = netWorthHidden ? "••••" : formatMoney(unallocatedMinor, baseCurrency);
 
+  // "What's new" after an update (spec.md §5.22). Derived, not state: the
+  // sheet is open exactly while lastSeenVersion lags the installed version,
+  // and dismissing it writes that column — so a fresh install (onboarding
+  // writes it) and an already-acknowledged version never see it.
+  const { appVersion } = appVersionLabel();
+  const whatsNewVisible = settings ? shouldShowWhatsNew(settings, appVersion) : false;
+
   return (
     <View className="flex-1 bg-bg">
       <GlobalHeader />
+      {settings && (
+        <WhatsNewSheet
+          version={appVersion}
+          visible={whatsNewVisible}
+          onClose={() => updateSettings(settings.id, { lastSeenVersion: appVersion })}
+        />
+      )}
       <ScrollView className="flex-1 bg-bg" contentContainerStyle={{ padding: 16, paddingBottom: TAB_BAR_CLEARANCE, gap: 16 }}>
         <View>
           <Text className="text-lg font-display-xbold text-fg">
