@@ -330,8 +330,8 @@ All 3 required updates for the 14-day window are now shipped
 (versionCode 9, 12, 13 — see step 9 below for the production-access
 application, the next gate).
 
-**Update 7 built as versionName 3.0.0 — release name
-`Erebor_WM<versionCode>(3.0.0)` (2026-09-11).** The Testers Community
+**Update 7 built as versionCode 17, versionName 3.0.0 — release name
+`Erebor_WM17(3.0.0)` (2026-09-11).** The Testers Community
 round (spec.md §5.22) plus the user's biometric lock (§5.23). A paid
 tester pass on 2.x found **no crashes and no bugs**; its report is
 eight suggestions, of which two (Google/email sign-in) were declined
@@ -357,9 +357,10 @@ as contrary to the local-first design and six are this release:
 One migration, `0017` (four `settings` columns, no data touched). No
 data-loss warning needed. Verified on-device across all of the above
 before merging; built via `npx eas-cli build --platform android
---profile production --non-interactive`, which auto-increments the
-versionCode. **Submission to the EWM Alpha track done manually by the
-user.**
+--profile production --non-interactive`, which auto-incremented
+versionCode 16 → 17. Build `594005bd-0203-4964-9187-d167257709b9`; AAB at
+`https://expo.dev/artifacts/eas/9uWu_1lv1wVGfiBzs5QIATUNwYnqBYsh6vcJuzxbPfs.aab`.
+**Submission to the EWM Alpha track done manually by the user.**
 
 Release notes used (3.0.0):
 ```
