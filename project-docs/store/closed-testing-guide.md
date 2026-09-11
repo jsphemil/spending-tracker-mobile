@@ -362,7 +362,7 @@ Verified on-device across both features before merging. Built via
 --non-interactive`, which auto-incremented versionCode 15 → 16. Build
 `9a28ff68-d49f-4083-a16a-e805c97e09a2`; AAB at
 `https://expo.dev/artifacts/eas/hz97SX55OYTbumyHU9RZb38AZ7BlvvEOIKJkBQNmA6c.aab`.
-**Submission to the EWM Alpha track done manually by the user.**
+**Submitted to the EWM Alpha track manually by the user on 2026-09-11.**
 
 Release notes used (versionCode 16):
 ```
