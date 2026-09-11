@@ -23,9 +23,12 @@ export default function SettingsLayout() {
       <Stack.Screen name="currency" options={{ title: "Default Currency" }} />
       <Stack.Screen name="notifications" options={{ title: "Notifications" }} />
       <Stack.Screen name="appearance" options={{ title: "Appearance" }} />
+      <Stack.Screen name="dashboard" options={{ title: "Customise Dashboard" }} />
       <Stack.Screen name="privacy" options={{ title: "Privacy & Security" }} />
       <Stack.Screen name="support" options={{ title: "Help & Support" }} />
+      <Stack.Screen name="intro" options={{ title: "Introduction" }} />
       <Stack.Screen name="about" options={{ title: "About Erebor" }} />
+      <Stack.Screen name="whats-new" options={{ title: "What's New" }} />
       <Stack.Screen name="export" options={{ title: "Export Transactions" }} />
     </Stack>
   );

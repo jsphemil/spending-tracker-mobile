@@ -1,13 +1,73 @@
-import { Linking, Pressable, ScrollView, Text, View } from "react-native";
+import { useEffect, useState } from "react";
+import { Linking, Pressable, ScrollView, Switch, Text, View } from "react-native";
+
+import { updateSettings } from "../../db/actions/settings";
+import { useSettings } from "../../db/queries/settings";
+import { authenticate, canUseBiometrics } from "../../services/appLock";
+import { useThemeColors } from "../../theme/palette";
 
 const PRIVACY_POLICY_URL = "https://meliordevelopments.github.io/erebor-wealth-management-pp/";
 
 // Static summary of spec.md §3's "local-first, developer never hosts your
 // data" architecture, plus the link out to the full policy — not a second
-// copy of the legal text, just the plain-language version of it.
+// copy of the legal text, just the plain-language version of it. The app
+// lock toggle (spec.md §5.23) lives here because it is a privacy control,
+// not a login.
 export default function PrivacySecurityScreen() {
+  const { settings } = useSettings();
+  const colors = useThemeColors();
+  // null = still asking the OS; the toggle is disabled until it answers.
+  const [biometricsAvailable, setBiometricsAvailable] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    canUseBiometrics()
+      .then((ok) => {
+        if (!cancelled) setBiometricsAvailable(ok);
+      })
+      .catch(() => {
+        if (!cancelled) setBiometricsAvailable(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (!settings) return null;
+
+  async function toggleLock(value: boolean) {
+    if (!settings) return;
+    // Turning it on runs one prompt first and only persists on success, so
+    // the lock can never be enabled into a lock-out. Turning it off needs
+    // no prompt: the user is already inside the app.
+    if (value) {
+      const ok = await authenticate().catch(() => false);
+      if (!ok) return;
+    }
+    updateSettings(settings.id, { appLockEnabled: value });
+  }
+
+  const lockSublabel =
+    biometricsAvailable === false
+      ? "Set up fingerprint or face unlock in your phone's settings first."
+      : "Ask for your fingerprint, face, or your phone's PIN or pattern when Erebor opens or comes back after 30 seconds in the background.";
+
   return (
     <ScrollView className="flex-1 bg-bg" contentContainerStyle={{ padding: 16, gap: 16 }}>
+      <View className="flex-row items-center justify-between">
+        <View className="flex-1 pr-4">
+          <Text className="text-base text-fg">Unlock with biometrics</Text>
+          <Text className="text-sm text-fg-muted">{lockSublabel}</Text>
+        </View>
+        <Switch
+          value={settings.appLockEnabled}
+          onValueChange={toggleLock}
+          disabled={biometricsAvailable !== true}
+          trackColor={{ false: colors.glassFill, true: colors.accent }}
+          thumbColor="#ffffff"
+          ios_backgroundColor={colors.glassFill}
+        />
+      </View>
       <View className="gap-2">
         <Text className="text-base font-semibold text-fg">Your data stays on your device</Text>
         <Text className="text-sm text-fg-muted">

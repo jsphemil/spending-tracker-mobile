@@ -12,10 +12,12 @@ import { useFonts } from "expo-font";
 import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold } from "@expo-google-fonts/inter";
 import { Manrope_600SemiBold, Manrope_700Bold, Manrope_800ExtraBold } from "@expo-google-fonts/manrope";
 
+import { LockScreen } from "../components/LockScreen";
 import { OnboardingFlow } from "../components/OnboardingFlow";
 import { db } from "../db/client";
 import { useSettings } from "../db/queries/settings";
 import { ensureSeeded } from "../db/seed";
+import { useAppLock } from "../hooks/useAppLock";
 import { runAutoBackupIfDue } from "../services/dropbox";
 import { rescheduleExpenseReminder } from "../services/notifications";
 import { cssVars, useResolvedTheme, useThemeColors } from "../theme/palette";
@@ -26,6 +28,9 @@ export default function RootLayout() {
   const scheme = useResolvedTheme();
   const colors = useThemeColors();
   const { settings } = useSettings();
+  // Biometric app lock (spec.md §5.23). Passed undefined until settings
+  // load so a cold start stays locked rather than opening on a default.
+  const { locked, unlock } = useAppLock(settings?.appLockEnabled);
   const [fontsLoaded] = useFonts({
     Inter_400Regular,
     Inter_500Medium,
@@ -87,6 +92,12 @@ export default function RootLayout() {
           </View>
         ) : !settings.onboardingCompleted ? (
           <OnboardingFlow settings={settings} />
+        ) : locked ? (
+          // Instead of the navigator, not over it: nothing underneath renders
+          // or can be captured while locked. Deep links from the widget and
+          // launcher shortcuts still resolve once unlocked, because the
+          // Stack mounts with the pending URL intact.
+          <LockScreen onUnlock={unlock} />
         ) : (
           <Stack
             screenOptions={{

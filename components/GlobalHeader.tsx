@@ -5,6 +5,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Icon } from "./ui/Icon";
 import { CurrencyPicker } from "./CurrencyPicker";
+import { HowToUseBody } from "./IntroSteps";
 import { useSettings } from "../db/queries/settings";
 import { updateSettings } from "../db/actions/settings";
 import { useThemeColors } from "../theme/palette";
@@ -72,8 +73,9 @@ export function GlobalHeader() {
 
 // Lets a returning user revisit onboarding's "how to use Erebor" habits
 // without redoing the whole flow — the "info/demo icon" the master prompt
-// asks for on the global header. Same copy as OnboardingFlow's step 3, not
-// a second explanation written from scratch.
+// asks for on the global header. Renders IntroSteps' HowToUseBody, so this
+// and the onboarding slide can never drift apart (§5.22 retired the copy
+// that used to live here).
 function InfoModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
   const colors = useThemeColors();
   return (
@@ -95,34 +97,10 @@ function InfoModal({ visible, onClose }: { visible: boolean; onClose: () => void
             <Text className="text-sm text-fg-muted">
               You don't need to understand everything on day one. Start with these four habits.
             </Text>
-            <InfoStep
-              title="1. Add your accounts"
-              body="Add the accounts and financial assets you want to track — such as bank accounts, investments, deposits, cash or credit cards. Your accounts form the foundation of your financial picture."
-            />
-            <InfoStep
-              title="2. Record what happens"
-              body="Record income when money comes in and expenses when you spend it. Moving money from one account to another is a transfer, not an expense — it doesn't reduce your overall wealth, and Erebor keeps both sides of the transfer connected so your financial picture stays accurate."
-            />
-            <InfoStep
-              title="3. Check your Dashboard"
-              body="Your Dashboard answers three questions: Where do I stand? How am I doing this month? What needs my attention?"
-            />
-            <InfoStep
-              title="4. Explore when you need more detail"
-              body="Use Accounts for individual account information, Transactions for your financial activity, Calendar for a day-by-day view and Analytics for deeper insights."
-            />
+            <HowToUseBody />
           </ScrollView>
         </SafeAreaView>
       </View>
     </Modal>
-  );
-}
-
-function InfoStep({ title, body }: { title: string; body: string }) {
-  return (
-    <View className="gap-1">
-      <Text className="text-base font-semibold text-fg">{title}</Text>
-      <Text className="text-sm text-fg-muted">{body}</Text>
-    </View>
   );
 }

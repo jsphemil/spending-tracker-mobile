@@ -330,6 +330,44 @@ All 3 required updates for the 14-day window are now shipped
 (versionCode 9, 12, 13 — see step 9 below for the production-access
 application, the next gate).
 
+**Update 7 built as versionName 3.0.0 — release name
+`Erebor_WM<versionCode>(3.0.0)` (2026-09-11).** The Testers Community
+round (spec.md §5.22) plus the user's biometric lock (§5.23). A paid
+tester pass on 2.x found **no crashes and no bugs**; its report is
+eight suggestions, of which two (Google/email sign-in) were declined
+as contrary to the local-first design and six are this release:
+
+- **Biometric app lock** — `expo-local-authentication`, the release's
+  only native change; fingerprint/face with the phone's PIN/pattern as
+  fallback, 30 s background grace, nothing stored by the app.
+- **Help & Support is a real FAQ** — ten folded sections, *Send
+  feedback* (a `mailto:` to the published address with version and
+  device prefilled) and *Replay the intro*. Closes §5.15.
+- **What's new** — bundled changelog, a Settings screen, and a one-time
+  sheet on the first launch after an update. **Every release from here
+  needs an entry in `constants/changelog.ts`** whose version matches
+  `app.json`, or the sheet won't fire.
+- **First-visit hints** on seven screens; replaying the intro re-arms
+  them.
+- **Customise Dashboard** — hide/reorder cards, pick shortcut tiles;
+  Net worth pinned.
+- **Analytics** — smoothed trend, earmarked-funds arc on the asset
+  ring, cumulative spend this month vs last.
+
+One migration, `0017` (four `settings` columns, no data touched). No
+data-loss warning needed. Verified on-device across all of the above
+before merging; built via `npx eas-cli build --platform android
+--profile production --non-interactive`, which auto-increments the
+versionCode. **Submission to the EWM Alpha track done manually by the
+user.**
+
+Release notes used (3.0.0):
+```
+<en-GB>
+Erebor can now lock itself: turn on Unlock with biometrics under Privacy & Security to ask for your fingerprint, face or phone PIN when the app opens. Customise the Dashboard - choose which cards and shortcuts appear, and in what order. Analytics gains a day-by-day spending chart against last month and marks earmarked funds on the asset ring. Help & Support is now a full FAQ with Send feedback and a replayable intro, plus a What's new page after each update.
+</en-GB>
+```
+
 **Update 6 built as versionCode 16, versionName 2.3.0 — release name
 `Erebor_WM16(2.3.0)` (2026-09-10).** Two changes, both found by the user
 testing the previous release on a second device.

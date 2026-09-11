@@ -16,6 +16,12 @@ export function updateSettings(
     lastAutoBackupDate: string | null;
     expenseReminderEnabled: boolean;
     expenseReminderTime: string;
+    // v3 (spec.md §5.22 / §5.23). The two JSON columns take the already
+    // serialised string — callers go through the constants' serialisers.
+    appLockEnabled: boolean;
+    lastSeenVersion: string | null;
+    dashboardLayout: string | null;
+    hintsSeen: string | null;
   }>,
 ): void {
   db.update(settings).set(patch).where(eq(settings.id, id)).run();

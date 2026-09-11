@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { FundRow } from "../../components/FundRow";
 import { GlobalHeader } from "../../components/GlobalHeader";
+import { FirstVisitHint } from "../../components/FirstVisitHint";
 import { Icon } from "../../components/ui/Icon";
 import { UnconvertedCurrenciesNote } from "../../components/UnconvertedCurrenciesNote";
 import { db } from "../../db/client";
@@ -74,6 +75,7 @@ export default function FundsListScreen() {
         className="flex-1"
         contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 96, gap: 16 }}
       >
+        <FirstVisitHint id="funds" />
         <View className="rounded-card border border-glass-border bg-glass p-4">
           <Text className="text-xs font-semibold uppercase tracking-wide text-fg-muted">
             Unallocated

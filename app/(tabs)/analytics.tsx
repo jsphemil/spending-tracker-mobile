@@ -4,16 +4,21 @@ import { Pressable, ScrollView, Text, View } from "react-native";
 import { Icon } from "../../components/ui/Icon";
 
 import { AssetAllocationChart } from "../../components/charts/AssetAllocationChart";
+import { CumulativeSpendChart } from "../../components/charts/CumulativeSpendChart";
 import { NetWorthTrendChart } from "../../components/charts/NetWorthTrendChart";
 import { UnconvertedCurrenciesNote } from "../../components/UnconvertedCurrenciesNote";
 import { GlobalHeader } from "../../components/GlobalHeader";
+import { FirstVisitHint } from "../../components/FirstVisitHint";
 import { db } from "../../db/client";
 import { useAccounts } from "../../db/queries/accounts";
 import { useCategories } from "../../db/queries/categories";
+import { useFundAllocationsSubscription } from "../../db/queries/funds";
 import { useSettings } from "../../db/queries/settings";
 import { useFilteredTransactions } from "../../db/queries/transactions";
 import { getAccountBalanceMinor, getEarliestTransactionDate, getNetWorthSeries } from "../../services/balance";
 import { addToBucket, sortedBuckets, type Bucket } from "../../services/breakdown";
+import { cumulativeDailySpend } from "../../services/cumulativeSpend";
+import { getFundBalances, sumEarmarkedMinor } from "../../services/funds";
 import { useBaseConverter } from "../../hooks/useBaseConverter";
 import { formatMoney } from "../../services/format";
 import {
@@ -56,6 +61,13 @@ export default function AnalyticsScreen() {
   const { data: accounts } = useAccounts();
   const { data: categories } = useCategories();
   const { data: monthTransactions } = useFilteredTransactions({ range });
+  // Last month's rows for the cumulative-spend comparison (spec.md §5.22).
+  const lastPeriod = useMemo(() => shiftMonth(period, -1), [period]);
+  const lastRange = useMemo(() => monthRange(lastPeriod), [lastPeriod]);
+  const { data: lastMonthTransactions } = useFilteredTransactions({ range: lastRange });
+  // Subscribed for the repaint only — getFundBalances is a synchronous read
+  // (same pattern as the Dashboard).
+  useFundAllocationsSubscription();
 
   const { toBaseMinor, unconvertedCurrencies } = useBaseConverter(
     (accounts ?? []).map((a) => a.currency),
@@ -95,6 +107,21 @@ export default function AnalyticsScreen() {
       .filter((a) => (bucket.types as readonly string[]).includes(a.type))
       .reduce((sum, a) => sum + Math.max(0, toBaseMinor(accountBalanceAtEnd.get(a.id) ?? 0, a.currency)), 0),
   })).filter((b) => b.valueMinor > 0);
+  // Earmarked as of the same range.end cutoff the balances above use, so
+  // the ring's inner arc agrees with the Dashboard for the same month.
+  const earmarkedMinor = sumEarmarkedMinor(getFundBalances(db, toBaseMinor, range.end));
+
+  const accountCurrencies = (accounts ?? []).map((a) => ({ id: a.id, currency: a.currency }));
+  const thisMonthSpend = cumulativeDailySpend(monthTransactions ?? [], accountCurrencies, toBaseMinor, {
+    ...period,
+    fallbackCurrency: baseCurrency,
+  });
+  const lastMonthSpend = cumulativeDailySpend(lastMonthTransactions ?? [], accountCurrencies, toBaseMinor, {
+    ...lastPeriod,
+    fallbackCurrency: baseCurrency,
+  });
+  const now = new Date();
+  const viewingCurrentMonth = period.year === now.getFullYear() && period.month === now.getMonth();
 
   const earliestTransactionDate = getEarliestTransactionDate(db);
   const earliestPeriod: MonthPeriod = earliestTransactionDate
@@ -118,6 +145,7 @@ export default function AnalyticsScreen() {
     <View className="flex-1 bg-bg">
       <GlobalHeader />
       <ScrollView className="flex-1 bg-bg" contentContainerStyle={{ padding: 16, paddingBottom: TAB_BAR_CLEARANCE, gap: 12 }}>
+        <FirstVisitHint id="analytics" />
         <View className="flex-row items-center justify-between">
           <Pressable onPress={() => setPeriod((p) => shiftMonth(p, -1))} className="p-3" hitSlop={8}>
             <Icon name="chevron-left" size={28} color={colors.fg} />
@@ -140,9 +168,25 @@ export default function AnalyticsScreen() {
         </View>
 
         <View className={card}>
+          <View className="mb-1 flex-row items-center justify-between">
+            <Text className={cardTitle}>Spending so far</Text>
+            <Text className="text-[10px] font-medium uppercase tracking-wide text-fg-subtle">
+              vs {monthShortLabel(lastPeriod)}
+            </Text>
+          </View>
+          <CumulativeSpendChart
+            thisMonth={thisMonthSpend}
+            lastMonth={lastMonthSpend}
+            currency={baseCurrency}
+            today={viewingCurrentMonth ? now.getDate() : undefined}
+          />
+          <UnconvertedCurrenciesNote currencies={unconvertedCurrencies} subject="Spending" />
+        </View>
+
+        <View className={card}>
           <Text className={cardTitle}>Asset allocation</Text>
           {assetAllocation.length > 0 ? (
-            <AssetAllocationChart data={assetAllocation} currency={baseCurrency} />
+            <AssetAllocationChart data={assetAllocation} currency={baseCurrency} earmarkedMinor={earmarkedMinor} />
           ) : (
             <Text className="text-sm text-fg-muted">No positive balances yet.</Text>
           )}
