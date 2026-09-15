@@ -350,10 +350,12 @@ optional description.
     three render the shared row with one layout: category title (`From
     → To` for transfers), description only when present, then
     `account · date · 🔁`, signed amount, copy/edit/delete, fund and tag
-    chips. The account appears on every row on every screen — one rule,
-    no per-screen special case — so Account Detail repeats its own name
-    per row; suppressing that when `viewingAccountId` is set is a
-    one-liner if it ever reads as noise. Verified on-device 2026-09-15.
+    chips. Two refinements the same day, both verified on-device: the
+    account is left off the meta line when the list is already scoped
+    to that account (Account Detail, or Transactions filtered to one
+    account — a transfer *into* the viewed account still names its
+    source), and the tag summary hides its own tag's chip since every
+    row there carries it by definition.
 - Tags are free-form (create a new one anytime while adding a
   transaction) and reusable beyond trips — the same mechanism works for
   things like "Wedding costs" or "Office reimbursements" without needing

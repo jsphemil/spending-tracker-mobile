@@ -23,11 +23,18 @@ interface TransactionListItemProps {
   fromAccountName?: string;
   toAccountName?: string;
   /**
-   * The account the transaction belongs to, shown on the meta line on every
-   * screen — one row layout everywhere (spec.md §5.2, 2026-09-15). For a
-   * transfer this is the source account; the title already names both.
+   * The account the transaction belongs to, shown on the meta line — one
+   * row layout everywhere (spec.md §5.3a, 2026-09-15). For a transfer this
+   * is the source account; the title already names both. Omitted by the
+   * row itself when the list is already scoped to this account
+   * (viewingAccountId matches), where it would repeat on every row.
    */
   accountName?: string;
+  /**
+   * A tag to leave out of the chip row — the tag summary passes its own
+   * name, since every row on that screen carries it by definition.
+   */
+  hideTag?: string;
   /**
    * The account whose own list this row is rendered in (Account Detail
    * page, or Transactions filtered to one account) — lets a transfer show
@@ -71,12 +78,13 @@ export function TransactionListItem({
   fromAccountName,
   toAccountName,
   accountName,
+  hideTag,
   viewingAccountId,
   showActionIcons = false,
   showDuplicateIcon = false,
   onDelete,
 }: TransactionListItemProps) {
-  const tagNames = useTransactionTagNames(transaction.id);
+  const tagNames = useTransactionTagNames(transaction.id).filter((name) => name !== hideTag);
   const colors = useThemeColors();
   // One live query per row, same as the tag names above — funds is a tiny
   // table (a handful of rows), so looking the name up here keeps this row
@@ -118,7 +126,7 @@ export function TransactionListItem({
           <Text className="text-sm text-fg-muted">{transaction.description}</Text>
         ) : null}
         <Text className="text-xs text-fg-subtle">
-          {accountName ? `${accountName} · ` : ""}
+          {accountName && transaction.accountId !== viewingAccountId ? `${accountName} · ` : ""}
           {transaction.date.toLocaleDateString()}
           {transaction.recurringRuleId != null ? " · 🔁" : ""}
         </Text>

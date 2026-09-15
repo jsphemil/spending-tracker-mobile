@@ -83,6 +83,7 @@ export default function TagSummaryScreen() {
               item.transaction.type === "transfer" ? accountName(item.transaction.toAccountId) : undefined
             }
             accountName={item.accountName}
+            hideTag={tagName}
             showActionIcons
             showDuplicateIcon
             onDelete={() => confirmDeleteTransaction(db, item.transaction, () => {})}
