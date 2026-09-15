@@ -1096,6 +1096,31 @@ reusing the existing transaction-create flow/screen
 implementation of either. Settings and its child screens hide both the
 top bar and the FAB.
 
+**Keyboard handling (added 2026-09-15).** The app is edge-to-edge
+(mandatory on SDK 57 / Android 15+), so Android no longer resizes the
+window for the keyboard and `adjustResize` does nothing — every form
+was a plain `ScrollView`, and the keyboard painted over whatever field
+sat near the bottom (Description and Tags on New Transaction, most
+visibly). Fixed with `react-native-keyboard-controller` (1.21.9, the
+Expo-documented answer for SDK 57 and the one native module this
+change adds): `KeyboardProvider` at the root with
+`statusBarTranslucent`/`navigationBarTranslucent`/`preserveEdgeToEdge`
+since the bars are already ours, and one shared container,
+`components/ui/FormScrollView.tsx` (a `KeyboardAwareScrollView` with
+`bottomOffset` 24, `keyboardShouldPersistTaps="handled"` so a chip or
+Save acts on the first tap, `keyboardDismissMode="on-drag"`), used by
+TransactionForm, AccountForm, CategoryForm, FundForm and Settings →
+Account Details. The one non-scrolling input surface, the Add money /
+Release bottom-sheet `Modal`, lifts itself instead via the library's
+`KeyboardAvoidingView` — which does see the keyboard from inside an
+Android `Modal` window, so the sheet did not need converting to a
+routed screen. React Native's own `KeyboardAvoidingView` was rejected
+because it only pads: Android scrolls a focused input into view at
+focus time, before the keyboard exists, so padding added afterwards
+leaves the field where it was. Verified on-device 2026-09-15 on every
+surface listed; the user chose the library over the JS-only route
+with the native-dependency risk stated.
+
 **Onboarding V2.** `components/OnboardingFlow.tsx`'s 4-step
 name+forced-account-creation flow is replaced by a 4-screen
 welcome/features/how-to-use/base-currency flow that never blocks on

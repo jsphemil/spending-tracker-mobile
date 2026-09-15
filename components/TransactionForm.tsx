@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { Alert, Pressable, ScrollView, Switch, Text, View } from "react-native";
+import { Alert, Pressable, Switch, Text, View } from "react-native";
+
+import { FormScrollView } from "./ui/FormScrollView";
 import { Input } from "./ui/Input";
 import DateTimePicker from "@react-native-community/datetimepicker";
 
@@ -261,7 +263,7 @@ export function TransactionForm({
   }
 
   return (
-    <ScrollView className="flex-1 bg-bg" contentContainerStyle={{ padding: 16, gap: 20 }}>
+    <FormScrollView contentContainerStyle={{ padding: 16, gap: 20 }}>
       <View className="flex-row gap-2">
         {TRANSACTION_TYPES.map((t) => (
           <Pressable
@@ -552,6 +554,6 @@ export function TransactionForm({
       {error && <Text className="text-sm text-danger">{error}</Text>}
 
       <Button onPress={handleSubmit} disabled={submitting}>{submitLabel}</Button>
-    </ScrollView>
+    </FormScrollView>
   );
 }

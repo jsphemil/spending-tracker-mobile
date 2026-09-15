@@ -1,5 +1,7 @@
 import { useState } from "react";
-import { ScrollView, Switch, Text, View } from "react-native";
+import { Switch, Text, View } from "react-native";
+
+import { FormScrollView } from "../../components/ui/FormScrollView";
 
 import { Input } from "../../components/ui/Input";
 import { updateSettings } from "../../db/actions/settings";
@@ -17,7 +19,7 @@ export default function AccountDetailsScreen() {
   const nameValue = editedName ? displayName : (settings.displayName ?? "");
 
   return (
-    <ScrollView className="flex-1 bg-bg" contentContainerStyle={{ padding: 16, gap: 24 }}>
+    <FormScrollView contentContainerStyle={{ padding: 16, gap: 24 }}>
       <View className="gap-2">
         <Text className="text-sm font-medium text-fg-muted">Display Name (optional)</Text>
         <Input
@@ -67,6 +69,6 @@ export default function AccountDetailsScreen() {
           ios_backgroundColor={colors.glassFill}
         />
       </View>
-    </ScrollView>
+    </FormScrollView>
   );
 }

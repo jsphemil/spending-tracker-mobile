@@ -1,5 +1,7 @@
 import { useRef, useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
+
+import { FormScrollView } from "./ui/FormScrollView";
 import DateTimePicker from "@react-native-community/datetimepicker";
 
 import { AmountOperatorRow } from "./AmountOperatorRow";
@@ -106,7 +108,7 @@ export function FundForm({
   }
 
   return (
-    <ScrollView className="flex-1 bg-bg" contentContainerStyle={{ padding: 16, gap: 20 }}>
+    <FormScrollView contentContainerStyle={{ padding: 16, gap: 20 }}>
       {showSuggestions && (
         <View className="gap-2">
           <Text className="text-sm font-medium text-fg-muted">What is this for?</Text>
@@ -220,6 +222,6 @@ export function FundForm({
       <Button onPress={handleSubmit} disabled={submitting}>
         {submitLabel}
       </Button>
-    </ScrollView>
+    </FormScrollView>
   );
 }

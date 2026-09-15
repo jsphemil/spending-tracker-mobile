@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { Modal, Pressable, Text, View } from "react-native";
+import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { AmountOperatorRow } from "./AmountOperatorRow";
@@ -76,6 +77,11 @@ export function FundAllocationSheet({
 
   return (
     <Modal visible animationType="slide" onRequestClose={onClose} transparent>
+      {/* The sheet sits at the very bottom, exactly where the keyboard
+          appears, so it has to lift itself by the keyboard's height —
+          keyboard-controller's KeyboardAvoidingView tracks that from the
+          activity's IME insets (spec.md §5.19 "Keyboard handling"). */}
+      <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
       <Pressable className="flex-1 justify-end bg-black/50" onPress={onClose}>
         <Pressable className="rounded-t-3xl bg-bg" onPress={(e) => e.stopPropagation()}>
           <SafeAreaView edges={["bottom"]}>
@@ -137,6 +143,7 @@ export function FundAllocationSheet({
           </SafeAreaView>
         </Pressable>
       </Pressable>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }

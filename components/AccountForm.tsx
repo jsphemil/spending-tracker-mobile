@@ -1,5 +1,7 @@
 import { useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
+
+import { FormScrollView } from "./ui/FormScrollView";
 import { Input } from "./ui/Input";
 import DateTimePicker from "@react-native-community/datetimepicker";
 
@@ -167,7 +169,7 @@ export function AccountForm({
   }
 
   return (
-    <ScrollView className="flex-1 bg-bg" contentContainerStyle={{ padding: 16, gap: 20 }}>
+    <FormScrollView contentContainerStyle={{ padding: 16, gap: 20 }}>
       <View className="gap-2">
         <Text className="text-sm font-medium text-fg-muted">Name</Text>
         <Input
@@ -332,6 +334,6 @@ export function AccountForm({
       {error && <Text className="text-sm text-danger">{error}</Text>}
 
       <Button onPress={handleSubmit}>{submitLabel}</Button>
-    </ScrollView>
+    </FormScrollView>
   );
 }

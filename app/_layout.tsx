@@ -3,6 +3,7 @@ import "../global.css";
 import { useEffect } from "react";
 import { Text, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { Stack } from "expo-router";
@@ -72,6 +73,13 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
+      {/* Keyboard handling (spec.md §5.19): the app is edge-to-edge, so
+          Android never resizes the window for the keyboard and forms have to
+          make room themselves — see components/ui/FormScrollView.tsx. The
+          translucent flags tell the library the bars are already ours
+          (SafeAreaView handles them), and preserveEdgeToEdge keeps it from
+          ever switching edge-to-edge off. */}
+      <KeyboardProvider statusBarTranslucent navigationBarTranslucent preserveEdgeToEdge>
       {/* CSS variables driven directly from our own resolved theme state
           (settings.themePreference + OS scheme for "system"), not from
           NativeWind's colorScheme/Appearance.setColorScheme — that path is
@@ -168,6 +176,7 @@ export default function RootLayout() {
         )}
       </SafeAreaProvider>
       </View>
+      </KeyboardProvider>
     </GestureHandlerRootView>
   );
 }
