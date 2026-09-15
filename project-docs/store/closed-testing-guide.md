@@ -330,8 +330,8 @@ All 3 required updates for the 14-day window are now shipped
 (versionCode 9, 12, 13 — see step 9 below for the production-access
 application, the next gate).
 
-**Update 8 built as versionName 3.0.1 — release name
-`Erebor_WM<versionCode>(3.0.1)` (2026-09-15).** Two fixes found by the
+**Update 8 built as versionCode 18, versionName 3.0.1 — release name
+`Erebor_WM18(3.0.1)` (2026-09-15).** Two fixes found by the
 user on 3.0.0 the same morning it went to Alpha:
 
 - **Keyboard no longer covers the field being typed into** (spec.md
@@ -353,9 +353,10 @@ user on 3.0.0 the same morning it went to Alpha:
 
 No migration. Verified on-device across every form and the sheet
 before merging; built via `npx eas-cli build --platform android
---profile production --non-interactive`, which auto-increments the
-versionCode. **Submission to the EWM Alpha track done manually by the
-user.**
+--profile production --non-interactive`, which auto-incremented
+versionCode 17 → 18. Build `b8705fda-00c6-4a53-a06f-6332ad4079be`; AAB at
+`https://expo.dev/artifacts/eas/V8Xab3aCiIXSrFI8_qnormhAEEZy72ZG0mb_VRJBdUs.aab`.
+**Submission to the EWM Alpha track done manually by the user.**
 
 Release notes used (3.0.1):
 ```
