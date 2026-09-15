@@ -1,20 +1,34 @@
 import { useLocalSearchParams } from "expo-router";
 import { FlatList, Text, View } from "react-native";
 
+import { confirmDeleteTransaction } from "../../components/confirmDeleteTransaction";
+import { TransactionListItem } from "../../components/TransactionListItem";
+import { EmptyState } from "../../components/ui/EmptyState";
+import { db } from "../../db/client";
+import { useAccounts } from "../../db/queries/accounts";
+import { useCategories } from "../../db/queries/categories";
 import { useSettings } from "../../db/queries/settings";
 import { useTagTransactions } from "../../db/queries/tags";
 import { useBaseConverter } from "../../hooks/useBaseConverter";
 import { formatMoney } from "../../services/format";
-import { EmptyState } from "../../components/ui/EmptyState";
 
+// Per-tag summary (spec.md §5.3a). Rows are the same TransactionListItem the
+// Transactions tab and Account Detail use — one row layout everywhere
+// (2026-09-15). This screen used to draw its own row, and with no
+// description it showed the account name in the description's place.
 export default function TagSummaryScreen() {
   const { name } = useLocalSearchParams<{ name: string }>();
   const tagName = decodeURIComponent(name);
   const { data: rows } = useTagTransactions(tagName);
   const { settings } = useSettings();
+  const { data: accounts } = useAccounts();
+  const { data: categories } = useCategories();
   const baseCurrency = settings?.baseCurrency ?? "INR";
 
   const { toBaseMinor } = useBaseConverter((rows ?? []).map((r) => r.accountCurrency));
+
+  const accountName = (id: number | null) => accounts?.find((a) => a.id === id)?.name;
+  const categoryName = (id: number | null) => categories?.find((c) => c.id === id)?.name;
 
   const totals = (rows ?? []).reduce(
     (acc, { transaction, accountCurrency }) => {
@@ -33,7 +47,7 @@ export default function TagSummaryScreen() {
       <FlatList
         data={rows ?? []}
         keyExtractor={({ transaction }) => String(transaction.id)}
-        contentContainerStyle={{ padding: 16, gap: 8 }}
+        contentContainerStyle={{ padding: 16 }}
         ListHeaderComponent={
           <View className="mb-6 gap-3">
             <Text className="text-xl font-display text-fg">{tagName}</Text>
@@ -58,23 +72,21 @@ export default function TagSummaryScreen() {
         }
         ListEmptyComponent={<EmptyState message="No transactions carry this tag yet." />}
         renderItem={({ item }) => (
-          <View className="flex-row items-center justify-between border-b border-glass-border py-3">
-            <View className="flex-1 pr-3">
-              <Text className="text-base text-fg">
-                {item.transaction.description || item.accountName}
-              </Text>
-              <Text className="text-xs text-fg-subtle">
-                {item.accountName} · {item.transaction.date.toLocaleDateString()}
-              </Text>
-            </View>
-            <Text
-              className={`font-data tabular-nums ${
-                item.transaction.type === "income" ? "text-success" : "text-fg"
-              }`}
-            >
-              {formatMoney(item.transaction.amountMinor, item.accountCurrency)}
-            </Text>
-          </View>
+          <TransactionListItem
+            transaction={item.transaction}
+            currency={item.accountCurrency}
+            categoryName={categoryName(item.transaction.categoryId)}
+            fromAccountName={
+              item.transaction.type === "transfer" ? accountName(item.transaction.accountId) : undefined
+            }
+            toAccountName={
+              item.transaction.type === "transfer" ? accountName(item.transaction.toAccountId) : undefined
+            }
+            accountName={item.accountName}
+            showActionIcons
+            showDuplicateIcon
+            onDelete={() => confirmDeleteTransaction(db, item.transaction, () => {})}
+          />
         )}
       />
     </View>

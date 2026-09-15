@@ -341,6 +341,19 @@ optional description.
   net figure (e.g. "Net cost of trip: ₹8,850.00") — plus the full list of
   transactions carrying that tag, regardless of which account or
   category each one actually belongs to
+  - **One transaction row everywhere (2026-09-15).** The tag summary
+    used to draw its own row — `description || accountName` as the
+    title, so a transaction with no description showed its account name
+    in the description's place, and no category, sign, actions or chips
+    at all — while the Transactions tab and Account Detail used
+    `TransactionListItem` without ever showing the account. Now all
+    three render the shared row with one layout: category title (`From
+    → To` for transfers), description only when present, then
+    `account · date · 🔁`, signed amount, copy/edit/delete, fund and tag
+    chips. The account appears on every row on every screen — one rule,
+    no per-screen special case — so Account Detail repeats its own name
+    per row; suppressing that when `viewingAccountId` is set is a
+    one-liner if it ever reads as noise. Verified on-device 2026-09-15.
 - Tags are free-form (create a new one anytime while adding a
   transaction) and reusable beyond trips — the same mechanism works for
   things like "Wedding costs" or "Office reimbursements" without needing

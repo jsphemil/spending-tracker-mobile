@@ -435,6 +435,7 @@ export default function AccountDetailScreen() {
             categoryName={categoryInfo(item.categoryId)?.name}
             fromAccountName={item.type === "transfer" ? otherAccountName(item.accountId) : undefined}
             toAccountName={item.type === "transfer" ? otherAccountName(item.toAccountId) : undefined}
+            accountName={account.name}
             viewingAccountId={accountId}
             showActionIcons
             showDuplicateIcon

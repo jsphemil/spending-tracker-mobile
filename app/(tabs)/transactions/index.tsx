@@ -326,6 +326,7 @@ export default function TransactionsListScreen() {
             categoryName={categoryName(item.categoryId)}
             fromAccountName={item.type === "transfer" ? accountName(item.accountId) : undefined}
             toAccountName={item.type === "transfer" ? accountName(item.toAccountId) : undefined}
+            accountName={accountName(item.accountId)}
             viewingAccountId={accountId}
             showActionIcons
             showDuplicateIcon

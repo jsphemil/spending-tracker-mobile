@@ -23,6 +23,12 @@ interface TransactionListItemProps {
   fromAccountName?: string;
   toAccountName?: string;
   /**
+   * The account the transaction belongs to, shown on the meta line on every
+   * screen — one row layout everywhere (spec.md §5.2, 2026-09-15). For a
+   * transfer this is the source account; the title already names both.
+   */
+  accountName?: string;
+  /**
    * The account whose own list this row is rendered in (Account Detail
    * page, or Transactions filtered to one account) — lets a transfer show
    * a direction-aware sign: "-" leaving this account, "+" arriving into
@@ -64,6 +70,7 @@ export function TransactionListItem({
   categoryName,
   fromAccountName,
   toAccountName,
+  accountName,
   viewingAccountId,
   showActionIcons = false,
   showDuplicateIcon = false,
@@ -111,6 +118,7 @@ export function TransactionListItem({
           <Text className="text-sm text-fg-muted">{transaction.description}</Text>
         ) : null}
         <Text className="text-xs text-fg-subtle">
+          {accountName ? `${accountName} · ` : ""}
           {transaction.date.toLocaleDateString()}
           {transaction.recurringRuleId != null ? " · 🔁" : ""}
         </Text>
