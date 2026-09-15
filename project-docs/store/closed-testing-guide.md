@@ -330,6 +330,40 @@ All 3 required updates for the 14-day window are now shipped
 (versionCode 9, 12, 13 — see step 9 below for the production-access
 application, the next gate).
 
+**Update 8 built as versionName 3.0.1 — release name
+`Erebor_WM<versionCode>(3.0.1)` (2026-09-15).** Two fixes found by the
+user on 3.0.0 the same morning it went to Alpha:
+
+- **Keyboard no longer covers the field being typed into** (spec.md
+  §5.19 "Keyboard handling"). Edge-to-edge means Android never resizes
+  the window for the keyboard, so every plain-`ScrollView` form let it
+  paint over Description, Tags and other bottom fields. Fixed with
+  `react-native-keyboard-controller` — **a native module, hence this
+  build** — via a root `KeyboardProvider`, a shared `FormScrollView`
+  on the five forms, and the library's `KeyboardAvoidingView` inside
+  the Add money / Release sheet. The user weighed the native-dependency
+  risk against a JS-only route and chose the library.
+- **One transaction row everywhere** (spec.md §5.3a). The tag summary
+  drew its own row and, with no description, showed the account name in
+  the description's place; the Transactions tab and Account Detail
+  never showed the account. All three now render the shared row —
+  category, description when present, `account · date`, signed amount,
+  actions, chips — with the account left off lists already scoped to
+  one account and the tag page hiding its own tag's chip.
+
+No migration. Verified on-device across every form and the sheet
+before merging; built via `npx eas-cli build --platform android
+--profile production --non-interactive`, which auto-increments the
+versionCode. **Submission to the EWM Alpha track done manually by the
+user.**
+
+Release notes used (3.0.1):
+```
+<en-GB>
+Two fixes from testing 3.0.0. The keyboard no longer covers the field you are typing into - forms scroll the focused field up above it, and the Add money sheet lifts itself out of the way. Every transaction row now shows the account it belongs to alongside its category and description, on the Transactions, Account and Tag screens alike. Please keep testing and flag anything that looks off.
+</en-GB>
+```
+
 **Update 7 built as versionCode 17, versionName 3.0.0 — release name
 `Erebor_WM17(3.0.0)` (2026-09-11).** The Testers Community
 round (spec.md §5.22) plus the user's biometric lock (§5.23). A paid

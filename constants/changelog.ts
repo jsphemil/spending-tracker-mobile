@@ -16,6 +16,15 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "3.0.1",
+    date: "2026-09-15",
+    title: "Typing and reading, tidied",
+    highlights: [
+      "The keyboard no longer covers the field you're typing into — forms scroll the focused field up above it, and the Add money sheet lifts itself out of the way.",
+      "Every transaction row now shows the account it belongs to, alongside its category and description, on the Transactions, Account and Tag screens alike.",
+    ],
+  },
+  {
     version: "3.0.0",
     date: "2026-09-11",
     title: "Lock, learn, customise",
