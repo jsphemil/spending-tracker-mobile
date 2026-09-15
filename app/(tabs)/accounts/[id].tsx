@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { Icon } from "../../../components/ui/Icon";
-import { Link, Stack, useLocalSearchParams } from "expo-router";
+import { Link, Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { FlatList, Pressable, Text, View } from "react-native";
 
+import { AccountSwitcherSheet } from "../../../components/AccountSwitcherSheet";
 import { confirmDeleteTransaction } from "../../../components/confirmDeleteTransaction";
 import { CreditUsageRing } from "../../../components/rings/CreditUsageRing";
 import { GaugeRing } from "../../../components/rings/GaugeRing";
@@ -36,6 +37,12 @@ import { TAB_BAR_CLEARANCE } from "../../../theme/tabBar";
 export default function AccountDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const accountId = Number(id);
+  const router = useRouter();
+  // Header-name account switcher (spec.md §5.1, 2026-09-15). Switching
+  // goes through setParams rather than push/replace so this screen stays
+  // mounted — the month you've paged to is kept, and Back still returns
+  // to the Accounts list in one step.
+  const [switcherOpen, setSwitcherOpen] = useState(false);
   const { account } = useAccount(accountId);
   const { data: accounts } = useAccounts();
   const { settings } = useSettings();
@@ -204,6 +211,20 @@ export default function AccountDetailScreen() {
       <Stack.Screen
         options={{
           title: account.name,
+          headerTitle: () => (
+            <Pressable
+              onPress={() => setSwitcherOpen(true)}
+              accessibilityRole="button"
+              accessibilityLabel="Switch account"
+              hitSlop={8}
+              className="flex-row items-center gap-1"
+            >
+              <Text className="font-display text-[17px] font-bold text-fg" numberOfLines={1}>
+                {account.name}
+              </Text>
+              <Icon name="chevron-down" size={16} color={colors.accent} />
+            </Pressable>
+          ),
           headerRight: () => (
             <Link href={`/account/${accountId}/edit`} asChild>
               <Pressable hitSlop={8} className="px-2">
@@ -213,6 +234,18 @@ export default function AccountDetailScreen() {
           ),
         }}
       />
+      {switcherOpen && accounts && (
+        <AccountSwitcherSheet
+          accounts={accounts}
+          currentId={accountId}
+          asOfDate={range.end}
+          onSelect={(nextId) => {
+            setSwitcherOpen(false);
+            router.setParams({ id: String(nextId) });
+          }}
+          onClose={() => setSwitcherOpen(false)}
+        />
+      )}
       <FlatList
         data={visibleTransactions}
         keyExtractor={(item) => String(item.id)}
