@@ -356,7 +356,7 @@ before merging; built via `npx eas-cli build --platform android
 --profile production --non-interactive`, which auto-incremented
 versionCode 17 → 18. Build `b8705fda-00c6-4a53-a06f-6332ad4079be`; AAB at
 `https://expo.dev/artifacts/eas/V8Xab3aCiIXSrFI8_qnormhAEEZy72ZG0mb_VRJBdUs.aab`.
-**Submission to the EWM Alpha track done manually by the user.**
+**Submitted to the EWM Alpha track manually by the user on 2026-09-15.**
 
 Release notes used (3.0.1):
 ```
