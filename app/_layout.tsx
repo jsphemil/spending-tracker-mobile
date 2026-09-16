@@ -165,8 +165,12 @@ export default function RootLayout() {
             />
             <Stack.Screen name="tag/index" />
             <Stack.Screen
-              name="tag/[name]"
+              name="tag/[name]/index"
               options={{ headerShown: true, title: "Tag" }}
+            />
+            <Stack.Screen
+              name="tag/[name]/edit"
+              options={{ presentation: "modal", headerShown: true, title: "Edit Tag" }}
             />
             <Stack.Screen
               name="backup/restore"

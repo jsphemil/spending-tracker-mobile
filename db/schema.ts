@@ -31,6 +31,10 @@ export type RecurrenceUnit = (typeof RECURRENCE_UNITS)[number];
 export const THEME_PREFERENCES = ["light", "dark", "system"] as const;
 export type ThemePreference = (typeof THEME_PREFERENCES)[number];
 
+// How the Tags overview is laid out (spec.md §5.3a, 2026-09-15).
+export const TAGS_VIEWS = ["grid", "list"] as const;
+export type TagsView = (typeof TAGS_VIEWS)[number];
+
 export const FUND_STATUSES = ["active", "closed"] as const;
 export type FundStatus = (typeof FUND_STATUSES)[number];
 
@@ -72,6 +76,13 @@ export const categories = sqliteTable("categories", {
 export const tags = sqliteTable("tags", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   name: text("name").notNull().unique(),
+  // Chosen per tag on the Edit Tag screen (spec.md §5.3a, 2026-09-15);
+  // same icon-name vocabulary as funds and categories, colour a hex from
+  // constants/colorPalette.ts. Migration 0018 spread the tags that
+  // existed before across the palette rather than leaving them all on
+  // the default, and findOrCreateTag does the same for new ones.
+  icon: text("icon").notNull().default("tag-outline"),
+  color: text("color").notNull().default("#6366F1"),
 });
 
 export const recurringRules = sqliteTable("recurring_rules", {
@@ -355,6 +366,8 @@ export const settings = sqliteTable("settings", {
   // JSON array of HintId — see constants/hints.ts's parseHintsSeen. Grows
   // with every screen that gains a first-visit hint.
   hintsSeen: text("hints_seen"),
+  // Tags overview layout, remembered across restarts (migration 0018).
+  tagsView: text("tags_view", { enum: TAGS_VIEWS }).notNull().default("grid"),
 });
 
 // Home Screen Widget (spec.md §5.11) — which accounts the "Accounts &

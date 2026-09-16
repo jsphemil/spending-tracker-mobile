@@ -43,6 +43,8 @@ import {
   Landmark,
   Laptop,
   LayoutDashboard,
+  LayoutGrid,
+  LayoutList,
   Leaf,
   LineChart,
   Lightbulb,
@@ -197,6 +199,9 @@ export const ICON_MAP: Record<string, LucideIcon> = {
   trophy: Trophy,
   package: Package,
   leaf: Leaf,
+  // Tags overview's grid/list toggle (spec.md §5.3a).
+  "layout-grid": LayoutGrid,
+  "layout-list": LayoutList,
   recycle: Recycle,
 };
 

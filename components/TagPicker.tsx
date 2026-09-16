@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Pressable, Text, View } from "react-native";
+import { Icon } from "./ui/Icon";
 import { Input } from "./ui/Input";
 
 import { findOrCreateTag } from "../db/actions/tags";
@@ -41,10 +42,15 @@ export function TagPicker({ selectedTagIds, onChange }: TagPickerProps) {
             <Pressable
               key={tag.id}
               onPress={() => toggle(tag.id)}
-              className={`rounded-full border px-3 py-1.5 ${
+              accessibilityRole="button"
+              accessibilityState={{ selected }}
+              className={`flex-row items-center gap-1.5 rounded-full border px-3 py-1.5 ${
                 selected ? "border-accent bg-accent-soft" : "border-glass-border"
               }`}
             >
+              {/* The tag's own icon in its own colour, so a chip here reads
+                  the same as on the transaction row and the Tags overview. */}
+              <Icon name={tag.icon} size={13} color={tag.color} />
               <Text className={selected ? "text-accent" : "text-fg-muted"}>
                 {tag.name}
               </Text>

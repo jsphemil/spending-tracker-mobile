@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 
 import { db } from "../client";
-import { settings, type ThemePreference } from "../schema";
+import { settings, type TagsView, type ThemePreference } from "../schema";
 
 export function updateSettings(
   id: number,
@@ -22,6 +22,7 @@ export function updateSettings(
     lastSeenVersion: string | null;
     dashboardLayout: string | null;
     hintsSeen: string | null;
+    tagsView: TagsView;
   }>,
 ): void {
   db.update(settings).set(patch).where(eq(settings.id, id)).run();
