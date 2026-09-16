@@ -330,6 +330,33 @@ All 3 required updates for the 14-day window are now shipped
 (versionCode 9, 12, 13 — see step 9 below for the production-access
 application, the next gate).
 
+**Update 9 built as versionCode 19, versionName 3.1.0 — release name
+`Erebor_WM19(3.1.0)` (2026-09-16).** Two user-requested features, both
+verified on-device before merging:
+
+- **Tags have an icon and colour, and a grid/list overview** (spec.md
+  §5.3a). Migration 0018 adds `tags.icon`, `tags.color` and
+  `settings.tags_view`, spreading existing tags across the palette. The
+  Tags screen is a grid of cards (icon, name, count, net amount) with a
+  remembered grid/list toggle; the tag page gains an Edit modal (name,
+  colour, icon, delete). Chips carry the icon/colour everywhere.
+- **Account switcher** (spec.md §5.1). On Account Detail, tap the
+  account name for a bottom sheet of accounts with balances; picking one
+  swaps the screen in place, keeping the month, with Back still one step.
+
+No native changes. Built via `npx eas-cli build --platform android
+--profile production --non-interactive`, which auto-incremented
+versionCode 18 → 19. Build `8cab8139-30b6-4102-968d-d67efba239f9`; AAB at
+`https://expo.dev/artifacts/eas/BRDJU-R0sFqsc93p4rEGjidWJ9qvEiEz0NeCi9fABPs.aab`.
+**Submission to the EWM Alpha track pending (manual, by the user).**
+
+Release notes to use (3.1.0):
+```
+<en-GB>
+Tags now have their own icon and colour, and the Tags screen is a grid of cards showing each tag's transaction count and net amount - switch to a list if you prefer. Edit a tag from its page: rename it, pick a colour and icon, or delete it. On an account's page, tap its name to switch to another account without going back to the list. Please keep testing and flag anything that looks off.
+</en-GB>
+```
+
 **Update 8 built as versionCode 18, versionName 3.0.1 — release name
 `Erebor_WM18(3.0.1)` (2026-09-15).** Two fixes found by the
 user on 3.0.0 the same morning it went to Alpha:
