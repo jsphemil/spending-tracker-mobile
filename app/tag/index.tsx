@@ -30,6 +30,10 @@ export default function TagsListScreen() {
 
   const view: TagsView = settings?.tagsView ?? "grid";
   const tags = summarizeTags(rows ?? [], toBaseMinor);
+  // With an odd count the lone card on the last grid row would stretch to
+  // the full width; an invisible filler keeps it the same size as the rest.
+  const items: GridItem[] =
+    view === "grid" && tags.length % 2 === 1 ? [...tags, GRID_FILLER] : tags;
 
   function setView(next: TagsView) {
     if (settings && next !== view) updateSettings(settings.id, { tagsView: next });
@@ -64,14 +68,16 @@ export default function TagsListScreen() {
         // Changing numColumns on a mounted FlatList is an error, so the
         // list is remounted when the view flips.
         key={view}
-        data={tags}
+        data={items}
         keyExtractor={(item) => String(item.id)}
         numColumns={view === "grid" ? 2 : 1}
         columnWrapperStyle={view === "grid" ? { gap: 12 } : undefined}
         contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 96, gap: 12 }}
         ListEmptyComponent={<EmptyState message="No tags yet. Add one from any transaction." />}
         renderItem={({ item }) =>
-          view === "grid" ? (
+          isFiller(item) ? (
+            <View className="flex-1" />
+          ) : view === "grid" ? (
             <TagCard tag={item} currency={baseCurrency} />
           ) : (
             <TagRow tag={item} currency={baseCurrency} />
@@ -80,6 +86,13 @@ export default function TagsListScreen() {
       />
     </View>
   );
+}
+
+const GRID_FILLER = { id: -1, filler: true } as const;
+type GridItem = TagSummary | typeof GRID_FILLER;
+
+function isFiller(item: GridItem): item is typeof GRID_FILLER {
+  return "filler" in item;
 }
 
 function netClass(netMinor: number): string {
