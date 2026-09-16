@@ -3,7 +3,7 @@ import { Link } from "expo-router";
 import { Pressable, Text, View } from "react-native";
 
 import { useFunds } from "../db/queries/funds";
-import { useTransactionTagNames } from "../db/queries/tags";
+import { useTransactionTags } from "../db/queries/tags";
 import type { transactions } from "../db/schema";
 import { useThemeColors } from "../theme/palette";
 import { CurrencyAmount } from "./CurrencyAmount";
@@ -84,7 +84,7 @@ export function TransactionListItem({
   showDuplicateIcon = false,
   onDelete,
 }: TransactionListItemProps) {
-  const tagNames = useTransactionTagNames(transaction.id).filter((name) => name !== hideTag);
+  const rowTags = useTransactionTags(transaction.id).filter((tag) => tag.name !== hideTag);
   const colors = useThemeColors();
   // One live query per row, same as the tag names above — funds is a tiny
   // table (a handful of rows), so looking the name up here keeps this row
@@ -170,7 +170,7 @@ export function TransactionListItem({
           <Pressable className="flex-row items-center justify-between">{rowContent}</Pressable>
         </Link>
       )}
-      {(linkedFund || tagNames.length > 0) && (
+      {(linkedFund || rowTags.length > 0) && (
         <View className="mt-2 flex-row flex-wrap items-center gap-1.5">
           {/* Accent-tinted so a fund reads as a different kind of thing
               from the plain tag chips beside it. */}
@@ -182,10 +182,11 @@ export function TransactionListItem({
               </Pressable>
             </Link>
           )}
-          {tagNames.map((name) => (
-            <Link key={name} href={`/tag/${encodeURIComponent(name)}`} asChild>
-              <Pressable className="rounded-full bg-surface-2 px-2 py-0.5">
-                <Text className="text-xs text-fg-muted">{name}</Text>
+          {rowTags.map((tag) => (
+            <Link key={tag.id} href={`/tag/${encodeURIComponent(tag.name)}`} asChild>
+              <Pressable className="flex-row items-center gap-1 rounded-full bg-surface-2 px-2 py-0.5">
+                <Icon name={tag.icon} size={11} color={tag.color} />
+                <Text className="text-xs text-fg-muted">{tag.name}</Text>
               </Pressable>
             </Link>
           ))}
