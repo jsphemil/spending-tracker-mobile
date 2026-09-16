@@ -540,7 +540,20 @@ future closed-testing period before requesting production access.
 
 ---
 
-## 9. Production access application — 📋 Not started
+## 9. Production access application — 🚧 Submitted 2026-09-16, under review
+
+**Applied 2026-09-16 07:13** after eight closed-testing updates
+(versionCode 9 → 18, 2026-09-01 → 09-15). Play Console: "We're
+reviewing your application form. We'll email the account owner with
+an update. This usually takes seven days or less." The answers as
+submitted are in `production-access-answers.md` beside this file —
+rewritten from what actually happened rather than the Testers
+Community pre-fill, which claimed sign-in features the app
+deliberately doesn't have. Pre-launch report showed nothing flagged;
+two "User experience" advisories on versionCode 18 (the portrait lock,
+and deprecated edge-to-edge calls inside React Native itself) are
+non-blocking and noted for a later release.
+
 
 Once the 14-day window closes with ≥12 active testers **and** at
 least 3 releases have shipped (step 8), Play Console unlocks
