@@ -16,6 +16,16 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "3.1.0",
+    date: "2026-09-16",
+    title: "Tags with character, accounts a tap apart",
+    highlights: [
+      "Tags now have their own icon and colour. The Tags screen is a grid of cards showing each tag's transaction count and net amount — switch to a list if you prefer, and the choice sticks.",
+      "Edit a tag from its page: rename it, pick a colour and icon, or delete it (its transactions stay, they just lose the label).",
+      "On an account's page, tap its name to switch to another account without going back to the list. The month you're viewing carries over.",
+    ],
+  },
+  {
     version: "3.0.1",
     date: "2026-09-15",
     title: "Typing and reading, tidied",

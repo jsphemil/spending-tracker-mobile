@@ -19,10 +19,10 @@ pushed to a later phase) · ❌ Dropped (cut from scope).
 
 | Section | Feature | Status | Notes |
 |---|---|---|---|
-| §5.1 | Accounts | ✅ Built & Verified | Phase 10 parity pass + UAT round 1 (2026-08-20, 3 bugs fixed: credit limit required for credit_card accounts, delete-account navigation, Breakdown icon rendering) + the 2-round recurring-rule FK delete fix (2026-08-20). Confirmed on-device via `backlog.md`'s UAT checklist §2: create-each-type, opening balance ≠0/=0, currency validation, header pencil→edit+delete, delete-blocked-with-transactions, Breakdown totals, Accounts-list month-nav+per-account figures all pass. **Two items never got a specific on-device check and are worth a final look**: Safe-to-spend/day, and the credit-card debt payoff projection line — both are code-complete, just unconfirmed live. |
+| §5.1 | Accounts | ✅ Built & Verified | Account switcher in the Account Detail header (2026-09-16). Phase 10 parity pass + UAT round 1 (2026-08-20, 3 bugs fixed: credit limit required for credit_card accounts, delete-account navigation, Breakdown icon rendering) + the 2-round recurring-rule FK delete fix (2026-08-20). Confirmed on-device via `backlog.md`'s UAT checklist §2: create-each-type, opening balance ≠0/=0, currency validation, header pencil→edit+delete, delete-blocked-with-transactions, Breakdown totals, Accounts-list month-nav+per-account figures all pass. **Two items never got a specific on-device check and are worth a final look**: Safe-to-spend/day, and the credit-card debt payoff projection line — both are code-complete, just unconfirmed live. |
 | §5.2 | Transactions | ✅ Built & Verified | Recurring transactions (Phase 5, 13 tests) + Phase 10 (SummaryBand, Duplicate+Edit+Delete icons, inline "+ New category") + the 2026-08-21 Recurring/Transfers type filter. UAT checklist §3 confirms create-all-3-types, category-required, amount-positive+expression-eval, tag inline add/select, edit/delete icons, opening-balance-row lockout, inward-transfer-leg visibility, signed transfer display, This month/Custom range/All time filter, and SummaryBand — all pass. One item stays intentionally as-is: the Duplicate icon doesn't prefill account/category (user explicitly withdrew the fix request 2026-08-21, "leave it"). |
 | §5.3 | Categories | ✅ Built & Verified | Full CRUD + starter seed + UAT round 3 fixes (no-budget category showing no total, Income tab totals hardcoded to ₹0). UAT checklist §4 confirms create/edit/delete and the spend-vs-budget bar — pass. |
-| §5.3a | Tags | ✅ Built & Verified | Inline creation + per-tag summary + the 2026-08-20 Dashboard Tags card/`/tag` list screen addition. UAT checklist §5 confirms tag summary + transaction list — pass. |
+| §5.3a | Tags | ✅ Built & Verified | Per-tag icon and colour, editable; grid/list overview with count + net (2026-09-16). Inline creation + per-tag summary + the 2026-08-20 Dashboard Tags card/`/tag` list screen addition. UAT checklist §5 confirms tag summary + transaction list — pass. |
 | §5.4 | Spending Summary | ✅ Built & Verified | Month nav, net worth, Indian formatting, Carry Forward, asset allocation donut all confirmed via the Dashboard/Account UAT items. The "literal pie chart" from the original description was a deliberate substitution, not a gap — matches §5.12's own gauge/donut-over-pie design decision (Categories' spend-vs-budget bars + the asset allocation donut + Account Detail's Breakdown list cover composition/budget-comparison needs). |
 | §5.5 | Budget Mode | ✅ Built & Verified | Account-level toggle + category-level budgets, both confirmed via UAT checklist §4 ("Account-level Budget Mode toggle... passed") and §13 (Profile global switches). |
 | §5.6 | Show/Hide Future Transactions | ✅ Built & Verified | Toggle + schema built; filtering applied across all 4 screens (Account Detail, Dashboard, Transactions, Calendar). User confirmed on-device 2026-08-20: all 4 screens pass. |
@@ -264,6 +264,17 @@ Everything below is the "must-have" list. Anything not listed here
   rows now render the category's icon as an actual icon glyph instead of
   its internal name slug as literal text (e.g. "cash Salary" → 🪙 Salary) —
   see backlog.md for full detail.
+- **Account switcher, added 2026-09-16**: on Account Detail the header
+  title is the account's name with a small chevron; tapping it opens a
+  bottom sheet listing every active account (archived ones excluded)
+  with its balance as of the viewed month's end, the current one
+  highlighted. Picking another account swaps the header, ring, stats and
+  transaction list in place — `router.setParams({ id })`, so the screen
+  stays mounted, the selected month is kept, and Back still returns to
+  the Accounts list in one step rather than through each account
+  visited. Tapping the current account just closes the sheet. The
+  header pencil always edits the account currently shown. Verified
+  on-device 2026-09-16.
 
 ### 5.2 Transactions ✅ Built & Verified
 
@@ -375,6 +386,28 @@ optional description.
   that tag's summary; a **"More" link** opens a new standalone **Tags
   list screen** (`/tag`, alphabetical, every tag that exists) for
   anything not recent enough to show on the Dashboard card.
+- **Tag appearance and overview, redone 2026-09-16** (migration 0018):
+  every tag now has an **icon and colour chosen by the user** (same icon
+  vocabulary and 12-swatch palette as funds and categories; defaults
+  `tag-outline` and a palette colour spread by `id % 12`, applied by the
+  migration to existing tags and by `findOrCreateTag` to new ones, so a
+  tag is never grey-by-accident). The Tags screen is a **grid of cards**
+  by default — coloured icon circle, name, `N transactions`, and the net
+  amount in base currency (green/red by sign, `—` at zero; transfers
+  excluded, matching the tag page's own totals) — with a **grid/list
+  toggle** in its header whose choice is remembered in
+  `settings.tagsView`. An odd count pads the last grid row with an
+  invisible filler so the lone card keeps half width. The tag page
+  (`/tag/[name]`) shows the coloured icon beside the name and gains a
+  header pencil → **Edit Tag** (`/tag/[name]/edit`, modal): name, colour
+  swatches, icon picker, Save, and Delete with a confirm that states the
+  N transactions keep their data and only lose the label. Renaming to
+  another tag's name is rejected; after a rename the overview reopens
+  on the renamed page since the route is keyed by name. Tags are still
+  *created* only inline from a transaction. Tag chips on transaction
+  rows and in the transaction form's picker show the icon in the tag's
+  colour, so a tag looks the same everywhere. Verified on-device
+  2026-09-16.
 
 ### 5.4 Spending Summary ✅ Built & Verified
 - Pick a month (or "all accounts" vs. a single account) and see:
