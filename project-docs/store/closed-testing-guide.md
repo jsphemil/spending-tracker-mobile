@@ -348,7 +348,9 @@ No native changes. Built via `npx eas-cli build --platform android
 --profile production --non-interactive`, which auto-incremented
 versionCode 18 → 19. Build `8cab8139-30b6-4102-968d-d67efba239f9`; AAB at
 `https://expo.dev/artifacts/eas/BRDJU-R0sFqsc93p4rEGjidWJ9qvEiEz0NeCi9fABPs.aab`.
-**Submission to the EWM Alpha track pending (manual, by the user).**
+**Production access was granted on 2026-09-18 before this build went
+to Alpha, so it became the first production release instead —
+submitted to Production by the user on 2026-09-18, in review.**
 
 Release notes to use (3.1.0):
 ```
@@ -567,7 +569,11 @@ future closed-testing period before requesting production access.
 
 ---
 
-## 9. Production access application — 🚧 Submitted 2026-09-16, under review
+## 9. Production access application — ✅ Approved 2026-09-18
+
+**Approved 2026-09-18** — two days after applying, well inside the
+"seven days or less". The first production release (3.1.0, versionCode
+19) was submitted the same day and is in Play review; see step 10.
 
 **Applied 2026-09-16 07:13** after eight closed-testing updates
 (versionCode 9 → 18, 2026-09-01 → 09-15). Play Console: "We're
@@ -603,6 +609,26 @@ successful test period. Per the same write-up:
   available.
 - Check the **Pre-Launch Report** in Play Console beforehand and fix
   anything flagged; keep total open issues low (aim under ~10).
+
+---
+
+## 10. First production release — 🚧 Submitted 2026-09-18, in review
+
+**3.1.0, versionCode 19** (`Erebor_WM19(3.1.0)`, build
+`8cab8139-30b6-4102-968d-d67efba239f9`) submitted to the Production
+track on 2026-09-18, the day production access was approved. Play's
+first-production review is typically a few days; the account owner is
+emailed when it goes live.
+
+Once it is live:
+- Record the public Play Store URL here and in the Obsidian note — it
+  is the blocker the paid-app / payments-profile decision has been
+  waiting on (`project-docs/store/` and the payments memo).
+- Keep the EWM Alpha track: future builds can go to Alpha first for a
+  device check, then be promoted to Production from Play Console
+  rather than uploaded twice.
+- Every later release still needs its `constants/changelog.ts` entry
+  and the `<en-GB>` release notes (≤500 bytes, ASCII).
 
 ---
 
