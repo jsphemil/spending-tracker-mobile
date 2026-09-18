@@ -624,9 +624,16 @@ Once it is live:
 - Record the public Play Store URL here and in the Obsidian note — it
   is the blocker the paid-app / payments-profile decision has been
   waiting on (`project-docs/store/` and the payments memo).
-- Keep the EWM Alpha track: future builds can go to Alpha first for a
-  device check, then be promoted to Production from Play Console
-  rather than uploaded twice.
+- **Release routine from here (decided 2026-09-18).** A testing track
+  is no longer required — the closed test was only the gate for
+  production access. The user tests each update as a debug build over
+  adb on the Pixel, then builds and uploads the AAB straight to
+  Production. Exception: a release that adds or upgrades a **native
+  module** should go to the **Internal testing** track first (installs
+  within minutes, no review), get a short smoke test of the R8 release
+  build on-device — Dropbox, widget, notifications, the new module —
+  and then be *promoted* to Production from Play Console, not
+  re-uploaded. The EWM Alpha track stays but is idle.
 - Every later release still needs its `constants/changelog.ts` entry
   and the `<en-GB>` release notes (≤500 bytes, ASCII).
 
