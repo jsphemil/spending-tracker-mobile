@@ -1787,6 +1787,36 @@ analytics, IAP)._
       (Dropbox connect/backup/restore, home screen widget,
       notifications) — all passed, no keep rules needed. See
       `closed-testing-guide.md` for the full record.
+- [ ] **Play Console "recommended actions" on the 3.1.0 production
+      release — flagged 2026-09-25, deferred until after this release
+      clears review.** Four non-blocking advisories on the Production
+      listing's Release dashboard, all confirmed separate from Google's
+      actual app review (which looks at policy/content, not these):
+      1. **Deprecated edge-to-edge APIs for Android 15** —
+         `Window.getStatusBarColor`/`setStatusBarColor`/
+         `setNavigationBarColor`, originating in React Native's own
+         `StatusBarModule` and `WindowUtilKt.enableEdgeToEdge`, not this
+         app's code. Same one already noted on versionCode 18.
+      2. **Resizability/orientation restriction for Android 16** —
+         `MainActivity`'s `android:screenOrientation="PORTRAIT"` lock.
+         Same one already noted on versionCode 18; a deliberate v1
+         choice (portrait-only), so removing it is a real product
+         decision, not just a fix.
+      3. **R8 optimisation "not enabled"** — contradicts this repo's own
+         record that R8/ProGuard shipped in versionCode 13 (2026-09-05,
+         directly above). Worth reconciling — possibly Play's scanner
+         reading a stale/partial config rather than a real regression —
+         before assuming either the doc or the scanner is right.
+      4. **Bitmap image optimization** — the Facebook/React Native image
+         pipeline (`BitmapFactory.decodeStream` via
+         `imagepipeline.producers`) decoding manually instead of through
+         an optimized image-loading library. Advisory only, not
+         something this app's own code controls directly.
+      **Do not act on any of these until 3.1.0 (versionCode 19) clears
+      its current review** — Google Play Developer Support's reply
+      2026-09-22 was explicit that a new submission resets the review's
+      elapsed-time clock. Take up in a follow-up release once 3.1.0 is
+      live.
 
 ### Legal
 - [x] **License decided 2026-08-28: All Rights Reserved / proprietary**
