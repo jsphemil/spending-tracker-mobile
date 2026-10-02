@@ -612,18 +612,28 @@ successful test period. Per the same write-up:
 
 ---
 
-## 10. First production release — 🚧 Submitted 2026-09-18, in review
+## 10. First production release — ✅ Live on Google Play 2026-10-02
 
 **3.1.0, versionCode 19** (`Erebor_WM19(3.1.0)`, build
 `8cab8139-30b6-4102-968d-d67efba239f9`) submitted to the Production
-track on 2026-09-18, the day production access was approved. Play's
-first-production review is typically a few days; the account owner is
-emailed when it goes live.
+track on 2026-09-18, the day production access was approved, and
+**published on 2026-10-02** after Play's first-production review.
 
-Once it is live:
-- Record the public Play Store URL here and in the Obsidian note — it
-  is the blocker the paid-app / payments-profile decision has been
-  waiting on (`project-docs/store/` and the payments memo).
+**Public listing:**
+`https://play.google.com/store/apps/details?id=com.jsphemil.spendingtracker`
+
+Erebor Wealth Management is now a public app. The whole store sequence
+— developer account, AAB builds, declarations, listing, closed testing,
+production access, production release — is complete; what follows is
+ordinary release maintenance plus the pricing decision below.
+
+- **Paid-app / payments profile** — the live URL above was the only
+  remaining blocker. The app is currently published free; making it a
+  one-time paid listing needs a Google payments profile (the BillDesk
+  KYC paused on 2026-08-28 for want of a real app URL). Note a Play
+  rule that matters: an app published as free **cannot later be
+  switched to paid** — a paid version has to be a new listing. So this
+  is a decision to make deliberately, not a setting to flip later.
 - **Release routine from here (decided 2026-09-18).** A testing track
   is no longer required — the closed test was only the gate for
   production access. The user tests each update as a debug build over
