@@ -346,6 +346,10 @@ local `assembleRelease` installed over adb, with Dropbox
 connect/backup/restore, the widget and notifications all re-tested,
 since a debug build cannot exercise R8 at all.
 
+Build `a5ce3cb5-cceb-4fa3-8633-5c8897b9a036`; AAB at
+`https://expo.dev/artifacts/eas/dBes0M9FqIsgGqDKXsRup-Kj5cyIdkxptwnDjhjPJIo.aab`.
+**Upload to Production pending (manual, by the user).**
+
 Release notes to use (3.1.1):
 ```
 <en-GB>
