@@ -98,10 +98,12 @@ core idea as the original web app, rebuilt as a standalone, sellable,
   stores its own copy of the data (SQLite via `expo-sqlite`) as the
   real source of truth. There is **no shared cloud database that the
   developer hosts or has access to** — this is a deliberate choice so
-  that, as the app is sold as a one-time purchase, the developer never
-  becomes responsible for hosting or securing other people's financial
-  data, and hosting costs don't scale with the number of people who
-  buy the app.
+  that the developer never becomes responsible for hosting or securing
+  other people's financial data, and hosting costs don't scale with the
+  number of people who install the app. (Written when the app was
+  planned as a one-time purchase; it shipped free in 2026-10 — see §9
+  Monetization — which makes the no-hosting-cost argument stronger
+  still, not weaker.)
 
 ## 3. Where data lives
 
@@ -1913,6 +1915,43 @@ analytics, IAP)._
       KYC just to set a price on a paid listing (separate from IAP) is
       a Play Console policy question, not confirmable from this repo
       — see the Payments Merchant item below.
+
+### Play Console advisories — assessed 2026-10-02
+Play Console raises four "recommended actions" against the 3.1.0
+release. Each was assessed against this codebase; only one was real.
+Recorded here so they aren't re-litigated at every release:
+
+- **Deprecated edge-to-edge APIs** (`Window.getStatusBarColor`,
+  `setStatusBarColor`, `setNavigationBarColor`) — **no action.** Every
+  stack frame Play names is inside React Native
+  (`StatusBarModule`, `WindowUtilKt.enableEdgeToEdge`) or Material
+  Components' bottom sheet, not this app's code. It clears when
+  RN/Expo stop calling them; nothing to migrate here.
+- **Orientation restriction on `MainActivity`** — **declined,
+  deliberately.** The app stays portrait-locked (`app.json`
+  `"orientation": "portrait"`). Android 16 already ignores the
+  restriction on large screens, so foldables and tablets rotate
+  regardless, while phones stay locked — which is the intended
+  experience. The advisory will keep appearing; that is accepted. If
+  this is ever revisited, the work is a landscape pass over every
+  screen, not just the flag.
+- **Manual bitmap download/decode** — **not applicable.** The app has
+  no `Image` component and no remote image URL anywhere. The frames
+  Play names are Fresco (`com.facebook.imagepipeline`), which React
+  Native links into every binary whether or not an app uses it.
+- **R8 optimisation not enabled** — **fixed in 3.1.1.** Real finding:
+  the RN template's `app/build.gradle` used
+  `getDefaultProguardFile("proguard-android.txt")`, the non-optimizing
+  default containing `-dontoptimize`, so R8 was shrinking and
+  obfuscating but never optimizing. `plugins/withR8Optimization.js`
+  now swaps in `proguard-android-optimize.txt` and sets
+  `android.r8.optimizedResourceShrinking=true` (needed on AGP 8.12;
+  AGP 9 does it automatically), with keep rules for the widget module,
+  Glance and expo-notifications added through
+  `expo-build-properties`. The advisory's third point — upgrade to AGP
+  9 — is **not actioned**: AGP is pinned by React Native 0.86
+  (`@react-native/gradle-plugin`'s version catalog) and forcing it on
+  SDK 57 is unsupported. It resolves with a future Expo SDK bump.
 
 ### Accounts & process
 - [x] Google Play Developer account — **confirmed ready 2026-08-29**

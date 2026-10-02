@@ -60,11 +60,16 @@ user-facing, and don't need to match the product name.
 > locked to any one country — and hold accounts in other currencies
 > with automatic conversion.
 >
-> No ads. No tracking. No subscription for the core app — a one-time
-> purchase, yours to keep.
+> Free, with no ads, no tracking, and no subscription. Every feature is
+> included — nothing is held back behind a purchase.
 
-_(Omits any monetization-specific language like exact pricing until
-that's decided.)_
+**Corrected 2026-10-02.** The published listing still carries the
+earlier line, *"No subscription for the core app — a one-time purchase,
+yours to keep."* That was written when the app was planned as a paid
+listing; it shipped **free, permanently** (spec.md §9 Monetization), so
+the live text contradicts the actual price and must be replaced with
+the paragraph above in Play Console → Grow → Store presence → Main
+store listing → Full description.
 
 ## Notes for Content Rating / Target Audience (Play Console)
 

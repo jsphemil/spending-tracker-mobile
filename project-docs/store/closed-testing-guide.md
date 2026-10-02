@@ -330,6 +330,29 @@ All 3 required updates for the 14-day window are now shipped
 (versionCode 9, 12, 13 — see step 9 below for the production-access
 application, the next gate).
 
+**3.1.1 built as versionCode 20 (2026-10-02)** — the first release
+*after* launch, and the first to go straight to Production with no
+track. Build-config only, no user-visible change: Play Console's R8
+advisory on 3.1.0 turned out to be real. The React Native template
+pointed `proguardFiles` at `proguard-android.txt`, the non-optimizing
+default (it contains `-dontoptimize`), so R8 shrank and obfuscated but
+never optimized. `plugins/withR8Optimization.js` swaps in
+`proguard-android-optimize.txt` and sets
+`android.r8.optimizedResourceShrinking=true`, with keep rules for the
+widget module, Glance and expo-notifications. The advisory's other
+three points were assessed and not actioned — see spec.md §9 "Play
+Console advisories". Verified the way the 2026-08-30 R8 change was: a
+local `assembleRelease` installed over adb, with Dropbox
+connect/backup/restore, the widget and notifications all re-tested,
+since a debug build cannot exercise R8 at all.
+
+Release notes to use (3.1.1):
+```
+<en-GB>
+A maintenance release with no changes to how the app works. Erebor is now compiled with full code and resource optimisation, so it downloads smaller and starts a little faster.
+</en-GB>
+```
+
 **Update 9 built as versionCode 19, versionName 3.1.0 — release name
 `Erebor_WM19(3.1.0)` (2026-09-16).** Two user-requested features, both
 verified on-device before merging:
