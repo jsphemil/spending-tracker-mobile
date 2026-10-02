@@ -1710,11 +1710,9 @@ almost entirely **§9 (Play Store Launch Readiness)** — not app code:
    Rating/Target Audience declarations, confirming actual tester
    opt-in count and elapsed days on the closed-testing track, and then
    the production-access application itself (§9 step 9).
-4. Monetization is **resolved** (simple one-time-purchase paid app, no
-   IAP — see §9 Monetization) — the only remaining monetization item is
-   confirming whether Play Console requires a payments profile just to
-   set a price on a paid listing, which can only be checked when
-   actually setting the price.
+4. Monetization is **closed** (2026-10-02): the app is published free
+   and stays free — no price, no IAP, no payments profile, no Merchant
+   KYC. See §9 Monetization.
 
 ## 9. Play Store Launch Readiness
 
@@ -1892,7 +1890,18 @@ analytics, IAP)._
       Developer account existing first).
 
 ### Monetization
-- [x] **Resolved 2026-08-28: simple paid app, no in-app purchases.**
+- [x] **Final, 2026-10-02: the app is free, permanently.** Erebor
+      shipped to Google Play on 2026-10-02 as a free listing and the
+      user has decided it stays that way — "this app is going to be
+      free forever." This closes monetization as a topic: no price, no
+      in-app purchases, no subscriptions, no payments profile, no
+      Merchant KYC. The Play rule that a free listing cannot later be
+      converted to a paid one is therefore not a constraint to work
+      around; it simply matches the decision. The earlier paid-app
+      reasoning below is kept as a record of how the decision was
+      reached, not as a plan.
+- [x] ~~**Resolved 2026-08-28: simple paid app, no in-app purchases.**~~
+      *(Superseded 2026-10-02 — free forever, see above.)*
       Now that §5.7 (Smart Features, the only feature that ever needed
       a separate unlock) is dropped, there's nothing left to sell
       beyond the core app itself. This means: **no `expo-iap`/
@@ -1910,8 +1919,13 @@ analytics, IAP)._
       by the user ("ready with the google account and everything").
       Not independently re-verified in Play Console this session; if
       closed testing hasn't actually started yet, see the item below.
-- [ ] **Google Payments Merchant account — not needed yet, revisited
-      2026-08-28.** The user had started this (Play Console prompted
+- [x] **Google Payments Merchant account — not needed at all, closed
+      2026-10-02.** The app is free forever (see Monetization above),
+      so there is no price to set and no payments profile or BillDesk
+      KYC to complete. The paused form can be abandoned. History below
+      for the record.
+- [x] ~~**Google Payments Merchant account — not needed yet, revisited
+      2026-08-28.**~~ *(Closed 2026-10-02.)* The user had started this (Play Console prompted
       for it while poking at payments setup) and hit BillDesk's KYC
       form asking for a live Website URL / Mobile App APK URL that
       didn't exist yet — paused pending a monetization decision. Now

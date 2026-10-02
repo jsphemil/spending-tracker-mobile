@@ -627,13 +627,12 @@ Erebor Wealth Management is now a public app. The whole store sequence
 production access, production release — is complete; what follows is
 ordinary release maintenance plus the pricing decision below.
 
-- **Paid-app / payments profile** — the live URL above was the only
-  remaining blocker. The app is currently published free; making it a
-  one-time paid listing needs a Google payments profile (the BillDesk
-  KYC paused on 2026-08-28 for want of a real app URL). Note a Play
-  rule that matters: an app published as free **cannot later be
-  switched to paid** — a paid version has to be a new listing. So this
-  is a decision to make deliberately, not a setting to flip later.
+- **Pricing — settled 2026-10-02: free, permanently.** The listing
+  went out free and stays free. Nothing further is needed: no price to
+  set, no Google payments profile, no BillDesk Merchant KYC (the form
+  paused on 2026-08-28 can be abandoned). The Play rule that a free
+  listing cannot later be converted to paid is consistent with this,
+  not an obstacle to it.
 - **Release routine from here (decided 2026-09-18).** A testing track
   is no longer required — the closed test was only the gate for
   production access. The user tests each update as a debug build over
