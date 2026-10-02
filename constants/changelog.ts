@@ -16,6 +16,14 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "3.1.1",
+    date: "2026-10-02",
+    title: "Smaller and quicker",
+    highlights: [
+      "A build-only release: Erebor is now compiled with full code and resource optimisation, so the app downloads smaller and starts a little faster. Nothing has changed in how it works.",
+    ],
+  },
+  {
     version: "3.1.0",
     date: "2026-09-16",
     title: "Tags with character, accounts a tap apart",

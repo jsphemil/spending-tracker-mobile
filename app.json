@@ -2,7 +2,7 @@
   "expo": {
     "name": "Erebor Wealth Management",
     "slug": "spending-tracker-mobile",
-    "version": "3.1.0",
+    "version": "3.1.1",
     "scheme": "spendingtracker",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -50,11 +50,13 @@
         {
           "android": {
             "enableProguardInReleaseBuilds": true,
-            "enableShrinkResourcesInReleaseBuilds": true
+            "enableShrinkResourcesInReleaseBuilds": true,
+            "extraProguardRules": "# R8 runs with optimization on from 3.1.1 (plugins/withR8Optimization.js).\n# The widget module is reached by the launcher and AppWidget framework, and\n# Glance/Compose resolve pieces of it reflectively, so keep it whole rather\n# than discover a stripped widget after upload.\n-keep class expo.modules.widgetbridge.** { *; }\n# Glance app widgets construct their receivers and state definitions by name.\n-keep class androidx.glance.appwidget.** { *; }\n# expo-notifications' receivers and services are started by the system.\n-keep class expo.modules.notifications.** { *; }"
           }
         }
       ],
-      "./plugins/withAppShortcuts.js"
+      "./plugins/withAppShortcuts.js",
+      "./plugins/withR8Optimization.js"
     ],
     "extra": {
       "router": {},
