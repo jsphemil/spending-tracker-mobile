@@ -679,6 +679,35 @@ ordinary release maintenance plus the pricing decision below.
 
 ---
 
+## 11. Post-launch Play Console hygiene — ✅ Done 2026-10-03
+
+**The listing showed as a beta.** Cause confirmed by reading the public
+page signed out: it rendered as a plain production listing with an
+Install button and no "Join the beta" section, so the badge was only
+ever the developer's own tester enrolment on the EWM Alpha track. Worth
+remembering for any future app — **a tester's view of a listing keeps
+the beta badge until they leave the programme**, no matter what is live
+on Production, and it says nothing about what the public sees.
+
+- **EWM Alpha retired 2026-10-03** — rollout halted, tester groups
+  removed. The closed test existed only to earn production access
+  (step 9) and that is done. The opt-in links in the Obsidian note are
+  dead; the recruitment posts on r/TestersCommunity and the Testers
+  Community app should come down if they haven't.
+- **Internal testing** remains the track to use when a release adds or
+  upgrades a native module — installs in minutes, no review, then
+  promote to Production. Everything else goes straight to Production.
+- **Listing text corrected 2026-10-03.** The full description still
+  described the app as "a one-time purchase, yours to keep" after it
+  shipped free; it now reads "Free, with no ads, no tracking, and no
+  subscription. Every feature is included — nothing is held back behind
+  a purchase." (The live copy lost the closing full stop — harmless,
+  worth fixing next time the listing is edited.)
+- Production is serving **3.1.1, versionCode 20**; the store page shows
+  its "What's new" text, confirming the rollout reached users.
+
+---
+
 ## What I can help with along the way
 
 - Building new AABs whenever an updated build is needed
