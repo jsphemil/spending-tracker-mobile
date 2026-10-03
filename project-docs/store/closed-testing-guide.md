@@ -348,7 +348,11 @@ since a debug build cannot exercise R8 at all.
 
 Build `a5ce3cb5-cceb-4fa3-8633-5c8897b9a036`; AAB at
 `https://expo.dev/artifacts/eas/dBes0M9FqIsgGqDKXsRup-Kj5cyIdkxptwnDjhjPJIo.aab`.
-**Upload to Production pending (manual, by the user).**
+**Published to Production on 2026-10-03** as release
+`Erebor 3.1.1 — Build Optimisation`. The first release to follow the
+post-launch routine end to end: debug check over adb, local
+`assembleRelease` smoke test for the R8 change, EAS build, straight to
+Production with no testing track.
 
 Release notes to use (3.1.1):
 ```
