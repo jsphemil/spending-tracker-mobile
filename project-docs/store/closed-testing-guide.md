@@ -330,6 +330,39 @@ All 3 required updates for the 14-day window are now shipped
 (versionCode 9, 12, 13 — see step 9 below for the production-access
 application, the next gate).
 
+**3.2.0 built as versionCode 21 (2026-10-04)** — release name
+`Erebor 3.2.0 — Upcoming & Reach`. Three changes, all from using the
+published app:
+
+- **Navigation-bar clearance** (spec.md §5.19). With 3-button
+  navigation the system bar (~48dp against gesture navigation's ~16dp)
+  painted over the Add Transaction button. Edge-to-edge means the app
+  must add the bottom inset itself; it now does, once per container —
+  `FormScrollView` for all six forms, a new `ScreenScrollView` for the
+  ten settings/backup screens that had repeated the same `ScrollView`,
+  and directly in `backup/restore`, the replay-intro screen and the
+  currency picker's full-screen list.
+- **Commitments show when each is next due** (spec.md §5.16), ordered
+  soonest first instead of by amount, via `nextOccurrence()` — the same
+  cadence arithmetic that materializes the transactions.
+- **Dashboard attention rows carry the details** (spec.md §5.8):
+  amount, account (or `from → to`), and note on a second line.
+
+No native change, no migration. `tsc`, `expo lint` and 136 tests clean;
+verified on-device over Metro in 3-button navigation mode before the
+build. Straight to Production, no track.
+
+Build `5c96268e-7b03-4567-b266-12a10fbfa1dc`; AAB at
+`https://expo.dev/artifacts/eas/IMyOInhZw63TxJBfvpRSgNzmJ_-lCXjBYypnoz8iwlY.aab`.
+**Upload to Production pending (manual, by the user).**
+
+Release notes to use (3.2.0):
+```
+<en-GB>
+Commitments now shows when each one is next due and lists them in the order they will happen, rather than by size. On the Dashboard, anything needing your attention shows the amount, the account it comes from and your note. Buttons and last rows no longer hide behind the system navigation bar if you use the three-button layout.
+</en-GB>
+```
+
 **3.1.1 built as versionCode 20 (2026-10-02)** — the first release
 *after* launch, and the first to go straight to Production with no
 track. Build-config only, no user-visible change: Play Console's R8

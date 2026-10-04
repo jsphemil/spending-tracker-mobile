@@ -35,7 +35,7 @@ pushed to a later phase) · ❌ Dropped (cut from scope).
 | §5.13 | First-Run Onboarding & Base Currency | ✅ Built & Verified | Onboarding flow + gate, live per-install base currency (not hardcoded INR), searchable ~170-currency picker. UAT checklist §1 confirms every step, the currency-picker search, and base-currency-change recalculation across the whole app — all pass (including the 2026-08-21 SafeAreaView fix for the onboarding-flush-to-top bug). |
 | §5.14 | CSV Export | ✅ Built & Verified | Matches the web app's account/date-filtered CSV export; required a native rebuild for `expo-file-system`/`expo-sharing` — verified on-device 2026-08-12, and re-confirmed working after all the base-currency changes (UAT checklist §12). |
 | §5.15 | In-App Info/Tips | ✅ Built & Verified | Deferred 2026-08-12; **built 2026-09-11 as §5.22's Help & Support FAQ** — ten folded sections plus Send feedback and Replay the intro — and verified on-device the same day. |
-| §5.16 | Commitments | ✅ Built & Verified | New tab, monthly-normalized recurring rules, % of recurring income committed. UAT checklist §7 confirms the sections and monthly-equivalent math (verified correct, not a bug — average-month normalization). Complex recurrence patterns (nth-weekday-of-month etc.) were requested then **withdrawn by the user 2026-08-21** ("it can be ignored") — not building. The "% of recurring income" line was explained to the user but never independently re-confirmed against their own live data — low-stakes, worth a glance next time it's relevant. |
+| §5.16 | Commitments | ✅ Built & Verified | Next-due dates + chronological order (2026-10-04). New tab, monthly-normalized recurring rules, % of recurring income committed. UAT checklist §7 confirms the sections and monthly-equivalent math (verified correct, not a bug — average-month normalization). Complex recurrence patterns (nth-weekday-of-month etc.) were requested then **withdrawn by the user 2026-08-21** ("it can be ignored") — not building. The "% of recurring income" line was explained to the user but never independently re-confirmed against their own live data — low-stakes, worth a glance next time it's relevant. |
 | §5.17 | Goals | ❌ Dropped | Built and verified 2026-08 (goal CRUD, trailing-6-month pace projection, behind-pace flag, Dashboard card; UAT checklist §8 all pass). **Removed entirely 2026-09-10** (shipped as versionCode 15) once §5.21's Funds was verified on-device, replacing it with a primitive that actually allocates money. Every goal was scored against the *same* portfolio-wide net-worth number, so N goals were just N thresholds on one figure and none could hold money independently. Table dropped in migration `0015`; no data migration — a goal's target is a net-worth threshold and a fund's is a purchase cost, so converting would have produced misleading nonsense. |
 | §5.18 | Design Refresh — "Erebor" | ✅ Built & Verified | **New, 2026-08-28.** Complete visual redesign sourced from a separate Claude Design project the user built ("Erebor Wealth App Design System," dark glassy-neon fintech language), applied as a presentational-only pass on the `design-refresh` branch and merged to `master` the same day. See the full write-up below (§5.18) for what shipped, what was explicitly decided, and the one behavior change (AccountForm's icon became user-selectable, at the user's explicit request). Verified via multiple rounds of on-device testing on the user's Pixel 10, including native rebuilds for the new `expo-linear-gradient`/`expo-font` dependencies. |
 | §3 | Dropbox Backup/Restore | ✅ Built & Verified | **Built and fully verified on-device 2026-08-28.** PKCE OAuth connect flow (`services/dropbox.ts`, `expo-auth-session`+`expo-web-browser`, App-folder-scoped access), tokens in `expo-secure-store` (never the unencrypted `settings` table), `VACUUM INTO`-based consistent snapshot backup (not a raw file copy or JSON export), check-on-app-open "automatic daily" backup (a true OS background task is unreliable on mobile — see the feature's own write-up below), manual backup, and a restore picker (`app/backup/restore.tsx`) that replaces the local DB file and prompts a manual app restart. Connect, manual backup, and restore-then-restart all confirmed working on the user's phone. |
@@ -971,6 +971,19 @@ this pass, follows the same native Glance pattern later as a second
   every month · TRIUMPH SPEED 400").
 - Built 2026-08-12: `app/(tabs)/commitments.tsx`,
   `db/queries/recurringRules.ts`. On-device verification pending.
+- **Next-due dates and chronological order, 2026-10-04.** The screen
+  showed amount and cadence but no dates, so the Dashboard's "what needs
+  my attention" could say "Rent due 5 Nov" and link here, where that
+  date appeared nowhere. Each row now carries **Next &lt;date&gt;** (or
+  "Ended"), and the sections are ordered **soonest first** instead of by
+  monthly amount, so the list reads in the order things will actually
+  happen; rules past their end date sink to the bottom. The date comes
+  from `nextOccurrence(rule, from)` in `services/recurrence.ts` — it
+  walks the rule's own cadence from its start date with the same
+  `addInterval` arithmetic `materializeRule` uses, so the date shown is
+  the date that will be generated, with no DB read. Unit-tested
+  (not-yet-started rule, an occurrence falling today, walking past
+  today, and an ended rule).
 
 ### 5.17 Goals ❌ Dropped
 
@@ -1131,6 +1144,24 @@ reusing the existing transaction-create flow/screen
 implementation of either. Settings and its child screens hide both the
 top bar and the FAB.
 
+**Navigation-bar clearance (added 2026-10-04).** The same edge-to-edge
+property that broke keyboard handling also means Android paints the
+**system navigation bar over the window**. With gesture navigation that
+bar is ~16dp and most screens' own padding happened to cover it; with
+**3-button navigation** it is ~48dp, and it sat on top of the Add
+Transaction button (reported with a screenshot). The inset is applied
+once per container rather than per screen: `FormScrollView` adds
+`insets.bottom` for all six forms, a new
+`components/ui/ScreenScrollView.tsx` does the same for the ten plain
+settings/backup screens that had each repeated the identical
+`ScrollView`, and `backup/restore.tsx` (a `FlatList`), the "Replay the
+intro" screen (which used a bare `View` where the first-run
+`OnboardingFlow` had always used `SafeAreaView edges={["top","bottom"]}`)
+and the currency picker's full-screen list take it directly. Tab screens
+never needed it — `components/BottomNavBar.tsx` applies the inset itself
+and screens clear the docked "+" via `TAB_BAR_CLEARANCE`; the bottom
+sheets were already correct with `SafeAreaView edges={["bottom"]}`.
+
 **Keyboard handling (added 2026-09-15).** The app is edge-to-edge
 (mandatory on SDK 57 / Android 15+), so Android no longer resizes the
 window for the keyboard and `adjustResize` does nothing — every form
@@ -1175,6 +1206,16 @@ existing category-budget, commitment, and goal-pace data — falling
 back to "You're all caught up." rather than ever showing an invented
 alert. Dashboard shortcuts are Commitments/Categories/Goals/Tags/
 Calendar/Settings only.
+
+**Attention rows carry the transaction's details (2026-10-04).** An
+upcoming-commitment row used to be a single line — "Rent due 5 Nov" —
+which named the charge without saying how big it was or where it came
+from, and tapping it landed on Commitments, which (until the same day's
+§5.16 change) showed no dates at all. Each row now has a second, muted
+line with the **amount, the account** (or `from → to` for a transfer)
+**and the note**, so an upcoming charge is recognisable without opening
+it, and the screen it links to lists the same commitments in due-date
+order.
 
 **Net worth privacy toggle ✅ Built & Verified (2026-09-08/09).** An
 eye/eye-off icon on the Net worth card masks Net worth, Assets, and
