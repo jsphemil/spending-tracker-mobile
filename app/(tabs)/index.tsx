@@ -196,21 +196,32 @@ export default function DashboardScreen() {
   const { data: upcomingTx } = useFilteredTransactions({ range: { start: today, end: lookaheadEnd } });
   const upcomingCommitments = useMemo(() => {
     const seen = new Set<number>();
-    const rows: { id: number; label: string; date: Date }[] = [];
+    const rows: { id: number; label: string; detail: string; date: Date }[] = [];
     for (const t of (upcomingTx ?? []).slice().sort((a, b) => a.date.getTime() - b.date.getTime())) {
       if (t.recurringRuleId == null || seen.has(t.recurringRuleId)) continue;
       if (t.type !== "expense" && t.type !== "transfer") continue;
       seen.add(t.recurringRuleId);
       const account = accounts?.find((a) => a.id === t.accountId);
+      const toAccount = accounts?.find((a) => a.id === t.toAccountId);
       const category = categories?.find((c) => c.id === t.categoryId);
+      // The second line carries what the first can't: how much, out of which
+      // account, and any note — enough to recognise the charge without
+      // opening it.
+      const where =
+        t.type === "transfer"
+          ? `${account?.name ?? "?"} → ${toAccount?.name ?? "?"}`
+          : (account?.name ?? "?");
       rows.push({
         id: t.id,
         label: t.type === "transfer" ? `Transfer from ${account?.name ?? "?"}` : (category?.name ?? "Uncategorized"),
+        detail: [formatMoney(t.amountMinor, account?.currency ?? baseCurrency), where, t.description]
+          .filter(Boolean)
+          .join(" · "),
         date: t.date,
       });
     }
     return rows;
-  }, [upcomingTx, accounts, categories]);
+  }, [upcomingTx, accounts, categories, baseCurrency]);
 
   // Both fund alerts are real, actionable and derived from real data —
   // §5.19 forbids invented alerts, and a "you haven't contributed this
@@ -437,6 +448,7 @@ export default function DashboardScreen() {
                 icon="calendar-sync-outline"
                 tone="transfer"
                 text={`${row.label} due ${row.date.toLocaleDateString(undefined, { month: "short", day: "numeric" })}`}
+                detail={row.detail}
                 href="/commitments"
               />
             ))}
@@ -511,11 +523,13 @@ function AttentionRow({
   icon,
   tone,
   text,
+  detail,
   href,
 }: {
   icon: string;
   tone: "danger" | "transfer";
   text: string;
+  detail?: string;
   href: "/categories" | "/commitments" | "/fund";
 }) {
   const colors = useThemeColors();
@@ -524,7 +538,10 @@ function AttentionRow({
     <Link href={href} asChild>
       <Pressable className="flex-row items-center gap-2.5">
         <Icon name={icon} size={16} color={toneColor} />
-        <Text className="flex-1 text-sm text-fg">{text}</Text>
+        <View className="flex-1">
+          <Text className="text-sm text-fg">{text}</Text>
+          {detail && <Text className="mt-0.5 text-xs text-fg-muted">{detail}</Text>}
+        </View>
         <Icon name="chevron-right" size={16} color={colors.fgSubtle} />
       </Pressable>
     </Link>

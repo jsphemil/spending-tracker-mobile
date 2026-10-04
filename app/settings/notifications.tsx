@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Pressable, ScrollView, Switch, Text, View } from "react-native";
+import { ScreenScrollView } from "../../components/ui/ScreenScrollView";
+import { Pressable, Switch, Text, View } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 
 import { db } from "../../db/client";
@@ -40,7 +41,7 @@ export default function NotificationsSettingsScreen() {
   }
 
   return (
-    <ScrollView className="flex-1 bg-bg" contentContainerStyle={{ padding: 16, gap: 20 }}>
+    <ScreenScrollView contentContainerStyle={{ padding: 16, gap: 20 }}>
       <View className="flex-row items-center justify-between">
         <View className="flex-1 pr-4">
           <Text className="text-base text-fg">Expense Reminders</Text>
@@ -79,6 +80,6 @@ export default function NotificationsSettingsScreen() {
           )}
         </View>
       )}
-    </ScrollView>
+    </ScreenScrollView>
   );
 }

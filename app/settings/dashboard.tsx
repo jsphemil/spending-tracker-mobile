@@ -1,5 +1,6 @@
-import { Pressable, ScrollView, Switch, Text, View } from "react-native";
+import { Pressable, Switch, Text, View } from "react-native";
 
+import { ScreenScrollView } from "../../components/ui/ScreenScrollView";
 import { SettingsRow, SettingsSection } from "../../components/ui/SettingsRow";
 import { Icon } from "../../components/ui/Icon";
 import {
@@ -78,7 +79,7 @@ export default function CustomiseDashboardScreen() {
   };
 
   return (
-    <ScrollView className="flex-1 bg-bg" contentContainerStyle={{ padding: 16, gap: 20 }}>
+    <ScreenScrollView contentContainerStyle={{ padding: 16, gap: 20 }}>
       <SettingsSection title="Cards">
         {layout.order.map((id, index) => {
           const pinned = id === PINNED_CARD;
@@ -165,6 +166,6 @@ export default function CustomiseDashboardScreen() {
           />
         </SettingsSection>
       )}
-    </ScrollView>
+    </ScreenScrollView>
   );
 }

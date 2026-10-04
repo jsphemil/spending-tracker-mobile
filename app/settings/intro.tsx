@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { View } from "react-native";
 import { useRouter } from "expo-router";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import { FeaturesStep, HowToUseStep, StepDots, WelcomeStep } from "../../components/IntroSteps";
 import { updateSettings } from "../../db/actions/settings";
@@ -23,11 +23,13 @@ export default function ReplayIntroScreen() {
   }
 
   return (
-    <View className="flex-1 bg-bg">
+    // edges={["bottom"]} like OnboardingFlow: edge-to-edge paints the system
+    // navigation bar over the window, and each step's CTA sits at the bottom.
+    <SafeAreaView edges={["bottom"]} className="flex-1 bg-bg">
       <StepDots count={STEP_COUNT} current={step} />
       {step === 0 && <WelcomeStep onNext={() => setStep(1)} cta="Continue" />}
       {step === 1 && <FeaturesStep onNext={() => setStep(2)} />}
       {step === 2 && <HowToUseStep onNext={finish} cta="Done" />}
-    </View>
+    </SafeAreaView>
   );
 }

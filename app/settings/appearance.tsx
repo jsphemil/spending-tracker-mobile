@@ -1,5 +1,6 @@
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 
+import { ScreenScrollView } from "../../components/ui/ScreenScrollView";
 import { Icon } from "../../components/ui/Icon";
 import { updateSettings } from "../../db/actions/settings";
 import { useSettings } from "../../db/queries/settings";
@@ -21,7 +22,7 @@ export default function AppearanceSettingsScreen() {
   if (!settings) return null;
 
   return (
-    <ScrollView className="flex-1 bg-bg" contentContainerStyle={{ padding: 16, gap: 12 }}>
+    <ScreenScrollView contentContainerStyle={{ padding: 16, gap: 12 }}>
       {THEME_PREFERENCES.map((preference) => {
         const selected = settings.themePreference === preference;
         const meta = OPTION_LABELS[preference];
@@ -44,6 +45,6 @@ export default function AppearanceSettingsScreen() {
           </Pressable>
         );
       })}
-    </ScrollView>
+    </ScreenScrollView>
   );
 }

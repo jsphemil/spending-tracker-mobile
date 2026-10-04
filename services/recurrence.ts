@@ -359,6 +359,22 @@ const UNIT_LABELS: Record<RecurrenceUnit, string> = {
   year: "year",
 };
 
+// The next occurrence at or after `from`, by walking the rule's own cadence
+// from its start date — the same arithmetic materializeRule uses, so the date
+// shown on Commitments is the date that will actually be generated. Null once
+// the rule has ended. Rules are deterministic, so this needs no DB read.
+export function nextOccurrence(
+  rule: Pick<RecurringRule, "startDate" | "endDate" | "intervalCount" | "intervalUnit">,
+  from: Date,
+): Date | null {
+  let cursor = rule.startDate;
+  while (cursor < from) {
+    cursor = addInterval(cursor, rule.intervalCount, rule.intervalUnit);
+  }
+  if (rule.endDate && cursor > rule.endDate) return null;
+  return cursor;
+}
+
 export function describeSchedule(intervalCount: number, intervalUnit: RecurrenceUnit): string {
   const unit = UNIT_LABELS[intervalUnit];
   return intervalCount === 1 ? `Repeats every ${unit}` : `Repeats every ${intervalCount} ${unit}s`;

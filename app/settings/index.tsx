@@ -1,5 +1,6 @@
-import { ScrollView, Text, View } from "react-native";
+import { Text, View } from "react-native";
 
+import { ScreenScrollView } from "../../components/ui/ScreenScrollView";
 import { DropboxBackupCard } from "../../components/DropboxBackupCard";
 import { SettingsRow, SettingsSection } from "../../components/ui/SettingsRow";
 import { useSettings } from "../../db/queries/settings";
@@ -11,7 +12,7 @@ export default function SettingsScreen() {
   if (!settings) return null;
 
   return (
-    <ScrollView className="flex-1 bg-bg" contentContainerStyle={{ padding: 16, gap: 20 }}>
+    <ScreenScrollView contentContainerStyle={{ padding: 16, gap: 20 }}>
       <SettingsSection title="Profile">
         <SettingsRow
           icon="account-circle-outline"
@@ -61,6 +62,6 @@ export default function SettingsScreen() {
       <SettingsSection title="Your Data">
         <SettingsRow icon="receipt" label="Export Transactions (CSV)" href="/settings/export" last />
       </SettingsSection>
-    </ScrollView>
+    </ScreenScrollView>
   );
 }

@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { LayoutAnimation, Pressable, ScrollView, Text, View } from "react-native";
+import { LayoutAnimation, Pressable, Text, View } from "react-native";
 
+import { ScreenScrollView } from "../../components/ui/ScreenScrollView";
 import { SettingsRow, SettingsSection } from "../../components/ui/SettingsRow";
 import { Icon } from "../../components/ui/Icon";
 import { FAQ_SECTIONS, type FaqSection } from "../../constants/faq";
@@ -22,7 +23,7 @@ export default function HelpSupportScreen() {
   }
 
   return (
-    <ScrollView className="flex-1 bg-bg" contentContainerStyle={{ padding: 16, gap: 20 }}>
+    <ScreenScrollView contentContainerStyle={{ padding: 16, gap: 20 }}>
       <SettingsSection title="Common questions">
         {FAQ_SECTIONS.map((section, i) => (
           <FaqSectionRow
@@ -52,7 +53,7 @@ export default function HelpSupportScreen() {
           last
         />
       </SettingsSection>
-    </ScrollView>
+    </ScreenScrollView>
   );
 }
 

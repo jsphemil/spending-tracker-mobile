@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Alert, FlatList, Pressable, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { EmptyState } from "../../components/ui/EmptyState";
 import { listBackups, restoreBackup, type BackupEntry } from "../../services/dropbox";
@@ -7,6 +8,7 @@ import { listBackups, restoreBackup, type BackupEntry } from "../../services/dro
 type ScreenState = "loading" | "loaded" | "error" | "restoring" | "done";
 
 export default function RestoreBackupScreen() {
+  const insets = useSafeAreaInsets();
   const [state, setState] = useState<ScreenState>("loading");
   const [backups, setBackups] = useState<BackupEntry[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -71,7 +73,9 @@ export default function RestoreBackupScreen() {
       <FlatList
         data={backups}
         keyExtractor={(item) => item.path}
-        contentContainerStyle={{ padding: 16, gap: 8 }}
+        // Clears the system navigation bar, which edge-to-edge paints over
+        // the window (~48dp in 3-button mode).
+        contentContainerStyle={{ padding: 16, gap: 8, paddingBottom: insets.bottom + 16 }}
         ListHeaderComponent={
           <Text className="mb-2 text-sm text-fg-muted">
             Choose a backup to restore. This replaces everything currently on this device.
