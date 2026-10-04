@@ -1,5 +1,6 @@
-import { ScrollView, Text, View } from "react-native";
+import { Text, View } from "react-native";
 
+import { ScreenScrollView } from "../../components/ui/ScreenScrollView";
 import { CurrencyPicker } from "../../components/CurrencyPicker";
 import { updateSettings } from "../../db/actions/settings";
 import { useSettings } from "../../db/queries/settings";
@@ -9,7 +10,7 @@ export default function CurrencySettingsScreen() {
   if (!settings) return null;
 
   return (
-    <ScrollView className="flex-1 bg-bg" contentContainerStyle={{ padding: 16, gap: 16 }}>
+    <ScreenScrollView contentContainerStyle={{ padding: 16, gap: 16 }}>
       <View className="gap-2">
         <CurrencyPicker
           label="Base Currency"
@@ -22,6 +23,6 @@ export default function CurrencySettingsScreen() {
           different currencies, and your original transaction amounts are never changed.
         </Text>
       </View>
-    </ScrollView>
+    </ScreenScrollView>
   );
 }

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Linking, Pressable, ScrollView, Switch, Text, View } from "react-native";
+import { ScreenScrollView } from "../../components/ui/ScreenScrollView";
+import { Linking, Pressable, Switch, Text, View } from "react-native";
 
 import { updateSettings } from "../../db/actions/settings";
 import { useSettings } from "../../db/queries/settings";
@@ -53,7 +54,7 @@ export default function PrivacySecurityScreen() {
       : "Ask for your fingerprint, face, or your phone's PIN or pattern when Erebor opens or comes back after 30 seconds in the background.";
 
   return (
-    <ScrollView className="flex-1 bg-bg" contentContainerStyle={{ padding: 16, gap: 16 }}>
+    <ScreenScrollView contentContainerStyle={{ padding: 16, gap: 16 }}>
       <View className="flex-row items-center justify-between">
         <View className="flex-1 pr-4">
           <Text className="text-base text-fg">Unlock with biometrics</Text>
@@ -95,6 +96,6 @@ export default function PrivacySecurityScreen() {
       <Pressable onPress={() => Linking.openURL(PRIVACY_POLICY_URL)}>
         <Text className="text-sm font-medium text-accent">Read the full Privacy Policy</Text>
       </Pressable>
-    </ScrollView>
+    </ScreenScrollView>
   );
 }

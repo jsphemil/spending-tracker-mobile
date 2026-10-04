@@ -1,11 +1,10 @@
-import { ScrollView } from "react-native";
-
+import { ScreenScrollView } from "../../components/ui/ScreenScrollView";
 import { ExportTransactionsForm } from "../../components/ExportTransactionsForm";
 
 export default function ExportSettingsScreen() {
   return (
-    <ScrollView className="flex-1 bg-bg" contentContainerStyle={{ padding: 16 }}>
+    <ScreenScrollView contentContainerStyle={{ padding: 16 }}>
       <ExportTransactionsForm />
-    </ScrollView>
+    </ScreenScrollView>
   );
 }

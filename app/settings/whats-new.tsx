@@ -1,4 +1,5 @@
-import { ScrollView, Text, View } from "react-native";
+import { Text, View } from "react-native";
+import { ScreenScrollView } from "../../components/ui/ScreenScrollView";
 
 import { CHANGELOG } from "../../constants/changelog";
 import { appVersionLabel } from "../../services/feedbackLink";
@@ -9,7 +10,7 @@ import { appVersionLabel } from "../../services/feedbackLink";
 export default function WhatsNewScreen() {
   const { appVersion } = appVersionLabel();
   return (
-    <ScrollView className="flex-1 bg-bg" contentContainerStyle={{ padding: 16, gap: 12 }}>
+    <ScreenScrollView contentContainerStyle={{ padding: 16, gap: 12 }}>
       {CHANGELOG.map((entry) => (
         <View key={entry.version} className="rounded-card border border-glass-border bg-glass p-4">
           <View className="mb-2 flex-row items-baseline justify-between">
@@ -30,6 +31,6 @@ export default function WhatsNewScreen() {
           </View>
         </View>
       ))}
-    </ScrollView>
+    </ScreenScrollView>
   );
 }

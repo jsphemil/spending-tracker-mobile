@@ -1,4 +1,5 @@
-import { Pressable, ScrollView, Text } from "react-native";
+import { Pressable, Text } from "react-native";
+import { ScreenScrollView } from "../../components/ui/ScreenScrollView";
 import { Link } from "expo-router";
 
 import { appVersionLabel, sendFeedback } from "../../services/feedbackLink";
@@ -6,7 +7,7 @@ import { appVersionLabel, sendFeedback } from "../../services/feedbackLink";
 export default function AboutScreen() {
   const { appVersion, buildNumber } = appVersionLabel();
   return (
-    <ScrollView className="flex-1 bg-bg" contentContainerStyle={{ padding: 16, gap: 12, alignItems: "center" }}>
+    <ScreenScrollView contentContainerStyle={{ padding: 16, gap: 12, alignItems: "center" }}>
       <Text className="font-display text-xl font-bold text-fg">Erebor Wealth Management</Text>
       <Text className="text-sm text-fg-subtle">
         v{appVersion} (build {buildNumber})
@@ -23,6 +24,6 @@ export default function AboutScreen() {
       <Pressable onPress={() => sendFeedback()} accessibilityRole="button">
         <Text className="text-sm font-medium text-accent">Send feedback</Text>
       </Pressable>
-    </ScrollView>
+    </ScreenScrollView>
   );
 }
