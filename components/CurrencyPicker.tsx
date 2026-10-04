@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { FlatList, Modal, Pressable, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Input } from "./ui/Input";
 
 import { getSupportedCurrencies, type CurrencyInfo } from "../services/currency";
@@ -23,6 +24,7 @@ interface CurrencyPickerProps {
 // field for now.
 export function CurrencyPicker({ value, onChange, label = "Currency", compact = false }: CurrencyPickerProps) {
   const colors = useThemeColors();
+  const insets = useSafeAreaInsets();
   const [visible, setVisible] = useState(false);
   const [query, setQuery] = useState("");
   const [currencies, setCurrencies] = useState<CurrencyInfo[]>([]);
@@ -86,7 +88,9 @@ export function CurrencyPicker({ value, onChange, label = "Currency", compact = 
           <FlatList
             data={filtered}
             keyExtractor={(item) => item.code}
-            contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 24 }}
+            // Edge-to-edge paints the system navigation bar over the window,
+            // so the last currency needs the inset to be reachable.
+            contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 24 }}
             ListEmptyComponent={
               <Text className="mt-8 text-center text-fg-subtle">
                 {currencies.length === 0 ? "Loading currencies…" : "No matches."}
