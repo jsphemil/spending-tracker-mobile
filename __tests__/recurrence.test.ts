@@ -2,16 +2,7 @@ import { and, eq, gte, lt } from "drizzle-orm";
 
 import { funds, recurringRules, tags, transactionTags, transactions } from "../db/schema";
 import { toLocalDateString } from "../services/period";
-import {
-  createRecurringSeries,
-  deleteFutureOccurrences,
-  deleteSingleOccurrence,
-  describeSchedule,
-  editFutureOccurrences,
-  editSingleOccurrence,
-  ensureMaterialized,
-  monthlyEquivalent,
-} from "../services/recurrence";
+import { createRecurringSeries, deleteFutureOccurrences, deleteSingleOccurrence, describeSchedule, editFutureOccurrences, editSingleOccurrence, ensureMaterialized, monthlyEquivalent, nextOccurrence } from "../services/recurrence";
 import { closeTestDb, createTestDb, insertAccount, type TestDb } from "./testDb";
 
 let db: TestDb;
@@ -465,5 +456,30 @@ describe("fund links on recurring rules", () => {
     expect(rows.slice(1).every((row) => row.fundId === fundId)).toBe(true);
     // The rule itself is untouched — that is what "just this one" means.
     expect(db.select().from(recurringRules).get()!.fundId).toBe(fundId);
+  });
+});
+
+describe("nextOccurrence", () => {
+  const monthly = {
+    startDate: new Date(2026, 0, 5),
+    endDate: null,
+    intervalCount: 1,
+    intervalUnit: "month" as const,
+  };
+
+  it("returns the start date when the rule hasn't started yet", () => {
+    expect(nextOccurrence(monthly, new Date(2025, 11, 1))).toEqual(new Date(2026, 0, 5));
+  });
+
+  it("counts an occurrence falling today as next up", () => {
+    expect(nextOccurrence(monthly, new Date(2026, 2, 5))).toEqual(new Date(2026, 2, 5));
+  });
+
+  it("walks forward to the next occurrence after today", () => {
+    expect(nextOccurrence(monthly, new Date(2026, 2, 6))).toEqual(new Date(2026, 3, 5));
+  });
+
+  it("returns null once the rule has ended", () => {
+    expect(nextOccurrence({ ...monthly, endDate: new Date(2026, 2, 31) }, new Date(2026, 3, 1))).toBeNull();
   });
 });

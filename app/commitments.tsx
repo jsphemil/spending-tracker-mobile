@@ -11,7 +11,7 @@ import { useFunds } from "../db/queries/funds";
 import { useActiveRecurringRules } from "../db/queries/recurringRules";
 import { useSettings } from "../db/queries/settings";
 import { formatMoney } from "../services/format";
-import { describeSchedule, monthlyEquivalent } from "../services/recurrence";
+import { describeSchedule, monthlyEquivalent, nextOccurrence } from "../services/recurrence";
 import { useThemeColors } from "../theme/palette";
 
 const SECTION_DEFS = [
@@ -35,14 +35,25 @@ export default function CommitmentsScreen() {
   const fundName = (id: number | null) =>
     id == null ? null : (funds?.find((f) => f.id === id)?.name ?? null);
 
+  // Today at midnight, so an occurrence falling today still counts as next up.
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
   const rows = (rules ?? []).map((rule) => ({
     rule,
     monthly: monthlyEquivalent(rule.amountMinor, rule.intervalCount, rule.intervalUnit),
+    next: nextOccurrence(rule, today),
   }));
 
+  // Soonest first, so the list reads as the order things will actually happen —
+  // the Dashboard's "what needs my attention" links here after naming a due
+  // date, and this is where that date has to be findable. Ended rules (no next
+  // occurrence) sink to the bottom.
   const sections = SECTION_DEFS.map((def) => ({
     ...def,
-    rows: rows.filter((r) => r.rule.type === def.type).sort((a, b) => b.monthly - a.monthly),
+    rows: rows
+      .filter((r) => r.rule.type === def.type)
+      .sort((a, b) => (a.next?.getTime() ?? Infinity) - (b.next?.getTime() ?? Infinity)),
   })).filter((section) => section.rows.length > 0);
 
   const totalExpenseMonthly = rows
@@ -89,7 +100,7 @@ export default function CommitmentsScreen() {
         sections.map((section) => (
           <View key={section.title} className="rounded-card border border-glass-border bg-glass p-4">
             <Text className="mb-3 text-sm font-display text-fg">{section.title}</Text>
-            {section.rows.map(({ rule, monthly }, i) => (
+            {section.rows.map(({ rule, monthly, next }, i) => (
               <View key={rule.id} className={`py-2.5 ${i > 0 ? "border-t border-glass-border" : ""}`}>
                 <View className="flex-row items-center justify-between gap-2">
                   <View className="flex-1 flex-row items-center gap-1.5">
@@ -117,6 +128,11 @@ export default function CommitmentsScreen() {
                   {formatMoney(rule.amountMinor, baseCurrency)} ·{" "}
                   {describeSchedule(rule.intervalCount, rule.intervalUnit)}
                   {rule.description ? ` · ${rule.description}` : ""}
+                </Text>
+                <Text className="mt-0.5 text-xs text-fg-muted">
+                  {next
+                    ? `Next ${next.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })}`
+                    : "Ended"}
                 </Text>
                 {/* Commitments is where you look to see what a rule does, so
                     it's where "and it draws from this fund" belongs. */}
