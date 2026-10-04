@@ -16,6 +16,16 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "3.2.0",
+    date: "2026-10-04",
+    title: "What's coming up, and room to tap it",
+    highlights: [
+      "Commitments now shows when each one is next due, and lists them in the order they'll actually happen rather than by size.",
+      "On the Dashboard, each thing needing your attention shows the amount, the account it comes from and your note, so you can recognise it at a glance.",
+      "Buttons and last rows no longer hide behind the system navigation bar if you use the three-button layout — forms, settings, the intro and the currency list all sit clear of it.",
+    ],
+  },
+  {
     version: "3.1.1",
     date: "2026-10-02",
     title: "Smaller and quicker",
