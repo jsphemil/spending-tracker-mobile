@@ -116,7 +116,7 @@ export default function CategoriesScreen() {
                 {hasBudget && (
                   <View className="h-1.5 overflow-hidden rounded-full bg-surface-2">
                     <View
-                      className={`h-full rounded-full ${overBudget ? "bg-danger" : "bg-accent"}`}
+                      className={`h-full rounded-full ${overBudget ? "bg-danger" : "bg-accent-fill"}`}
                       style={{ width: `${Math.min(fraction, 1) * 100}%` }}
                     />
                   </View>

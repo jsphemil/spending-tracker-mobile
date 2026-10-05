@@ -240,7 +240,7 @@ export default function AnalyticsScreen() {
                     </View>
                     <View className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-surface-3">
                       <View
-                        className={`h-full rounded-full ${kind === "expense" ? "bg-accent" : "bg-success"}`}
+                        className={`h-full rounded-full ${kind === "expense" ? "bg-accent-fill" : "bg-success"}`}
                         style={{ width: `${Math.min(fraction, 1) * 100}%` }}
                       />
                     </View>

@@ -35,7 +35,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -45,18 +44,15 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-private val ColorBg = Color(0xFF0C1120)
-private val ColorSurface = Color(0xFF131A2C)
-private val ColorFg = Color(0xFFF6F8FC)
-private val ColorFgMuted = Color(0xFF97A1BC)
-private val ColorAccent = Color(0xFF48E7F5)
+// V4 (spec.md §5.24) Octet blue — theme/palette.ts's dark tokens.
+private val ColorBg = Color(0xFF050505)
+private val ColorSurface = Color(0xFF1F1F1F)
+private val ColorFg = Color(0xFFF2F2F3)
+private val ColorFgMuted = Color(0xFFA9A9AC)
+private val ColorAccent = Color(0xFF5C8DFF)
+private val ColorAccentFill = Color(0xFF0D51FB)
+private val ColorOnAccent = Color(0xFFFFFFFF)
 
-// Matches theme/gradients.ts's GRADIENTS.brand — the app's real primary
-// button (components/ui/Button.tsx) is a diagonal cyan-blue-violet
-// gradient with white text, not a flat accent fill.
-private val AccentGradient = Brush.linearGradient(
-  colors = listOf(Color(0xFF48E7F5), Color(0xFF4C7DFF), Color(0xFF6E5CFF)),
-)
 
 class AccountsWidgetConfigActivity : ComponentActivity() {
   private var appWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID
@@ -227,7 +223,7 @@ private fun ConfigScreen(
         modifier = Modifier
           .fillMaxWidth()
           .clip(RoundedCornerShape(14.dp))
-          .background(AccentGradient)
+          .background(ColorAccentFill)
           // Ordered by this screen's own list (sort_order ASC, id ASC)
           // rather than by `selected.toList()`. KEY_ACCOUNT_IDS is a
           // comma-joined String specifically to preserve order, but a Set
@@ -238,7 +234,7 @@ private fun ConfigScreen(
           .padding(vertical = 14.dp),
         horizontalArrangement = Arrangement.Center,
       ) {
-        Text(text = "Save", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+        Text(text = "Save", color = ColorOnAccent, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
       }
     }
   }

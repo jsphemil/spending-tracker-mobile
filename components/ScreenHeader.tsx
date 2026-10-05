@@ -81,7 +81,7 @@ export function HeaderAction({
       className="h-11 w-11 items-center justify-center rounded-full active:bg-glass-press"
     >
       <Icon name={icon} size={22} color={colors.fg} />
-      {active && <View className="absolute right-2 top-2 h-2 w-2 rounded-full bg-accent" />}
+      {active && <View className="absolute right-2 top-2 h-2 w-2 rounded-full bg-accent-fill" />}
     </Pressable>
   );
   return href ? (

@@ -28,7 +28,9 @@ export function Button({ variant = "primary", children, className, disabled, ...
   if (variant === "primary") {
     return (
       <Pressable
-        className={`items-center rounded-full bg-accent py-3 active:opacity-85 ${disabled ? "opacity-50" : ""} ${className ?? ""}`}
+        accessibilityRole="button"
+        accessibilityState={{ disabled: !!disabled }}
+        className={`items-center rounded-full bg-accent-fill py-3 active:opacity-85 ${disabled ? "opacity-50" : ""} ${className ?? ""}`}
         disabled={disabled}
         {...props}
       >
@@ -40,6 +42,8 @@ export function Button({ variant = "primary", children, className, disabled, ...
   if (variant === "ghost") {
     return (
       <Pressable
+        accessibilityRole="button"
+        accessibilityState={{ disabled: !!disabled }}
         className={`items-center rounded-full border border-glass-border bg-transparent py-3 active:bg-glass ${disabled ? "opacity-50" : ""} ${className ?? ""}`}
         disabled={disabled}
         {...props}
@@ -51,6 +55,8 @@ export function Button({ variant = "primary", children, className, disabled, ...
 
   return (
     <Pressable
+      accessibilityRole="button"
+      accessibilityState={{ disabled: !!disabled }}
       className={`items-center rounded-full py-3 ${TONE_BG[variant]} ${disabled ? "opacity-50" : ""} ${className ?? ""}`}
       disabled={disabled}
       {...props}

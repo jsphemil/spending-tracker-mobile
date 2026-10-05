@@ -168,7 +168,7 @@ export function StepDots({ count, current }: { count: number; current: number })
       {Array.from({ length: count }).map((_, i) => (
         <View
           key={i}
-          className={`h-1.5 w-8 rounded-full ${i <= current ? "bg-accent" : "bg-surface-3"}`}
+          className={`h-1.5 w-8 rounded-full ${i <= current ? "bg-accent-fill" : "bg-surface-3"}`}
         />
       ))}
     </View>

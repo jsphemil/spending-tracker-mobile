@@ -27,6 +27,7 @@ module.exports = {
         transfer: "rgb(var(--transfer) / <alpha-value>)",
         warning: "rgb(var(--warning) / <alpha-value>)",
         "on-accent": "rgb(var(--on-accent) / <alpha-value>)",
+        "accent-fill": "rgb(var(--accent-fill) / <alpha-value>)",
         // "Soft" tokens already carry their own alpha as rgba() — must NOT
         // go through the <alpha-value> wrapper, that would double-apply it.
         "accent-soft": "var(--accent-soft)",

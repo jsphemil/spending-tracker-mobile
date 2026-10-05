@@ -82,7 +82,7 @@ The exact grouping can evolve, but unrelated controls should not be presented as
 
 ### 3.1 Overall aesthetic
 
-Erebor is a **calm, premium wealth-management app**: quiet neutrals, one navy-blue accent, and restrained semantic colour. It should feel mature and trustworthy, and make a financial position easy to grasp in a few seconds.
+Erebor is a **calm, premium wealth-management app**: quiet neutrals, one vivid blue accent ("Octet blue", #0D51FB), and restrained semantic colour. It should feel mature and trustworthy, and make a financial position easy to grasp in a few seconds.
 
 The guiding principle is **at a glance first, details when I ask for them.** A screen shows the few figures that answer its question; everything else is one tap away.
 
@@ -104,7 +104,7 @@ No drop shadows on cards or the navigation bar. Depth comes from surface contras
 
 ### 3.4 Accent philosophy
 
-The primary accent is **navy** in Light and a **soft sky blue** in Dark (the same hue, tuned per theme). It marks primary actions, the selected tab, links and key interactive elements — nothing else. Do not make every selected element strongly blue.
+The primary accent is **Octet blue #0D51FB**, chosen 2026-10-05 from a palette the user supplied. In Light it is both text and fill. In Dark it is a fill only (white on it is 5.9:1) — as text on near-black it is 3.5:1, so blue text and icons use the lighter `#5c8dff` (6.5:1). Hence two tokens: `accent` (text/icons) and `accent-fill` (solid fills, paired with `on-accent`). It marks primary actions, the selected tab, links and key interactive elements — nothing else. Do not make every selected element strongly blue.
 
 ---
 
@@ -121,7 +121,8 @@ Never hardcode UI colors in components. Components consume semantic token names.
 | `border` / `border-strong` | Divider, emphasised divider |
 | `fg` / `fg-muted` / `fg-subtle` | Text primary / secondary / tertiary |
 | `accent` / `accent-strong` / `accent-soft` | Primary, primary pressed, primary container |
-| `on-accent` | Text and icons on a solid accent fill |
+| `accent-fill` | Solid primary fills: buttons, the +, progress bars |
+| `on-accent` | Text and icons on `accent-fill` |
 | `success` / `success-soft` | Positive movement, income, gains |
 | `danger` / `danger-soft` | Debt, overspending, negative movement, destructive actions |
 | `warning` / `warning-soft` | Something needs the user's attention |
@@ -137,17 +138,18 @@ Implementation values, not permission to bypass the tokens. Every text-bearing r
 
 | Token | Light | Dark |
 |---|---|---|
-| bg | `#f6f6f8` | `#121318` |
-| surface | `#ffffff` | `#1a1b22` |
-| surface-2 | `#efeff3` | `#22232b` |
-| surface-3 | `#e4e4ea` | `#2b2c35` |
-| border | `#e2e2e8` | `#2a2b33` |
-| border-strong | `#c9c9d3` | `#3a3b45` |
-| fg | `#16171d` | `#e7e7ee` |
-| fg-muted | `#555867` | `#a4a6b3` |
-| fg-subtle | `#676a78` | `#8b8d9b` |
-| accent | `#203d6e` | `#a3c4f2` |
-| on-accent | `#ffffff` | `#0e1a30` |
+| bg | `#f4f4f5` | `#050505` (Black Metal) |
+| surface | `#ffffff` | `#1f1f1f` (Umbra) |
+| surface-2 | `#ededee` | `#2a2a2c` |
+| surface-3 | `#e3e3e5` | `#343537` (Jet Black) |
+| border | `#e3e3e5` | `#2a2a2c` |
+| fg | `#1f1f1f` | `#f2f2f3` |
+| fg-muted | `#656567` (Squant) | `#a9a9ac` |
+| fg-subtle | `#656567` | `#8e8e91` |
+| accent (text/icons) | `#0d51fb` | `#5c8dff` |
+| accent-fill (buttons, +, progress) | `#0d51fb` | `#0d51fb` |
+| accent-strong | `#103693` (Dark Seashore Night) | `#8aacff` |
+| on-accent | `#ffffff` | `#ffffff` |
 | success | `#2b7a57` | `#7fc6a2` |
 | danger | `#b03f4c` | `#e8909a` |
 | warning | `#94600f` | `#dbb46c` |

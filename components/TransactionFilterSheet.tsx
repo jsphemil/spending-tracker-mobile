@@ -126,7 +126,7 @@ export function TransactionFilterSheet({
               <Pressable
                 onPress={onClose}
                 accessibilityRole="button"
-                className="min-h-12 items-center justify-center rounded-full bg-accent active:opacity-85"
+                className="min-h-12 items-center justify-center rounded-full bg-accent-fill active:opacity-85"
               >
                 <Text className="text-base font-semibold text-on-accent">
                   Show {resultCount} transaction{resultCount === 1 ? "" : "s"}

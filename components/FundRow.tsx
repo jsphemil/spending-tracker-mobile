@@ -38,7 +38,7 @@ export function FundRow({ fund, balance, progress, baseCurrency, hidden = false 
 
   return (
     <Link href={`/fund/${fund.id}`} asChild>
-      <Pressable className="gap-2">
+      <Pressable className="gap-2" accessibilityRole="button">
         <View className="flex-row items-center gap-3">
           <View
             className="h-9 w-9 items-center justify-center rounded-icon-badge"
@@ -57,32 +57,32 @@ export function FundRow({ fund, balance, progress, baseCurrency, hidden = false 
 
         <View className="h-1.5 overflow-hidden rounded-full bg-surface-3">
           <View
-            className={`h-full rounded-full ${progress.isFullyFunded ? "bg-success" : "bg-accent"}`}
+            className={`h-full rounded-full ${progress.isFullyFunded ? "bg-success" : "bg-accent-fill"}`}
             style={{ width: `${progress.percent}%` }}
           />
         </View>
 
         <View className="flex-row items-center justify-between">
-          <Text className="text-[11px] text-fg-muted">
+          <Text className="text-xs text-fg-muted">
             {isClosed ? "Closed" : `${progress.percent.toFixed(0)}%`}
           </Text>
           {/* A closed fund holds nothing, so "X to go" would read as though
               it still needed funding. Say what would actually happen. */}
           {isClosed ? (
-            <Text className="text-[11px] text-fg-subtle">
+            <Text className="text-xs text-fg-subtle">
               {balance.heldMinor > 0 ? `${money(balance.heldMinor)} returns if reopened` : "No money set aside"}
             </Text>
           ) : progress.isOverfunded ? (
-            <Text className="text-[11px] font-medium text-transfer">
+            <Text className="text-xs font-medium text-transfer">
               {money(progress.overMinor)} over target
             </Text>
           ) : progress.isFullyFunded ? (
             <View className="flex-row items-center gap-1">
               <Icon name="check-circle" size={12} color={colors.success} />
-              <Text className="text-[11px] font-medium text-success">Ready</Text>
+              <Text className="text-xs font-medium text-success">Ready</Text>
             </View>
           ) : (
-            <Text className="text-[11px] text-fg-muted">{money(progress.remainingMinor)} to go</Text>
+            <Text className="text-xs text-fg-muted">{money(progress.remainingMinor)} to go</Text>
           )}
         </View>
       </Pressable>

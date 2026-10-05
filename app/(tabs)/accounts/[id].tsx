@@ -355,7 +355,7 @@ export default function AccountDetailScreen() {
                 </View>
                 <View className="h-1.5 overflow-hidden rounded-full bg-surface-3">
                   <View
-                    className={`h-full ${overBudget ? "bg-danger" : "bg-accent"}`}
+                    className={`h-full ${overBudget ? "bg-danger" : "bg-accent-fill"}`}
                     style={{ width: `${Math.min(100, (totalOutMinor / account.budgetMonthlyMinor!) * 100)}%` }}
                   />
                 </View>

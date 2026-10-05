@@ -67,15 +67,15 @@ private const val TAG = "WidgetBridge"
 private const val BASE_CARD_WIDTH = 300f
 private const val BASE_CARD_HEIGHT = 184f
 
-val WIDGET_ACCENT_CYAN = Color(0xFF48E7F5)
+// V4 (spec.md §5.24) Octet blue — theme/palette.ts's dark tokens.
+val WIDGET_ACCENT = Color(0xFF5C8DFF)
 
-// Matches theme/palette.ts's dark success/danger/transfer tokens — the
-// same colors app/(tabs)/accounts/[id].tsx's Income/Expense/Transfer
-// buttons use (bg-success/bg-danger/bg-transfer, white text), not the
-// brand gradient stops.
-val WIDGET_INCOME = Color(0xFF2FE39B)
-val WIDGET_EXPENSE = Color(0xFFFF5C72)
-val WIDGET_TRANSFER = Color(0xFFFFC24B)
+// Matches theme/palette.ts's dark success/danger/transfer tokens. Pills
+// use them the way Account Detail's quick-add pills do: a soft tint of
+// the colour behind text in the colour itself.
+val WIDGET_INCOME = Color(0xFF7FC6A2)
+val WIDGET_EXPENSE = Color(0xFFE8909A)
+val WIDGET_TRANSFER = Color(0xFFB6ABD4)
 
 data class WidgetColors(
   val cardBg: Color,
@@ -96,12 +96,12 @@ private fun rgba(r: Int, g: Int, b: Int, alpha: Float): Color =
 private fun widgetColors(opacityPct: Int): WidgetColors {
   val alpha = opacityPct.coerceIn(0, 100) / 100f
   return WidgetColors(
-    cardBg = rgba(12, 17, 32, alpha),
-    border = Color(0xFF1F2432),
-    dividerStrong = Color(0xFF2E323F),
-    textPrimary = Color(0xFFF6F8FC),
-    textSecondary = Color(0xFF97A1BC),
-    textSubtle = Color(0xFF5C6584),
+    cardBg = rgba(31, 31, 31, alpha),
+    border = Color(0xFF2A2A2C),
+    dividerStrong = Color(0xFF343537),
+    textPrimary = Color(0xFFF2F2F3),
+    textSecondary = Color(0xFFA9A9AC),
+    textSubtle = Color(0xFF8E8E91),
   )
 }
 
@@ -131,7 +131,7 @@ private fun accountTypeIcon(type: String): Int = when (type) {
 // Anything unparseable falls back to the accent rather than throwing inside
 // the launcher's process.
 private fun parseAccountColor(hex: String): Color =
-  runCatching { Color(android.graphics.Color.parseColor(hex)) }.getOrDefault(WIDGET_ACCENT_CYAN)
+  runCatching { Color(android.graphics.Color.parseColor(hex)) }.getOrDefault(WIDGET_ACCENT)
 
 private fun currentMonthLabel(): String =
   SimpleDateFormat("MMMM yyyy", Locale("en", "IN")).format(Date())
@@ -499,7 +499,7 @@ class AccountsGlanceWidget : GlanceAppWidget() {
           // Net in − out, with an explicit "+" when non-negative, matching
           // the app's card exactly.
           (if (detail.netTransferMinor >= 0) "+" else "") + formatMoney(detail.netTransferMinor, detail.currency),
-          if (detail.netTransferMinor >= 0) WIDGET_ACCENT_CYAN else WIDGET_EXPENSE,
+          WIDGET_TRANSFER,
           colors,
           scale,
           GlanceModifier.defaultWeight(),
@@ -567,7 +567,7 @@ class AccountsGlanceWidget : GlanceAppWidget() {
               style = TextStyle(
                 fontSize = (14f * scale).sp,
                 fontWeight = if (index == selectedIndex) FontWeight.Bold else FontWeight.Normal,
-                color = ColorProvider(if (index == selectedIndex) WIDGET_ACCENT_CYAN else colors.textPrimary),
+                color = ColorProvider(if (index == selectedIndex) WIDGET_ACCENT else colors.textPrimary),
               ),
               modifier = GlanceModifier.defaultWeight(),
             )
@@ -635,7 +635,7 @@ class AccountsGlanceWidget : GlanceAppWidget() {
       modifier = modifier
         .height((36f * scale).dp)
         .cornerRadius((18f * scale).dp)
-        .background(accent)
+        .background(accent.copy(alpha = 0.18f))
         .clickable(actionStartActivity(Intent(Intent.ACTION_VIEW, Uri.parse(uri)))),
       contentAlignment = Alignment.Center,
     ) {
@@ -645,7 +645,7 @@ class AccountsGlanceWidget : GlanceAppWidget() {
         style = TextStyle(
           fontSize = (13f * scale).sp,
           fontWeight = FontWeight.Bold,
-          color = ColorProvider(Color.White),
+          color = ColorProvider(accent),
         ),
       )
     }

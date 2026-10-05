@@ -97,7 +97,7 @@ export function BottomNavBar({ state, descriptors, navigation }: BottomTabBarPro
         >
           <View
             style={{
-              backgroundColor: colors.accent,
+              backgroundColor: colors.accentFill,
               height: FAB_SIZE,
               width: FAB_SIZE,
               borderRadius: 9999,

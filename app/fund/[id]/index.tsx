@@ -161,7 +161,7 @@ export default function FundDetailScreen() {
 
           <View className="mt-3 h-2 overflow-hidden rounded-full bg-surface-3">
             <View
-              className={`h-full rounded-full ${progress.isFullyFunded ? "bg-success" : "bg-accent"}`}
+              className={`h-full rounded-full ${progress.isFullyFunded ? "bg-success" : "bg-accent-fill"}`}
               style={{ width: `${progress.percent}%` }}
             />
           </View>
@@ -213,7 +213,7 @@ export default function FundDetailScreen() {
           <View className="flex-row gap-3">
             <Pressable
               onPress={() => setSheetMode("add")}
-              className="flex-1 items-center rounded-full bg-accent py-3"
+              className="flex-1 items-center rounded-full bg-accent-fill py-3"
             >
               <Text className="text-base font-semibold text-on-accent">Add money</Text>
             </Pressable>
@@ -266,7 +266,7 @@ export default function FundDetailScreen() {
                         : entry.note?.trim() ||
                           (entry.amountMinor >= 0 ? "Added" : "Released")}
                     </Text>
-                    <Text className="text-[11px] text-fg-subtle">
+                    <Text className="text-xs text-fg-subtle">
                       {entry.date.toLocaleDateString(undefined, {
                         day: "numeric",
                         month: "short",
@@ -316,7 +316,7 @@ export default function FundDetailScreen() {
               ))}
             </View>
           )}
-          <Text className="mt-3 text-[11px] text-fg-subtle">
+          <Text className="mt-3 text-xs text-fg-subtle">
             Spending shown here is the real transaction — edit or delete it from the transaction
             itself and this fund updates to match.
           </Text>

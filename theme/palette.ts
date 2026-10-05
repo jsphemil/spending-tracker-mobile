@@ -8,7 +8,7 @@ import { useSettings } from "../db/queries/settings";
 // global.css carries the same values as a pre-settings fallback — keep the
 // two in sync by hand.
 //
-// V4 (spec.md §5.24): calm navy (light) / soft sky blue (dark), replacing the
+// V4 (spec.md §5.24): Octet blue — vivid #0D51FB on soft neutrals, replacing the
 // neon-cyan dark / saturated-purple light pair. Every text-bearing role
 // below clears WCAG AA (4.5:1) against bg, surface and surface2 in its
 // own theme — re-check if you change a value.
@@ -22,10 +22,13 @@ export interface ThemeColors {
   fg: string;
   fgMuted: string;
   fgSubtle: string;
-  // Primary: actions, selected navigation, key interactive elements.
+  // Primary as text and icons: links, selected navigation, key controls.
   accent: string;
   accentStrong: string;
-  // Text/icons drawn on a solid accent fill.
+  // Primary as a solid fill (buttons, the +, progress). Same as `accent` in
+  // Light; in Dark the vivid blue only works as a fill.
+  accentFill: string;
+  // Text/icons drawn on accentFill.
   onAccent: string;
   // Financial semantics: income/gains, expenses/debt/destructive.
   success: string;
@@ -48,59 +51,62 @@ export interface ThemeColors {
 }
 
 export const palette: Record<"light" | "dark", ThemeColors> = {
-  // Soft cool-neutral page, white surfaces, deep navy accent.
+  // Octet blue (chosen 2026-10-05): soft grey page, white surfaces, vivid
+  // #0D51FB as both the text accent and the fill.
   light: {
-    bg: "#f6f6f8",
+    bg: "#f4f4f5",
     surface: "#ffffff",
-    surface2: "#efeff3",
-    surface3: "#e4e4ea",
-    border: "#e2e2e8",
-    borderStrong: "#c9c9d3",
-    fg: "#16171d",
-    fgMuted: "#555867",
-    fgSubtle: "#676a78",
-    accent: "#203d6e",
-    accentStrong: "#172e55",
+    surface2: "#ededee",
+    surface3: "#e3e3e5",
+    border: "#e3e3e5",
+    borderStrong: "#c9c9cc",
+    fg: "#1f1f1f",
+    fgMuted: "#656567",
+    fgSubtle: "#656567",
+    accent: "#0d51fb",
+    accentStrong: "#103693",
+    accentFill: "#0d51fb",
     onAccent: "#ffffff",
     success: "#2b7a57",
     danger: "#b03f4c",
     warning: "#94600f",
     transfer: "#6a5f88",
-    chart1: "#203d6e",
+    chart1: "#0d51fb",
     chart2: "#b07a2a",
     chart3: "#3f8a8c",
     glassFill: "#ffffff",
-    glassFillStrong: "rgba(22, 23, 29, 0.05)",
-    glassFillPress: "rgba(22, 23, 29, 0.08)",
-    glassBorder: "rgba(22, 23, 29, 0.08)",
-    glassBorderStrong: "rgba(22, 23, 29, 0.14)",
+    glassFillStrong: "rgba(31, 31, 31, 0.05)",
+    glassFillPress: "rgba(31, 31, 31, 0.08)",
+    glassBorder: "rgba(31, 31, 31, 0.08)",
+    glassBorderStrong: "rgba(31, 31, 31, 0.14)",
   },
-  // Deep neutral (not black), slightly lifted surfaces, off-white text and
-  // desaturated accents — designed for checking finances at night, not a
-  // darkened copy of light.
+  // Black Metal page, Umbra surfaces, Jet Black dividers. #0D51FB is a fill
+  // only here (white on it is 5.9:1); as text on near-black it is just
+  // 3.5:1, so blue text and icons use the lighter #5C8DFF (6.5:1).
   dark: {
-    bg: "#121318",
-    surface: "#1a1b22",
-    surface2: "#22232b",
-    surface3: "#2b2c35",
-    border: "#2a2b33",
-    borderStrong: "#3a3b45",
-    fg: "#e7e7ee",
-    fgMuted: "#a4a6b3",
-    fgSubtle: "#8b8d9b",
-    accent: "#a3c4f2",
-    accentStrong: "#bfd6f6",
-    onAccent: "#0e1a30",
+    bg: "#050505",
+    surface: "#1f1f1f",
+    surface2: "#2a2a2c",
+    surface3: "#343537",
+    border: "#2a2a2c",
+    borderStrong: "#343537",
+    fg: "#f2f2f3",
+    fgMuted: "#a9a9ac",
+    fgSubtle: "#8e8e91",
+    accent: "#5c8dff",
+    accentStrong: "#8aacff",
+    accentFill: "#0d51fb",
+    onAccent: "#ffffff",
     success: "#7fc6a2",
     danger: "#e8909a",
     warning: "#dbb46c",
     transfer: "#b6abd4",
-    chart1: "#a3c4f2",
+    chart1: "#5c8dff",
     chart2: "#dbb46c",
     chart3: "#7fbfc0",
-    glassFill: "rgba(255, 255, 255, 0.04)",
-    glassFillStrong: "rgba(255, 255, 255, 0.07)",
-    glassFillPress: "rgba(255, 255, 255, 0.10)",
+    glassFill: "rgba(255, 255, 255, 0.05)",
+    glassFillStrong: "rgba(255, 255, 255, 0.08)",
+    glassFillPress: "rgba(255, 255, 255, 0.11)",
     glassBorder: "rgba(255, 255, 255, 0.08)",
     glassBorderStrong: "rgba(255, 255, 255, 0.14)",
   },
@@ -112,14 +118,14 @@ export const palette: Record<"light" | "dark", ThemeColors> = {
 type SoftKey = "accentSoft" | "successSoft" | "dangerSoft" | "warningSoft" | "transferSoft";
 const SOFT: Record<"light" | "dark", Record<SoftKey, string>> = {
   light: {
-    accentSoft: "rgba(32, 61, 110, 0.08)",
+    accentSoft: "rgba(13, 81, 251, 0.08)",
     successSoft: "rgba(43, 122, 87, 0.10)",
     dangerSoft: "rgba(176, 63, 76, 0.09)",
     warningSoft: "rgba(148, 96, 15, 0.10)",
     transferSoft: "rgba(106, 95, 136, 0.10)",
   },
   dark: {
-    accentSoft: "rgba(163, 196, 242, 0.14)",
+    accentSoft: "rgba(92, 141, 255, 0.14)",
     successSoft: "rgba(127, 198, 162, 0.13)",
     dangerSoft: "rgba(232, 144, 154, 0.13)",
     warningSoft: "rgba(219, 180, 108, 0.13)",
@@ -157,6 +163,7 @@ export function cssVars(scheme: "light" | "dark"): Record<string, string> {
     "--accent": hexToRgbTriplet(p.accent),
     "--accent-strong": hexToRgbTriplet(p.accentStrong),
     "--accent-soft": s.accentSoft,
+    "--accent-fill": hexToRgbTriplet(p.accentFill),
     "--on-accent": hexToRgbTriplet(p.onAccent),
     "--success": hexToRgbTriplet(p.success),
     "--success-soft": s.successSoft,

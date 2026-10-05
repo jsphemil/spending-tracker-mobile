@@ -174,7 +174,7 @@ export default function FundsListScreen() {
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="New fund"
-          className="absolute h-14 w-14 items-center justify-center rounded-full bg-accent"
+          className="absolute h-14 w-14 items-center justify-center rounded-full bg-accent-fill"
           style={{ bottom: insets.bottom + 20, right: 24 }}
         >
           <Icon name="plus" size={26} color={colors.onAccent} strokeWidth={2.5} />
