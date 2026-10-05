@@ -123,6 +123,7 @@ export default function RootLayout() {
             <Stack.Screen name="commitments" />
             <Stack.Screen name="categories" />
             <Stack.Screen name="calendar" />
+            <Stack.Screen name="net-worth" />
             {/* Settings owns its own Stack (app/settings/_layout.tsx) with
                 normal in-navigator headers — no ScreenHeader/FAB there. */}
             <Stack.Screen name="settings" />

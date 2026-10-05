@@ -1,46 +1,36 @@
-import { Fragment, useEffect, useMemo, useState, type ReactNode } from "react";
-import { Link } from "expo-router";
+import { Fragment, useEffect, useMemo, type ReactNode } from "react";
+import { Link, type Href } from "expo-router";
 import { Pressable, ScrollView, Text, View } from "react-native";
-import { Icon } from "../../components/ui/Icon";
 
 import { FundRow } from "../../components/FundRow";
 import { HeaderAction, ScreenHeader } from "../../components/ScreenHeader";
 import { FirstVisitHint } from "../../components/FirstVisitHint";
+import { UnconvertedCurrenciesNote } from "../../components/UnconvertedCurrenciesNote";
 import { WhatsNewSheet } from "../../components/WhatsNewSheet";
+import { Icon } from "../../components/ui/Icon";
 import { shouldShowWhatsNew } from "../../constants/changelog";
 import { parseDashboardLayout, type CardId } from "../../constants/dashboardCards";
 import { updateSettings } from "../../db/actions/settings";
-import { UnconvertedCurrenciesNote } from "../../components/UnconvertedCurrenciesNote";
 import { db } from "../../db/client";
-import { useAccounts } from "../../db/queries/accounts";
 import { useCategories } from "../../db/queries/categories";
-import { useFundAllocationsSubscription, useFunds } from "../../db/queries/funds";
+import { useFunds } from "../../db/queries/funds";
 import { useSettings } from "../../db/queries/settings";
 import { useFilteredTransactions } from "../../db/queries/transactions";
-import { getAccountBalanceMinor, getPeriodTotals } from "../../services/balance";
-import { useBaseConverter } from "../../hooks/useBaseConverter";
+import { useMonthPosition } from "../../hooks/useMonthPosition";
 import { toggleNetWorthHidden, useNetWorthHidden } from "../../hooks/useNetWorthHidden";
-import { formatMoney } from "../../services/format";
-import {
-  computeFundProgress,
-  emptyFundBalance,
-  getFundBalances,
-  getFundLinkedCurrencies,
-  sumEarmarkedMinor,
-} from "../../services/funds";
-import {
-  currentMonthPeriod,
-  monthLabel,
-  monthRange,
-  shiftMonth,
-} from "../../services/period";
-import { ensureMaterialized } from "../../services/recurrence";
-import { TAB_BAR_CLEARANCE } from "../../theme/tabBar";
-import { useThemeColors } from "../../theme/palette";
 import { appVersionLabel } from "../../services/feedbackLink";
+import { formatMoney } from "../../services/format";
+import { computeFundProgress, emptyFundBalance } from "../../services/funds";
+import { currentMonthPeriod, monthRange, shiftMonth, type MonthPeriod } from "../../services/period";
+import { ensureMaterialized } from "../../services/recurrence";
+import { useThemeColors, type ThemeColors } from "../../theme/palette";
+import { TAB_BAR_CLEARANCE } from "../../theme/tabBar";
 
-const ASSET_TYPES = ["savings", "wallet", "deposit", "investment"] as const;
 const COMMITMENT_LOOKAHEAD_DAYS = 7;
+// The most fund-relevant window: near enough to act on, far enough to
+// still be able to. Anything further out isn't "attention" yet.
+const FUND_DUE_SOON_DAYS = 30;
+const DASHBOARD_FUND_LIMIT = 3;
 
 function greeting(now: Date): string {
   const hour = now.getHours();
@@ -49,125 +39,45 @@ function greeting(now: Date): string {
   return "Good evening";
 }
 
-// The most fund-relevant window: near enough to act on, far enough to
-// still be able to. Anything further out isn't "attention" yet.
-const FUND_DUE_SOON_DAYS = 30;
-const DASHBOARD_FUND_LIMIT = 3;
-
-interface Shortcut {
-  href: "/commitments" | "/categories" | "/fund" | "/tag" | "/calendar" | "/settings";
-  icon: string;
-  label: string;
+function monthName({ year, month }: MonthPeriod): string {
+  return new Date(year, month, 1).toLocaleDateString(undefined, { month: "long" });
 }
 
-// Only destinations without their own bottom tab (spec.md §5.19 "Dashboard
-// navigation shortcuts") — never Accounts/Transactions/Analytics, never
-// Profile (folded into Settings).
-const SHORTCUTS: Shortcut[] = [
-  { href: "/commitments", icon: "calendar-sync-outline", label: "Commitments" },
-  { href: "/categories", icon: "shape-outline", label: "Categories" },
-  { href: "/fund", icon: "piggy-bank", label: "Funds" },
-  { href: "/tag", icon: "tag-outline", label: "Tags" },
-  { href: "/calendar", icon: "calendar-month-outline", label: "Calendar" },
-  { href: "/settings", icon: "settings-outline", label: "Settings" },
-];
+function plural(n: number, one: string, many: string): string {
+  return `${n} ${n === 1 ? one : many}`;
+}
 
-// Dashboard V2 (spec.md §5.19): Position → Performance → Action. Reuses
-// every calculation from the old Dashboard/Goals/Commitments screens as-is
-// — no new financial formulas, just a different composition of them.
+// Dashboard V4 (spec.md §5.24): "at a glance first, details when I ask".
+// Four questions, one section each — where do I stand (net worth and how
+// it moved), how is this month going, what am I saving for, and what needs
+// attention. Everything deeper is one tap away: net worth → its detail
+// screen, the month → Analytics. Always the current month (no month
+// arrows); the figures come from useMonthPosition, unchanged from V2.
 export default function DashboardScreen() {
   const colors = useThemeColors();
   const { settings } = useSettings();
   const baseCurrency = settings?.baseCurrency ?? "INR";
-  const { data: accounts } = useAccounts();
   const { data: categories } = useCategories();
   const { data: funds } = useFunds();
 
+  const period = useMemo(() => currentMonthPeriod(), []);
+  const {
+    accounts,
+    toBaseMinor,
+    unconvertedCurrencies,
+    netWorthMinor,
+    netWorthChangeMinor,
+    fundBalances,
+    earmarkedMinor,
+    incomeMinor,
+    expenseMinor,
+    lastMonthExpenseMinor,
+  } = useMonthPosition(period);
 
-  // Performance is the only month-scoped section — Position (net worth /
-  // assets / debt) and Action are always "as of right now," same
-  // today-anchored convention Goals and the debt-payoff projection already
-  // use, so paging this month-nav never makes them lie.
-  const [period, setPeriod] = useState(currentMonthPeriod());
-  const range = useMemo(() => monthRange(period), [period]);
-  useEffect(() => {
-    ensureMaterialized(db, { through: range.end });
-  }, [range.end]);
-
-  // Fund-linked expenses are recorded in their account's currency, so those
-  // currencies have to reach the converter too — otherwise a fund spent
-  // from a foreign account would silently value that spending at 0.
-  const linkedFundCurrencies = getFundLinkedCurrencies(db);
-  const { toBaseMinor, unconvertedCurrencies } = useBaseConverter([
-    ...(accounts ?? []).map((a) => a.currency),
-    ...linkedFundCurrencies,
-  ]);
-
-  // ---- POSITION (as of the viewed month) ----
-  // `range.end` is required, not optional polish: getAccountBalanceMinor
-  // with no cutoff sums an account's *entire* history, which includes
-  // already-materialized future-dated recurring transactions (next month's
-  // salary, etc.) and silently overstates net worth. It also has to be
-  // range.end rather than a "now" timestamp so this figure keeps tracking
-  // the month navigation, and so it agrees with the Accounts and Analytics
-  // screens, which both already pass range.end.
-  const accountBalanceAsOf = new Map(
-    (accounts ?? []).map((a) => [a.id, getAccountBalanceMinor(db, a.id, range.end)]),
-  );
-  let netWorthMinor = 0;
-  let assetsMinor = 0;
-  let debtMinor = 0;
-  for (const account of accounts ?? []) {
-    const baseBalance = toBaseMinor(accountBalanceAsOf.get(account.id) ?? 0, account.currency);
-    netWorthMinor += baseBalance;
-    if (account.type === "credit_card") {
-      if (baseBalance < 0) debtMinor += -baseBalance;
-    } else if ((ASSET_TYPES as readonly string[]).includes(account.type) && baseBalance > 0) {
-      assetsMinor += baseBalance;
-    }
-  }
-
-  // Funds (spec.md §5.21). Subscribed for the repaint, not the rows:
-  // getFundBalances is a synchronous read, and useFunds() alone only
-  // repaints when a fund row itself changes — so adding or releasing money
-  // left these figures stale until something else forced a render.
-  useFundAllocationsSubscription();
-  // Same range.end cutoff as net worth above, so the
-  // three figures stay arithmetically consistent as the month-nav moves —
-  // a today-anchored Earmarked against a range.end net worth would make the
-  // subtraction on screen visibly wrong.
-  const fundBalances = getFundBalances(db, toBaseMinor, range.end);
-  const earmarkedMinor = sumEarmarkedMinor(fundBalances);
-  // Not clamped at zero: earmarking more than you have is real information,
-  // and it gets its own attention row below.
-  const unallocatedMinor = netWorthMinor - earmarkedMinor;
   const activeFunds = (funds ?? []).filter((f) => f.status === "active");
   const dashboardFunds = activeFunds.slice(0, DASHBOARD_FUND_LIMIT);
 
-  // ---- PERFORMANCE (viewed month) ----
-  // Subscribed for its re-render, not its rows: the income/expense figures
-  // below come from getPeriodTotals, a plain synchronous read that isn't
-  // reactive on its own. The other live queries here are scoped to the
-  // *current* month, so without this one an edit made while browsing a past
-  // month wouldn't repaint and those totals would sit stale. Deliberately
-  // called for the subscription alone — don't "clean up" the bare call.
-  useFilteredTransactions({ range });
-  let incomeMinor = 0;
-  let expenseMinor = 0;
-  let carryForwardMinor = 0;
-  for (const account of accounts ?? []) {
-    const totals = getPeriodTotals(db, { accountId: account.id, ...range });
-    incomeMinor += toBaseMinor(totals.incomeMinor, account.currency);
-    expenseMinor += toBaseMinor(totals.expenseMinor, account.currency);
-    carryForwardMinor += toBaseMinor(getAccountBalanceMinor(db, account.id, range.start), account.currency);
-  }
-  const availableThisMonthMinor = carryForwardMinor + incomeMinor - expenseMinor;
-
-  // Wealth history lived here behind a toggle, duplicating the Net worth
-  // trend chart that Analytics shows unconditionally. Removed from the
-  // Dashboard rather than kept in two places.
-
-  // ---- ACTION (always "right now," independent of the Performance month-nav) ----
+  // ---- ATTENTION (always "right now") ----
   const currentRange = useMemo(() => monthRange(currentMonthPeriod()), []);
   const { data: currentMonthTx } = useFilteredTransactions({ range: currentRange });
 
@@ -196,27 +106,21 @@ export default function DashboardScreen() {
   const { data: upcomingTx } = useFilteredTransactions({ range: { start: today, end: lookaheadEnd } });
   const upcomingCommitments = useMemo(() => {
     const seen = new Set<number>();
-    const rows: { id: number; label: string; detail: string; date: Date }[] = [];
+    const rows: { id: number; label: string; amount: string; date: Date }[] = [];
     for (const t of (upcomingTx ?? []).slice().sort((a, b) => a.date.getTime() - b.date.getTime())) {
       if (t.recurringRuleId == null || seen.has(t.recurringRuleId)) continue;
       if (t.type !== "expense" && t.type !== "transfer") continue;
       seen.add(t.recurringRuleId);
       const account = accounts?.find((a) => a.id === t.accountId);
-      const toAccount = accounts?.find((a) => a.id === t.toAccountId);
       const category = categories?.find((c) => c.id === t.categoryId);
-      // The second line carries what the first can't: how much, out of which
-      // account, and any note — enough to recognise the charge without
-      // opening it.
-      const where =
-        t.type === "transfer"
-          ? `${account?.name ?? "?"} → ${toAccount?.name ?? "?"}`
-          : (account?.name ?? "?");
       rows.push({
         id: t.id,
-        label: t.type === "transfer" ? `Transfer from ${account?.name ?? "?"}` : (category?.name ?? "Uncategorized"),
-        detail: [formatMoney(t.amountMinor, account?.currency ?? baseCurrency), where, t.description]
-          .filter(Boolean)
-          .join(" · "),
+        // A note ("Netflix") identifies a charge better than its category
+        // ("Subscriptions"), so it wins when there is one.
+        label:
+          t.description ||
+          (t.type === "transfer" ? `Transfer from ${account?.name ?? "?"}` : (category?.name ?? "Uncategorized")),
+        amount: formatMoney(t.amountMinor, account?.currency ?? baseCurrency),
         date: t.date,
       });
     }
@@ -251,124 +155,145 @@ export default function DashboardScreen() {
 
   const overEarmarked = earmarkedMinor > netWorthMinor;
 
-  const hasAttentionItems =
-    overBudgetCategories.length > 0 ||
-    upcomingCommitments.length > 0 ||
-    fundsDueSoon.length > 0 ||
-    overEarmarked;
+  const shortDate = (d: Date) => d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+
+  // One summary row per kind, not one row per item (§5.24 "Needs
+  // attention"): the count says how much, the second line names the most
+  // pressing one, and the destination screen has the rest.
+  const attentionRows: AttentionRowProps[] = [];
+  if (overBudgetCategories.length > 0) {
+    attentionRows.push({
+      icon: "shape-outline",
+      tone: "danger",
+      text: `${plural(overBudgetCategories.length, "category", "categories")} over budget`,
+      detail: overBudgetCategories.map((c) => c.name).join(", "),
+      href: "/categories",
+    });
+  }
+  if (upcomingCommitments.length > 0) {
+    const next = upcomingCommitments[0];
+    attentionRows.push({
+      icon: "calendar-sync-outline",
+      tone: "warning",
+      text: `${plural(upcomingCommitments.length, "commitment", "commitments")} due this week`,
+      detail: `Next: ${next.label}, ${next.amount} on ${shortDate(next.date)}`,
+      href: "/commitments",
+    });
+  }
+  if (fundsDueSoon.length > 0) {
+    const { fund, progress } = fundsDueSoon[0];
+    attentionRows.push({
+      icon: "piggy-bank",
+      tone: "warning",
+      text: `${plural(fundsDueSoon.length, "fund needs", "funds need")} money soon`,
+      detail: `${fund.name} is ${formatMoney(progress.remainingMinor, baseCurrency)} short, needed by ${shortDate(fund.targetDate!)}`,
+      href: "/fund",
+    });
+  }
+  if (overEarmarked) {
+    attentionRows.push({
+      icon: "piggy-bank",
+      tone: "danger",
+      text: "You've earmarked more than your net worth",
+      href: "/fund",
+    });
+  }
 
   const displayName = settings?.displayName?.trim();
-  const card = "rounded-card border border-glass-border bg-glass p-4";
-  const cardTitle = "mb-3 text-sm font-display text-fg";
 
   // Dashboard privacy toggle (spec.md §5.19) — Dashboard is the first
-  // screen shown on app open, so Net worth/Assets/Debt start masked and a
-  // reveal lasts only for this session. See hooks/useNetWorthHidden.ts for
-  // why this isn't a persisted setting.
+  // screen shown on app open, so net worth starts masked and a reveal
+  // lasts only for this session. See hooks/useNetWorthHidden.ts for why
+  // this isn't a persisted setting.
   const netWorthHidden = useNetWorthHidden();
-  const netWorthDisplay = netWorthHidden ? "••••••" : formatMoney(netWorthMinor, baseCurrency);
-  const assetsDisplay = netWorthHidden ? "••••" : formatMoney(assetsMinor, baseCurrency);
-  const debtDisplay = netWorthHidden ? "••••" : debtMinor > 0 ? formatMoney(debtMinor, baseCurrency) : "—";
-  const earmarkedDisplay = netWorthHidden ? "••••" : formatMoney(earmarkedMinor, baseCurrency);
-  const unallocatedDisplay = netWorthHidden ? "••••" : formatMoney(unallocatedMinor, baseCurrency);
 
-  // "What's new" after an update (spec.md §5.22). Derived, not state: the
-  // sheet is open exactly while lastSeenVersion lags the installed version,
-  // and dismissing it writes that column — so a fresh install (onboarding
-  // writes it) and an already-acknowledged version never see it.
   const { appVersion } = appVersionLabel();
   const layout = parseDashboardLayout(settings?.dashboardLayout);
   const whatsNewVisible = settings ? shouldShowWhatsNew(settings, appVersion) : false;
 
-  // Dashboard customisation (spec.md §5.22): each card is a value in this
-  // map and the saved layout decides order and visibility. Every
-  // calculation above is untouched — this is a render-order change only.
-  const cards: Record<CardId, ReactNode> = {
+  const lastMonthName = monthName(shiftMonth(period, -1));
+  const spendChangePercent =
+    lastMonthExpenseMinor > 0 ? Math.round(((expenseMinor - lastMonthExpenseMinor) / lastMonthExpenseMinor) * 100) : null;
+
+  // Dashboard customisation (spec.md §5.22): each section is a value in
+  // this map and the saved layout decides order and visibility.
+  const sections: Record<CardId, ReactNode> = {
     netWorth: (
-      <View className={card}>
-        <View className="mb-1 flex-row items-center justify-between">
-          <Text className="text-xs font-semibold uppercase tracking-wide text-fg-muted">Net worth</Text>
-          <Pressable
-            onPress={toggleNetWorthHidden}
-            hitSlop={8}
-            accessibilityRole="button"
-            accessibilityLabel={netWorthHidden ? "Show net worth" : "Hide net worth"}
-          >
-            <Icon name={netWorthHidden ? "eye-off" : "eye"} size={18} color={colors.fgMuted} />
-          </Pressable>
-        </View>
-        <Text className="font-data text-4xl font-bold tabular-nums text-fg">
-          {netWorthDisplay}
-        </Text>
-        {!netWorthHidden && netWorthMinor < 0 && (
-          <Text className="mt-1 text-xs font-medium text-danger">
-            Overdrawn by {formatMoney(Math.abs(netWorthMinor), baseCurrency)}
+      <Link href="/net-worth" asChild>
+        <Pressable accessibilityRole="button" accessibilityHint="Opens net worth details">
+          <View className="flex-row items-center justify-between">
+            <View className="flex-row items-center gap-1">
+              <Text className="text-sm text-fg-muted">Net worth</Text>
+              <Icon name="chevron-right" size={14} color={colors.fgSubtle} />
+            </View>
+            <Pressable
+              onPress={toggleNetWorthHidden}
+              hitSlop={12}
+              accessibilityRole="button"
+              accessibilityLabel={netWorthHidden ? "Show net worth" : "Hide net worth"}
+              className="h-11 w-11 items-center justify-center"
+            >
+              <Icon name={netWorthHidden ? "eye-off" : "eye"} size={18} color={colors.fgMuted} />
+            </Pressable>
+          </View>
+          <Text className="font-data text-4xl font-bold tabular-nums text-fg">
+            {netWorthHidden ? "••••••" : formatMoney(netWorthMinor, baseCurrency)}
           </Text>
-        )}
-        <View className="mt-4 flex-row gap-3">
-          <View className="flex-1 rounded-card bg-surface-2 p-3">
-            <Text className="text-[11px] text-fg-muted">Assets</Text>
-            <Text className="font-data mt-1 text-base font-semibold tabular-nums text-success">
-              {assetsDisplay}
+          {!netWorthHidden && <NetWorthChange changeMinor={netWorthChangeMinor} currency={baseCurrency} />}
+          {!netWorthHidden && netWorthMinor < 0 && (
+            <Text className="mt-1 text-xs font-medium text-danger">
+              Overdrawn by {formatMoney(Math.abs(netWorthMinor), baseCurrency)}
             </Text>
-          </View>
-          <View className="flex-1 rounded-card bg-surface-2 p-3">
-            <Text className="text-[11px] text-fg-muted">Debt</Text>
-            <Text className="font-data mt-1 text-base font-semibold tabular-nums text-fg">
-              {debtDisplay}
-            </Text>
-          </View>
-        </View>
-        {/* Earmarked + Unallocated only earn their space once there's
-            something earmarked — an all-zero row on a profile with no
-            funds is noise. */}
-        {earmarkedMinor !== 0 && (
-          <View className="mt-3 flex-row gap-3">
-            <View className="flex-1 rounded-card bg-surface-2 p-3">
-              <Text className="text-[11px] text-fg-muted">Earmarked</Text>
-              <Text className="font-data mt-1 text-base font-semibold tabular-nums text-accent">
-                {earmarkedDisplay}
-              </Text>
-            </View>
-            <View className="flex-1 rounded-card bg-surface-2 p-3">
-              <Text className="text-[11px] text-fg-muted">Unallocated</Text>
-              <Text className="font-data mt-1 text-base font-semibold tabular-nums text-fg">
-                {unallocatedDisplay}
-              </Text>
-            </View>
-          </View>
-        )}
-        {!netWorthHidden && <UnconvertedCurrenciesNote currencies={unconvertedCurrencies} subject="Net worth" />}
-      </View>
-    ),
-    // Default order puts this with the wealth story, before the month-scoped
-    // Performance card — earmarking is a position, not a monthly result.
-    funds: (
-      <View className={card}>
-        <View className="mb-3 flex-row items-center justify-between">
-          <Text className="text-sm font-display text-fg">Funds</Text>
-          {activeFunds.length > 0 && (
-            <Link href="/fund" asChild>
-              <Pressable hitSlop={8}>
-                <Text className="text-xs font-medium text-accent">View all</Text>
-              </Pressable>
-            </Link>
           )}
-        </View>
+          {!netWorthHidden && <UnconvertedCurrenciesNote currencies={unconvertedCurrencies} subject="Net worth" />}
+        </Pressable>
+      </Link>
+    ),
+    month: (
+      <Link href="/analytics" asChild>
+        <Pressable accessibilityRole="button" accessibilityHint="Opens Analytics">
+          <SectionTitle title={monthName(period)} />
+          <View className="flex-row gap-4">
+            <View className="flex-1">
+              <Text className="text-sm text-fg-muted">Income</Text>
+              <Text className="font-data mt-0.5 text-xl font-semibold tabular-nums text-fg">
+                {formatMoney(incomeMinor, baseCurrency)}
+              </Text>
+            </View>
+            <View className="flex-1">
+              <Text className="text-sm text-fg-muted">Spending</Text>
+              <Text className="font-data mt-0.5 text-xl font-semibold tabular-nums text-fg">
+                {formatMoney(expenseMinor, baseCurrency)}
+              </Text>
+              {spendChangePercent !== null && (
+                <Text className="mt-0.5 text-xs text-fg-muted">
+                  {spendChangePercent === 0
+                    ? `Same as ${lastMonthName}`
+                    : `${spendChangePercent > 0 ? "↑" : "↓"} ${Math.abs(spendChangePercent)}% vs ${lastMonthName}`}
+                </Text>
+              )}
+            </View>
+          </View>
+        </Pressable>
+      </Link>
+    ),
+    funds: (
+      <View>
+        <SectionTitle title="Funds" link={(funds ?? []).length > 0 ? { label: "See all", href: "/fund" } : undefined} />
         {activeFunds.length === 0 ? (
-          <View className="gap-3">
+          <View className="gap-2">
             <Text className="text-sm text-fg-muted">
-              Set money aside for something specific — a laptop, a trip, next year&rsquo;s
-              insurance — without moving it out of your accounts.
+              Set money aside for something specific — a laptop, a trip, next year&rsquo;s insurance — without
+              moving it out of your accounts.
             </Text>
             <Link href="/fund/new" asChild>
-              <Pressable className="items-center rounded-full border border-glass-border bg-glass py-2.5">
+              <Pressable accessibilityRole="button" hitSlop={8} className="self-start py-2">
                 <Text className="text-sm font-semibold text-accent">Create a fund</Text>
               </Pressable>
             </Link>
           </View>
         ) : (
-          <View className="gap-4">
+          <View className="gap-5">
             {dashboardFunds.map((fund) => (
               <FundRow
                 key={fund.id}
@@ -382,110 +307,27 @@ export default function DashboardScreen() {
                 hidden={netWorthHidden}
               />
             ))}
-            {activeFunds.length > dashboardFunds.length && (
-              <Link href="/fund" asChild>
-                <Pressable>
-                  <Text className="text-xs font-medium text-accent">
-                    +{activeFunds.length - dashboardFunds.length} more
-                  </Text>
-                </Pressable>
-              </Link>
-            )}
           </View>
         )}
-      </View>
-    ),
-    month: (
-      <View className={card}>
-        <View className="mb-3 flex-row items-center justify-between">
-          <Pressable onPress={() => setPeriod((p) => shiftMonth(p, -1))} className="p-2" hitSlop={8}>
-            <Icon name="chevron-left" size={22} color={colors.fg} />
-          </Pressable>
-          <Text className={cardTitle}>{monthLabel(period)}</Text>
-          <Pressable onPress={() => setPeriod((p) => shiftMonth(p, 1))} className="p-2" hitSlop={8}>
-            <Icon name="chevron-right" size={22} color={colors.fg} />
-          </Pressable>
-        </View>
-        <View className="flex-row gap-3">
-          <View className="flex-1 rounded-card bg-surface-2 p-3.5">
-            <Text className="text-[11px] text-fg-muted">Actual income</Text>
-            <Text className="font-data mt-1.5 text-lg font-semibold tabular-nums text-success">
-              +{formatMoney(incomeMinor, baseCurrency)}
-            </Text>
-          </View>
-          <View className="flex-1 rounded-card bg-surface-2 p-3.5">
-            <Text className="text-[11px] text-fg-muted">Actual spending</Text>
-            <Text className="font-data mt-1.5 text-lg font-semibold tabular-nums text-danger">
-              −{formatMoney(expenseMinor, baseCurrency)}
-            </Text>
-          </View>
-        </View>
-        <Text className="mt-3 text-xs text-fg-muted">
-          {formatMoney(availableThisMonthMinor, baseCurrency)} available this month (carry forward
-          + income − spending, transfers not counted as spending)
-        </Text>
       </View>
     ),
     attention: (
-      <View className={card}>
-        <Text className={cardTitle}>What needs my attention</Text>
-        {!hasAttentionItems ? (
-          <Text className="text-sm text-fg-muted">You&rsquo;re all caught up.</Text>
+      <View>
+        <SectionTitle title="Needs attention" />
+        {attentionRows.length === 0 ? (
+          <Text className="text-sm text-fg-muted">Nothing right now — you&rsquo;re all caught up.</Text>
         ) : (
-          <View className="gap-3">
-            {overBudgetCategories.map((c) => (
-              <AttentionRow
-                key={`budget-${c.id}`}
-                icon="shape-outline"
-                tone="danger"
-                text={`${c.name} is ${formatMoney(c.spentMinor - c.monthlyBudgetMinor!, baseCurrency)} over its ${formatMoney(c.monthlyBudgetMinor!, baseCurrency)}/mo budget`}
-                href="/categories"
-              />
+          <View className="gap-2">
+            {attentionRows.map((row) => (
+              <AttentionRow key={row.text} {...row} />
             ))}
-            {upcomingCommitments.slice(0, 3).map((row) => (
-              <AttentionRow
-                key={`commitment-${row.id}`}
-                icon="calendar-sync-outline"
-                tone="warning"
-                text={`${row.label} due ${row.date.toLocaleDateString(undefined, { month: "short", day: "numeric" })}`}
-                detail={row.detail}
-                href="/commitments"
-              />
-            ))}
-            {fundsDueSoon.map(({ fund, progress }) => (
-              <AttentionRow
-                key={`fund-${fund.id}`}
-                icon={fund.icon}
-                tone="warning"
-                text={`${fund.name} is ${formatMoney(progress.remainingMinor, baseCurrency)} short, needed by ${fund.targetDate!.toLocaleDateString(undefined, { month: "short", day: "numeric" })}`}
-                href="/fund"
-              />
-            ))}
-            {overEarmarked && (
-              <AttentionRow
-                icon="piggy-bank"
-                tone="danger"
-                text="You've earmarked more than your net worth"
-                href="/fund"
-              />
-            )}
           </View>
         )}
       </View>
     ),
-    shortcuts: (
-      <View className="flex-row flex-wrap gap-3">
-        {SHORTCUTS.filter((s) => layout.shortcuts.includes(s.href)).map((s) => (
-          <Link key={s.href} href={s.href} asChild>
-            <Pressable className="min-w-[30%] flex-1 items-center gap-2 rounded-card border border-glass-border bg-glass py-4">
-              <Icon name={s.icon} size={20} color={colors.accent} />
-              <Text className="text-xs font-medium text-fg">{s.label}</Text>
-            </Pressable>
-          </Link>
-        ))}
-      </View>
-    ),
   };
+
+  const visibleSections = layout.order.filter((id) => !layout.hidden.includes(id));
 
   return (
     <View className="flex-1 bg-bg">
@@ -499,50 +341,76 @@ export default function DashboardScreen() {
           onClose={() => updateSettings(settings.id, { lastSeenVersion: appVersion })}
         />
       )}
-      <ScrollView className="flex-1 bg-bg" contentContainerStyle={{ padding: 16, paddingBottom: TAB_BAR_CLEARANCE, gap: 16 }}>
-        <FirstVisitHint id="dashboard" />
-        <View>
-          <Text className="text-lg font-display-xbold text-fg">
-            {displayName ? `${greeting(new Date())}, ${displayName}` : greeting(new Date())}
-          </Text>
-          <Text className="text-sm text-fg-muted">Here&rsquo;s your financial picture at a glance.</Text>
-        </View>
-
-        {layout.order
-          .filter((id) => !layout.hidden.includes(id))
-          // A shortcuts card with every tile unticked would be an empty row
-          // plus a gap; treat it as hidden.
-          .filter((id) => id !== "shortcuts" || layout.shortcuts.length > 0)
-          .map((id) => (
-            <Fragment key={id}>{cards[id]}</Fragment>
-          ))}
+      <ScrollView className="flex-1 bg-bg" contentContainerStyle={{ padding: 20, paddingBottom: TAB_BAR_CLEARANCE }}>
+        <FirstVisitHint id="dashboard" className="mb-5" />
+        <Text className="mb-5 text-lg font-display text-fg">
+          {displayName ? `${greeting(new Date())}, ${displayName}` : greeting(new Date())}
+        </Text>
+        {visibleSections.map((id, i) => (
+          <Fragment key={id}>
+            {i > 0 && <View className="my-6 h-px bg-border" />}
+            {sections[id]}
+          </Fragment>
+        ))}
       </ScrollView>
     </View>
   );
 }
 
-function AttentionRow({
-  icon,
-  tone,
-  text,
-  detail,
-  href,
-}: {
+function SectionTitle({ title, link }: { title: string; link?: { label: string; href: Href } }) {
+  return (
+    <View className="mb-3 flex-row items-center justify-between">
+      <Text accessibilityRole="header" className="font-display text-base text-fg">
+        {title}
+      </Text>
+      {link && (
+        <Link href={link.href} asChild>
+          <Pressable accessibilityRole="link" hitSlop={12}>
+            <Text className="text-sm font-medium text-accent">{link.label}</Text>
+          </Pressable>
+        </Link>
+      )}
+    </View>
+  );
+}
+
+// Direction is carried by the arrow and the words, not colour alone.
+function NetWorthChange({ changeMinor, currency }: { changeMinor: number; currency: string }) {
+  if (changeMinor === 0) {
+    return <Text className="mt-1 text-sm text-fg-muted">No change this month</Text>;
+  }
+  const up = changeMinor > 0;
+  return (
+    <Text className={`mt-1 text-sm font-medium ${up ? "text-success" : "text-danger"}`}>
+      {up ? "↑" : "↓"} {formatMoney(Math.abs(changeMinor), currency)} this month
+    </Text>
+  );
+}
+
+interface AttentionRowProps {
   icon: string;
-  tone: "danger" | "warning";
+  tone: keyof Pick<ThemeColors, "danger" | "warning">;
   text: string;
   detail?: string;
-  href: "/categories" | "/commitments" | "/fund";
-}) {
+  href: Href;
+}
+
+function AttentionRow({ icon, tone, text, detail, href }: AttentionRowProps) {
   const colors = useThemeColors();
-  const toneColor = tone === "danger" ? colors.danger : colors.warning;
   return (
     <Link href={href} asChild>
-      <Pressable className="flex-row items-center gap-2.5">
-        <Icon name={icon} size={16} color={toneColor} />
+      <Pressable
+        accessibilityRole="button"
+        className={`min-h-14 flex-row items-center gap-3 rounded-2xl px-3 py-3 ${tone === "danger" ? "bg-danger-soft" : "bg-warning-soft"}`}
+      >
+        <Icon name={icon} size={18} color={colors[tone]} />
         <View className="flex-1">
-          <Text className="text-sm text-fg">{text}</Text>
-          {detail && <Text className="mt-0.5 text-xs text-fg-muted">{detail}</Text>}
+          <Text className="text-sm font-medium text-fg">{text}</Text>
+          {detail && (
+            <Text className="mt-0.5 text-xs text-fg-muted" numberOfLines={2}>
+              {detail}
+            </Text>
+          )}
         </View>
         <Icon name="chevron-right" size={16} color={colors.fgSubtle} />
       </Pressable>

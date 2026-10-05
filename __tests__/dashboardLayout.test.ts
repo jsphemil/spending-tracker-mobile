@@ -5,7 +5,6 @@ import {
   parseDashboardLayout,
   sanitizeDashboardLayout,
   serializeDashboardLayout,
-  SHORTCUT_HREFS,
 } from "../constants/dashboardCards";
 
 describe("parseDashboardLayout", () => {
@@ -17,37 +16,43 @@ describe("parseDashboardLayout", () => {
   });
 
   it("keeps a saved order and hidden set", () => {
-    const raw = JSON.stringify({ order: ["netWorth", "attention", "month", "funds", "shortcuts"], hidden: ["funds"], shortcuts: ["/fund"] });
+    const raw = JSON.stringify({ order: ["netWorth", "attention", "month", "funds"], hidden: ["funds"] });
     expect(parseDashboardLayout(raw)).toEqual({
-      order: ["netWorth", "attention", "month", "funds", "shortcuts"],
+      order: ["netWorth", "attention", "month", "funds"],
       hidden: ["funds"],
-      shortcuts: ["/fund"],
     });
   });
 
   it("pins net worth first and never lets it be hidden", () => {
-    const raw = JSON.stringify({ order: ["month", "netWorth"], hidden: ["netWorth", "month"], shortcuts: [] });
+    const raw = JSON.stringify({ order: ["month", "netWorth"], hidden: ["netWorth", "month"] });
     const layout = parseDashboardLayout(raw);
     expect(layout.order[0]).toBe("netWorth");
     expect(layout.hidden).toEqual(["month"]);
   });
 
   it("drops unknown ids and appends cards missing from a saved order", () => {
-    const raw = JSON.stringify({ order: ["netWorth", "retired", "month"], hidden: ["retired"], shortcuts: ["/nowhere", "/tag"] });
+    const raw = JSON.stringify({ order: ["netWorth", "retired", "attention"], hidden: ["retired"] });
     const layout = parseDashboardLayout(raw);
-    expect(layout.order).toEqual(["netWorth", "month", "funds", "attention", "shortcuts"]);
+    expect(layout.order).toEqual(["netWorth", "attention", "month", "funds"]);
     expect(layout.hidden).toEqual([]);
-    expect(layout.shortcuts).toEqual(["/tag"]);
     expect(new Set(layout.order).size).toBe(CARD_IDS.length);
   });
 
-  it("treats a missing shortcuts key as all shortcuts, and an empty one as none", () => {
-    expect(parseDashboardLayout(JSON.stringify({ order: [] })).shortcuts).toEqual([...SHORTCUT_HREFS]);
-    expect(parseDashboardLayout(JSON.stringify({ order: [], shortcuts: [] })).shortcuts).toEqual([]);
+  // Layouts saved before V4 (§5.24) carry the retired shortcuts card and key.
+  it("reads a pre-V4 layout, keeping its order and dropping shortcuts", () => {
+    const raw = JSON.stringify({
+      order: ["netWorth", "attention", "shortcuts", "month", "funds"],
+      hidden: ["shortcuts", "funds"],
+      shortcuts: ["/fund", "/tag"],
+    });
+    expect(parseDashboardLayout(raw)).toEqual({
+      order: ["netWorth", "attention", "month", "funds"],
+      hidden: ["funds"],
+    });
   });
 
   it("round-trips through serialize", () => {
-    const layout = sanitizeDashboardLayout({ order: ["netWorth", "shortcuts", "funds"], hidden: ["attention"], shortcuts: ["/calendar"] });
+    const layout = sanitizeDashboardLayout({ order: ["netWorth", "funds"], hidden: ["attention"] });
     expect(parseDashboardLayout(serializeDashboardLayout(layout))).toEqual(layout);
   });
 

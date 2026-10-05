@@ -8,7 +8,7 @@ import { useSettings } from "../db/queries/settings";
 // global.css carries the same values as a pre-settings fallback — keep the
 // two in sync by hand.
 //
-// V4 (spec.md §5.24): calm, muted indigo in both themes, replacing the
+// V4 (spec.md §5.24): calm navy (light) / soft sky blue (dark), replacing the
 // neon-cyan dark / saturated-purple light pair. Every text-bearing role
 // below clears WCAG AA (4.5:1) against bg, surface and surface2 in its
 // own theme — re-check if you change a value.
@@ -48,7 +48,7 @@ export interface ThemeColors {
 }
 
 export const palette: Record<"light" | "dark", ThemeColors> = {
-  // Soft cool-neutral page, white surfaces, muted indigo accent.
+  // Soft cool-neutral page, white surfaces, deep navy accent.
   light: {
     bg: "#f6f6f8",
     surface: "#ffffff",
@@ -59,14 +59,14 @@ export const palette: Record<"light" | "dark", ThemeColors> = {
     fg: "#16171d",
     fgMuted: "#555867",
     fgSubtle: "#676a78",
-    accent: "#4b51b0",
-    accentStrong: "#3c4196",
+    accent: "#203d6e",
+    accentStrong: "#172e55",
     onAccent: "#ffffff",
     success: "#2b7a57",
     danger: "#b03f4c",
     warning: "#94600f",
-    transfer: "#4f6a84",
-    chart1: "#4b51b0",
+    transfer: "#6a5f88",
+    chart1: "#203d6e",
     chart2: "#b07a2a",
     chart3: "#3f8a8c",
     glassFill: "#ffffff",
@@ -88,14 +88,14 @@ export const palette: Record<"light" | "dark", ThemeColors> = {
     fg: "#e7e7ee",
     fgMuted: "#a4a6b3",
     fgSubtle: "#8b8d9b",
-    accent: "#a3a8f0",
-    accentStrong: "#bcc0f5",
-    onAccent: "#16173a",
+    accent: "#a3c4f2",
+    accentStrong: "#bfd6f6",
+    onAccent: "#0e1a30",
     success: "#7fc6a2",
     danger: "#e8909a",
     warning: "#dbb46c",
-    transfer: "#97adc4",
-    chart1: "#a3a8f0",
+    transfer: "#b6abd4",
+    chart1: "#a3c4f2",
     chart2: "#dbb46c",
     chart3: "#7fbfc0",
     glassFill: "rgba(255, 255, 255, 0.04)",
@@ -112,18 +112,18 @@ export const palette: Record<"light" | "dark", ThemeColors> = {
 type SoftKey = "accentSoft" | "successSoft" | "dangerSoft" | "warningSoft" | "transferSoft";
 const SOFT: Record<"light" | "dark", Record<SoftKey, string>> = {
   light: {
-    accentSoft: "rgba(75, 81, 176, 0.10)",
+    accentSoft: "rgba(32, 61, 110, 0.08)",
     successSoft: "rgba(43, 122, 87, 0.10)",
     dangerSoft: "rgba(176, 63, 76, 0.09)",
     warningSoft: "rgba(148, 96, 15, 0.10)",
-    transferSoft: "rgba(79, 106, 132, 0.10)",
+    transferSoft: "rgba(106, 95, 136, 0.10)",
   },
   dark: {
-    accentSoft: "rgba(163, 168, 240, 0.14)",
+    accentSoft: "rgba(163, 196, 242, 0.14)",
     successSoft: "rgba(127, 198, 162, 0.13)",
     dangerSoft: "rgba(232, 144, 154, 0.13)",
     warningSoft: "rgba(219, 180, 108, 0.13)",
-    transferSoft: "rgba(151, 173, 196, 0.13)",
+    transferSoft: "rgba(182, 171, 212, 0.13)",
   },
 };
 

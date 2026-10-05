@@ -78,11 +78,11 @@ The exact grouping can evolve, but unrelated controls should not be presented as
 
 ## 3. Visual language
 
-> **V4 (2026-10, spec.md §5.24) replaces the V2 "glassy neon" language.** The neon-cyan dark theme, brand gradient, coloured glows and card drop shadows are gone.
+> **V4 (2026-10, spec.md §5.24) replaces the V2 "glassy neon" language.** The neon-cyan dark theme, the saturated purple light accent, brand gradient, coloured glows and card drop shadows are gone.
 
 ### 3.1 Overall aesthetic
 
-Erebor is a **calm, premium wealth-management app**: quiet neutrals, one muted indigo accent, and restrained semantic colour. It should feel mature and trustworthy, and make a financial position easy to grasp in a few seconds.
+Erebor is a **calm, premium wealth-management app**: quiet neutrals, one navy-blue accent, and restrained semantic colour. It should feel mature and trustworthy, and make a financial position easy to grasp in a few seconds.
 
 The guiding principle is **at a glance first, details when I ask for them.** A screen shows the few figures that answer its question; everything else is one tap away.
 
@@ -104,7 +104,7 @@ No drop shadows on cards or the navigation bar. Depth comes from surface contras
 
 ### 3.4 Accent philosophy
 
-The primary accent is a **muted indigo** in both themes. It marks primary actions, the selected tab, links and key interactive elements — nothing else. Do not make every selected element strongly indigo.
+The primary accent is **navy** in Light and a **soft sky blue** in Dark (the same hue, tuned per theme). It marks primary actions, the selected tab, links and key interactive elements — nothing else. Do not make every selected element strongly blue.
 
 ---
 
@@ -146,12 +146,12 @@ Implementation values, not permission to bypass the tokens. Every text-bearing r
 | fg | `#16171d` | `#e7e7ee` |
 | fg-muted | `#555867` | `#a4a6b3` |
 | fg-subtle | `#676a78` | `#8b8d9b` |
-| accent | `#4b51b0` | `#a3a8f0` |
-| on-accent | `#ffffff` | `#16173a` |
+| accent | `#203d6e` | `#a3c4f2` |
+| on-accent | `#ffffff` | `#0e1a30` |
 | success | `#2b7a57` | `#7fc6a2` |
 | danger | `#b03f4c` | `#e8909a` |
 | warning | `#94600f` | `#dbb46c` |
-| transfer | `#4f6a84` | `#97adc4` |
+| transfer | `#6a5f88` | `#b6abd4` |
 
 Dark is designed for checking finances at night: a deep neutral (not black), off-white text (not pure white), desaturated accents. It is not a darkened copy of Light.
 

@@ -45,7 +45,7 @@ pushed to a later phase) · ❌ Dropped (cut from scope).
 | §5.21 | Funds | ✅ Built & Verified | **New, built 2026-09-09, verified on-device 2026-09-10** across 7 test groups (cold open, live refresh, earmarking leaving net worth untouched, spend/edit/delete, overspend and overfunding, close/reopen, and a full regression sweep), plus a Dropbox backup→restore round trip. **Shipped as versionCode 15, versionName 2.2.0** — closed-testing update 5. A new financial primitive: money you still own but have earmarked for a future purpose, sitting as a logical allocation layer *above* the accounting model. Account balances and net worth are completely unchanged; the app additionally reports **Earmarked** and **Unallocated** (net worth − earmarked). Not a budget, not an account, and deliberately not a renamed Goal — **§5.17 Goals is being removed and replaced by this**. Fund balances are **derived, never stored**, so editing or deleting a fund-linked expense reverses correctly with zero write hooks. Full plan and phasing in the §5.21 body below. |
 | §5.22 | Version 3 — Testers Community round | ✅ Built & Verified | **Built and verified on-device 2026-09-11**, shipped as **3.0.0** (closed-testing update 7). Six enhancement suggestions from a paid tester pass that found no bugs: FAQ + Send feedback (closes §5.15), What's new, first-visit hints + replayable intro, Dashboard customisation, three Analytics chart changes. Two suggestions (Google/email sign-in) declined as contrary to §3/§4. One migration (`0017`), shared with §5.23. |
 | §5.23 | Biometric App Lock | ✅ Built & Verified | **Built and verified on-device 2026-09-11**, shipped in 3.0.0. `expo-local-authentication` (the release's only native change), device PIN/pattern fallback allowed, 30 s background grace, lock screen rendered instead of the navigator so nothing underneath can be captured. Nothing stored by the app. |
-| §5.24 | Erebor V4 — Calm UI/UX Redesign | 🚧 In Progress | **Started 2026-10-05** on `redesign/v4`, shipping as 4.0.0. Presentation-only: muted indigo palette for Light and Dark, progressive-disclosure Dashboard/Analytics, Transactions filter sheet + search, grouped Accounts, rethemed widgets. Financial logic and schema untouched. Phases 1 (colour tokens) and 2 (shell) verified on-device 2026-10-05. |
+| §5.24 | Erebor V4 — Calm UI/UX Redesign | 🚧 In Progress | **Started 2026-10-05** on `redesign/v4`, shipping as 4.0.0. Presentation-only: navy-blue palette for Light and Dark, progressive-disclosure Dashboard/Analytics, Transactions filter sheet + search, grouped Accounts, rethemed widgets. Financial logic and schema untouched. Phases 1 (colour tokens), 2 (shell) and 3 (Dashboard) verified on-device 2026-10-05. |
 
 **Remaining known gaps** (everything else above is fully verified,
 carried forward unchanged from the last audit — none of these have
@@ -1657,7 +1657,8 @@ schema or backup/restore. Any calculation issue found along the way is
 flagged separately, not silently fixed.
 
 **Decisions (user questionnaire, 2026-10-05):**
-- Muted **indigo** primary in both Light and Dark, replacing the neon-cyan
+- **Navy** primary (Light `#203d6e`, Dark `#a3c4f2`; chosen 2026-10-05 over
+  indigo, steel, ocean and petrol options), replacing the neon-cyan
   dark / saturated-purple light pair. `DESIGN.md` §3–§4 rewritten.
 - `react-native-paper` may be added, scoped to specific controls
   (search bar, menus, chips) and themed from `theme/palette.ts`.
@@ -1693,7 +1694,16 @@ overdrawn savings or wallet account appears in neither tile.
    on Transactions); browse screens get a back arrow and a title. Base
    currency is changed only in Settings → Default Currency, and the old info
    sheet's content is Settings → Help & Support → Replay the intro.
-3. 📋 Dashboard. 4. 📋 Transactions. 5. 📋 Accounts. 6. 📋 Analytics.
+3. ✅ Verified on-device 2026-10-05 — Dashboard. Four sections with dividers,
+   no cards: Net worth (+ change this month) → new `/net-worth` detail screen
+   holding Assets/Debt/Earmarked/Unallocated and the month breakdown;
+   current month Income/Spending with % vs last month → Analytics; up to three
+   funds; Needs attention as one summary row per kind. Month arrows and
+   shortcut tiles removed; Funds/Commitments/Categories/Tags gained a Settings
+   → Manage group. Figures moved verbatim into `hooks/useMonthPosition.ts`
+   and checked against the pre-change Dashboard on-device (income, spending
+   and available-this-month identical).
+4. 📋 Transactions. 5. 📋 Accounts. 6. 📋 Analytics.
 7. 📋 Secondary screens + widgets. 8. 📋 Accessibility / font-scale pass.
 9. 📋 Regression + release build.
 

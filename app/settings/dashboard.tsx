@@ -11,28 +11,14 @@ import {
   PINNED_CARD,
   sanitizeDashboardLayout,
   serializeDashboardLayout,
-  SHORTCUT_HREFS,
   type DashboardLayout,
-  type ShortcutHref,
 } from "../../constants/dashboardCards";
 import { updateSettings } from "../../db/actions/settings";
 import { useSettings } from "../../db/queries/settings";
 import { useThemeColors } from "../../theme/palette";
 
-// Mirrors the Dashboard's SHORTCUTS table (label + icon per href); the
-// hrefs themselves are the shared constant.
-const SHORTCUT_META: Record<ShortcutHref, { label: string; icon: string }> = {
-  "/commitments": { label: "Commitments", icon: "calendar-sync-outline" },
-  "/categories": { label: "Categories", icon: "shape-outline" },
-  "/fund": { label: "Funds", icon: "piggy-bank" },
-  "/tag": { label: "Tags", icon: "tag-outline" },
-  "/calendar": { label: "Calendar", icon: "calendar-month-outline" },
-  "/settings": { label: "Settings", icon: "settings-outline" },
-};
-
 // Customise Dashboard (spec.md §5.22): per-card show/hide and ▲/▼
-// ordering, plus which shortcut tiles appear. Five rows don't justify a
-// drag library. Every change writes the whole layout back through the
+// ordering. Four rows don't justify a drag library. Every change writes the whole layout back through the
 // sanitiser, so the stored value can never violate the invariants.
 export default function CustomiseDashboardScreen() {
   const { settings } = useSettings();
@@ -64,14 +50,6 @@ export default function CustomiseDashboardScreen() {
     save({ ...layout, hidden: Array.from(set) });
   }
 
-  function toggleShortcut(href: ShortcutHref) {
-    const set = new Set(layout.shortcuts);
-    if (set.has(href)) set.delete(href);
-    else set.add(href);
-    // Keep the Dashboard's own tile order rather than tick order.
-    save({ ...layout, shortcuts: SHORTCUT_HREFS.filter((h) => set.has(h)) });
-  }
-
   const switchProps = {
     trackColor: { false: colors.glassFill, true: colors.accent },
     thumbColor: "#ffffff",
@@ -80,7 +58,7 @@ export default function CustomiseDashboardScreen() {
 
   return (
     <ScreenScrollView contentContainerStyle={{ padding: 16, gap: 20 }}>
-      <SettingsSection title="Cards">
+      <SettingsSection title="Sections">
         {layout.order.map((id, index) => {
           const pinned = id === PINNED_CARD;
           const visible = !layout.hidden.includes(id);
@@ -137,30 +115,12 @@ export default function CustomiseDashboardScreen() {
         })}
       </SettingsSection>
 
-      <SettingsSection title="Shortcuts">
-        {SHORTCUT_HREFS.map((href, i) => (
-          <SettingsRow
-            key={href}
-            icon={SHORTCUT_META[href].icon}
-            label={SHORTCUT_META[href].label}
-            right={
-              <Switch
-                value={layout.shortcuts.includes(href)}
-                onValueChange={() => toggleShortcut(href)}
-                {...switchProps}
-              />
-            }
-            last={i === SHORTCUT_HREFS.length - 1}
-          />
-        ))}
-      </SettingsSection>
-
       {!isDefaultLayout(layout) && (
         <SettingsSection title="Reset">
           <SettingsRow
             icon="recycle"
             label="Reset to default"
-            sublabel="All cards shown, original order, every shortcut"
+            sublabel="All sections shown, in the original order"
             onPress={() => save(DEFAULT_LAYOUT)}
             last
           />
