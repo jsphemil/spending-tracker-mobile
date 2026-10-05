@@ -13,7 +13,7 @@ import { currentMonthPeriod, monthLabel, monthRange, shiftMonth } from "../../..
 import { ensureMaterialized } from "../../../services/recurrence";
 import { CurrencyAmount } from "../../../components/CurrencyAmount";
 import { EmptyState } from "../../../components/ui/EmptyState";
-import { GlobalHeader } from "../../../components/GlobalHeader";
+import { HeaderAction, ScreenHeader } from "../../../components/ScreenHeader";
 import { FirstVisitHint } from "../../../components/FirstVisitHint";
 import { TAB_BAR_CLEARANCE } from "../../../theme/tabBar";
 import { useThemeColors } from "../../../theme/palette";
@@ -71,7 +71,9 @@ export default function AccountsListScreen() {
 
   return (
     <View className="flex-1 bg-bg">
-      <GlobalHeader />
+      <ScreenHeader title="Accounts">
+        <HeaderAction icon="plus" label="New account" href="/account/new" />
+      </ScreenHeader>
       <FlatList
         data={accounts ?? []}
         keyExtractor={(item) => String(item.id)}
@@ -87,15 +89,6 @@ export default function AccountsListScreen() {
             <Pressable onPress={() => setPeriod((p) => shiftMonth(p, 1))} className="p-3" hitSlop={8}>
               <Icon name="chevron-right" size={28} color={colors.fg} />
             </Pressable>
-            <Link href="/account/new" asChild>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="New account"
-                className="h-10 w-10 items-center justify-center rounded-full bg-glass"
-              >
-                <Icon name="plus" size={18} color={colors.fg} />
-              </Pressable>
-            </Link>
             </View>
           </View>
         }

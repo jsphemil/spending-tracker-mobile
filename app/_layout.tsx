@@ -117,14 +117,14 @@ export default function RootLayout() {
           >
             <Stack.Screen name="(tabs)" />
             {/* V2 shortcut destinations (spec.md §5.19) — moved out of the
-                tab bar, each renders its own GlobalHeader instead of an
+                tab bar, each renders its own ScreenHeader instead of an
                 in-navigator header. They have no "+": that button is docked
                 into the bottom navigation bar, which only the tabs have. */}
             <Stack.Screen name="commitments" />
             <Stack.Screen name="categories" />
             <Stack.Screen name="calendar" />
             {/* Settings owns its own Stack (app/settings/_layout.tsx) with
-                normal in-navigator headers — no GlobalHeader/FAB there. */}
+                normal in-navigator headers — no ScreenHeader/FAB there. */}
             <Stack.Screen name="settings" />
             <Stack.Screen
               name="account/new"
@@ -150,7 +150,7 @@ export default function RootLayout() {
               name="category/[id]/edit"
               options={{ presentation: "modal", headerShown: true, title: "Edit Category" }}
             />
-            {/* Browse screens render their own GlobalHeader; only the
+            {/* Browse screens render their own ScreenHeader; only the
                 create/edit forms are modals, same split as the entities
                 above. */}
             <Stack.Screen name="fund/index" />

@@ -45,7 +45,7 @@ pushed to a later phase) · ❌ Dropped (cut from scope).
 | §5.21 | Funds | ✅ Built & Verified | **New, built 2026-09-09, verified on-device 2026-09-10** across 7 test groups (cold open, live refresh, earmarking leaving net worth untouched, spend/edit/delete, overspend and overfunding, close/reopen, and a full regression sweep), plus a Dropbox backup→restore round trip. **Shipped as versionCode 15, versionName 2.2.0** — closed-testing update 5. A new financial primitive: money you still own but have earmarked for a future purpose, sitting as a logical allocation layer *above* the accounting model. Account balances and net worth are completely unchanged; the app additionally reports **Earmarked** and **Unallocated** (net worth − earmarked). Not a budget, not an account, and deliberately not a renamed Goal — **§5.17 Goals is being removed and replaced by this**. Fund balances are **derived, never stored**, so editing or deleting a fund-linked expense reverses correctly with zero write hooks. Full plan and phasing in the §5.21 body below. |
 | §5.22 | Version 3 — Testers Community round | ✅ Built & Verified | **Built and verified on-device 2026-09-11**, shipped as **3.0.0** (closed-testing update 7). Six enhancement suggestions from a paid tester pass that found no bugs: FAQ + Send feedback (closes §5.15), What's new, first-visit hints + replayable intro, Dashboard customisation, three Analytics chart changes. Two suggestions (Google/email sign-in) declined as contrary to §3/§4. One migration (`0017`), shared with §5.23. |
 | §5.23 | Biometric App Lock | ✅ Built & Verified | **Built and verified on-device 2026-09-11**, shipped in 3.0.0. `expo-local-authentication` (the release's only native change), device PIN/pattern fallback allowed, 30 s background grace, lock screen rendered instead of the navigator so nothing underneath can be captured. Nothing stored by the app. |
-| §5.24 | Erebor V4 — Calm UI/UX Redesign | 🚧 In Progress | **Started 2026-10-05** on `redesign/v4`, shipping as 4.0.0. Presentation-only: muted indigo palette for Light and Dark, progressive-disclosure Dashboard/Analytics, Transactions filter sheet + search, grouped Accounts, rethemed widgets. Financial logic and schema untouched. Phase 1 (colour tokens) verified on-device in Light and Dark 2026-10-05. |
+| §5.24 | Erebor V4 — Calm UI/UX Redesign | 🚧 In Progress | **Started 2026-10-05** on `redesign/v4`, shipping as 4.0.0. Presentation-only: muted indigo palette for Light and Dark, progressive-disclosure Dashboard/Analytics, Transactions filter sheet + search, grouped Accounts, rethemed widgets. Financial logic and schema untouched. Phases 1 (colour tokens) and 2 (shell) verified on-device 2026-10-05. |
 
 **Remaining known gaps** (everything else above is fully verified,
 carried forward unchanged from the last audit — none of these have
@@ -1686,8 +1686,13 @@ overdrawn savings or wallet account appears in neither tile.
    attention items use `warning` instead of `transfer`). Removes the brand
    gradient, glows, card and nav shadows, and the `expo-linear-gradient`
    dependency.
-2. 📋 Shell — Add Transaction sheet (Expense / Income / Transfer, into the
-   existing form via `?type=`), calmer nav bar, contextual top bars.
+2. ✅ Verified on-device 2026-10-05 — Shell. The "+" opens an Add transaction
+   sheet (Expense / Income / Transfer) into the unchanged form via `?type=`.
+   The four-control global header is replaced by `ScreenHeader`: a title plus
+   contextual actions (Settings on Dashboard, New account on Accounts, Calendar
+   on Transactions); browse screens get a back arrow and a title. Base
+   currency is changed only in Settings → Default Currency, and the old info
+   sheet's content is Settings → Help & Support → Replay the intro.
 3. 📋 Dashboard. 4. 📋 Transactions. 5. 📋 Accounts. 6. 📋 Analytics.
 7. 📋 Secondary screens + widgets. 8. 📋 Accessibility / font-scale pass.
 9. 📋 Regression + release build.

@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { EmptyState } from "../../components/ui/EmptyState";
 import { FundRow } from "../../components/FundRow";
-import { GlobalHeader } from "../../components/GlobalHeader";
+import { ScreenHeader } from "../../components/ScreenHeader";
 import { FirstVisitHint } from "../../components/FirstVisitHint";
 import { Icon } from "../../components/ui/Icon";
 import { UnconvertedCurrenciesNote } from "../../components/UnconvertedCurrenciesNote";
@@ -70,7 +70,7 @@ export default function FundsListScreen() {
 
   return (
     <View className="flex-1 bg-bg">
-      <GlobalHeader />
+      <ScreenHeader title="Funds" back />
       <ScrollView
         className="flex-1"
         contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 96, gap: 16 }}

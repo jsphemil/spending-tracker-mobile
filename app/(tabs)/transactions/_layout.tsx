@@ -2,7 +2,7 @@ import { Stack } from "expo-router";
 
 // Single screen now — Calendar moved to a top-level shared route
 // (app/calendar.tsx, spec.md §5.19). No in-navigator header: the
-// Transactions tab renders its own GlobalHeader instead.
+// Transactions tab renders its own ScreenHeader instead.
 export default function TransactionsLayout() {
   return (
     <Stack screenOptions={{ headerShown: false }}>

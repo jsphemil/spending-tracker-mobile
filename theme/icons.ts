@@ -1,5 +1,6 @@
 import {
   Activity,
+  ArrowLeft,
   ArrowLeftRight,
   Backpack,
   Baby,
@@ -123,6 +124,7 @@ export const ICON_MAP: Record<string, LucideIcon> = {
   "information-outline": Info,
   "tag-outline": Tag,
   "chart-line": LineChart,
+  "arrow-left": ArrowLeft,
   plus: Plus,
   close: X,
   logo: Mountain,

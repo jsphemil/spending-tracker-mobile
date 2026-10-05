@@ -3,7 +3,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Icon } from "../components/ui/Icon";
 
 import { EmptyState } from "../components/ui/EmptyState";
-import { GlobalHeader } from "../components/GlobalHeader";
+import { ScreenHeader } from "../components/ScreenHeader";
 import { FirstVisitHint } from "../components/FirstVisitHint";
 import { useAccounts } from "../db/queries/accounts";
 import { useCategories } from "../db/queries/categories";
@@ -70,7 +70,7 @@ export default function CommitmentsScreen() {
 
   return (
     <View className="flex-1 bg-bg">
-      <GlobalHeader />
+      <ScreenHeader title="Commitments" back />
       <ScrollView
         className="flex-1 bg-bg"
         contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 96, gap: 16 }}

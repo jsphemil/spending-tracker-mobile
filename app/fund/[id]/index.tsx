@@ -4,7 +4,7 @@ import { Alert, Pressable, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { FundAllocationSheet, type AllocationMode } from "../../../components/FundAllocationSheet";
-import { GlobalHeader } from "../../../components/GlobalHeader";
+import { ScreenHeader } from "../../../components/ScreenHeader";
 import { Icon } from "../../../components/ui/Icon";
 import { UnconvertedCurrenciesNote } from "../../../components/UnconvertedCurrenciesNote";
 import {
@@ -120,7 +120,7 @@ export default function FundDetailScreen() {
 
   return (
     <View className="flex-1 bg-bg">
-      <GlobalHeader />
+      <ScreenHeader title="Fund" back />
       <ScrollView
         className="flex-1"
         contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 32, gap: 16 }}

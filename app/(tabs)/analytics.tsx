@@ -7,7 +7,7 @@ import { AssetAllocationChart } from "../../components/charts/AssetAllocationCha
 import { CumulativeSpendChart } from "../../components/charts/CumulativeSpendChart";
 import { NetWorthTrendChart } from "../../components/charts/NetWorthTrendChart";
 import { UnconvertedCurrenciesNote } from "../../components/UnconvertedCurrenciesNote";
-import { GlobalHeader } from "../../components/GlobalHeader";
+import { ScreenHeader } from "../../components/ScreenHeader";
 import { FirstVisitHint } from "../../components/FirstVisitHint";
 import { db } from "../../db/client";
 import { useAccounts } from "../../db/queries/accounts";
@@ -143,7 +143,7 @@ export default function AnalyticsScreen() {
 
   return (
     <View className="flex-1 bg-bg">
-      <GlobalHeader />
+      <ScreenHeader title="Analytics" />
       <ScrollView className="flex-1 bg-bg" contentContainerStyle={{ padding: 16, paddingBottom: TAB_BAR_CLEARANCE, gap: 12 }}>
         <FirstVisitHint id="analytics" />
         <View className="flex-row items-center justify-between">

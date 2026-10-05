@@ -1,10 +1,11 @@
+import { useState } from "react";
 import { Pressable, Text, View } from "react-native";
-import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 // React Navigation isn't a direct dependency — expo-router vendors it, and
 // re-exports the tab types from this entry point.
 import type { BottomTabBarProps } from "expo-router/js-tabs";
 
+import { AddTransactionSheet } from "./AddTransactionSheet";
 import { Icon } from "./ui/Icon";
 import { useThemeColors } from "../theme/palette";
 import { FAB_SIZE, NAV_BAR_HEIGHT } from "../theme/tabBar";
@@ -22,7 +23,7 @@ const FAB_GUTTER = FAB_SIZE + 24;
 export function BottomNavBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
   const colors = useThemeColors();
-  const router = useRouter();
+  const [addOpen, setAddOpen] = useState(false);
 
   const half = Math.ceil(state.routes.length / 2);
 
@@ -60,7 +61,7 @@ export function BottomNavBar({ state, descriptors, navigation }: BottomTabBarPro
         {options.tabBarIcon?.({ focused, color, size: 24 })}
         <Text
           numberOfLines={1}
-          style={{ color, fontFamily: "Inter_500Medium", fontSize: 10 }}
+          style={{ color, fontFamily: "Inter_500Medium", fontSize: 11 }}
         >
           {label}
         </Text>
@@ -91,7 +92,7 @@ export function BottomNavBar({ state, descriptors, navigation }: BottomTabBarPro
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Add transaction"
-          onPress={() => router.push("/transaction/new")}
+          onPress={() => setAddOpen(true)}
           style={{ borderRadius: 9999 }}
         >
           <View
@@ -112,6 +113,8 @@ export function BottomNavBar({ state, descriptors, navigation }: BottomTabBarPro
           </View>
         </Pressable>
       </View>
+
+      {addOpen && <AddTransactionSheet onClose={() => setAddOpen(false)} />}
     </View>
   );
 }

@@ -9,7 +9,7 @@ import { useThemeColors } from "../theme/palette";
 
 // The one-time "What's new in X" sheet (spec.md §5.22), shown by the
 // Dashboard on the first launch after an update — same bottom-sheet shape
-// as GlobalHeader's InfoModal. The parent decides *whether* to show it
+// as the old header's info sheet. The parent decides *whether* to show it
 // (constants/changelog.ts's shouldShowWhatsNew) and records the dismissal;
 // this component only renders one version's entry.
 export function WhatsNewSheet({

@@ -6,8 +6,8 @@ import { useThemeColors } from "../theme/palette";
 
 // The three explanatory intro slides (spec.md §5.13 / §5.19 onboarding
 // steps 1–3), shared by first-run onboarding (OnboardingFlow, which adds
-// its currency step), the Settings "Replay the intro" route, and the
-// header's ⓘ sheet — one copy of the words rather than three (§5.22).
+// its currency step) and the Settings "Replay the intro" route — one
+// copy of the words (§5.22).
 
 export function WelcomeStep({ onNext, cta = "Let’s get started" }: { onNext: () => void; cta?: string }) {
   const colors = useThemeColors();
@@ -95,9 +95,8 @@ export function FeaturesStep({ onNext }: { onNext: () => void }) {
   );
 }
 
-// The four habits. HowToUseBody is the list on its own so the header's ⓘ
-// sheet can show exactly this content without the slide's title and CTA.
-export function HowToUseBody() {
+// The four habits.
+function HowToUseBody() {
   return (
     <>
       <HowToStep

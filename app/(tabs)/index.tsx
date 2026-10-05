@@ -4,7 +4,7 @@ import { Pressable, ScrollView, Text, View } from "react-native";
 import { Icon } from "../../components/ui/Icon";
 
 import { FundRow } from "../../components/FundRow";
-import { GlobalHeader } from "../../components/GlobalHeader";
+import { HeaderAction, ScreenHeader } from "../../components/ScreenHeader";
 import { FirstVisitHint } from "../../components/FirstVisitHint";
 import { WhatsNewSheet } from "../../components/WhatsNewSheet";
 import { shouldShowWhatsNew } from "../../constants/changelog";
@@ -489,7 +489,9 @@ export default function DashboardScreen() {
 
   return (
     <View className="flex-1 bg-bg">
-      <GlobalHeader />
+      <ScreenHeader title="Erebor" brand>
+        <HeaderAction icon="settings-outline" label="Settings" href="/settings" />
+      </ScreenHeader>
       {settings && (
         <WhatsNewSheet
           version={appVersion}

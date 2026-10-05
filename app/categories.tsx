@@ -10,7 +10,7 @@ import { useSettings } from "../db/queries/settings";
 import { useFilteredTransactions } from "../db/queries/transactions";
 import type { CategoryKind } from "../db/schema";
 import { db } from "../db/client";
-import { GlobalHeader } from "../components/GlobalHeader";
+import { ScreenHeader } from "../components/ScreenHeader";
 import { FirstVisitHint } from "../components/FirstVisitHint";
 import { useBaseConverter } from "../hooks/useBaseConverter";
 import { formatMoney } from "../services/format";
@@ -54,7 +54,7 @@ export default function CategoriesScreen() {
 
   return (
     <View className="flex-1 bg-bg">
-      <GlobalHeader />
+      <ScreenHeader title="Categories" back />
       <View className="flex-row items-center gap-2 p-4">
         {(["expense", "income"] as const).map((k) => (
           <Pressable

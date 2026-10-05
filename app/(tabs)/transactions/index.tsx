@@ -4,7 +4,7 @@ import { FlatList, Pressable, ScrollView, Text, View } from "react-native";
 import { Icon } from "../../../components/ui/Icon";
 
 import { confirmDeleteTransaction } from "../../../components/confirmDeleteTransaction";
-import { GlobalHeader } from "../../../components/GlobalHeader";
+import { HeaderAction, ScreenHeader } from "../../../components/ScreenHeader";
 import { FirstVisitHint } from "../../../components/FirstVisitHint";
 import { SummaryBand } from "../../../components/SummaryBand";
 import { UnconvertedCurrenciesNote } from "../../../components/UnconvertedCurrenciesNote";
@@ -124,7 +124,9 @@ export default function TransactionsListScreen() {
 
   return (
     <View className="flex-1 bg-bg">
-      <GlobalHeader />
+      <ScreenHeader title="Transactions">
+        <HeaderAction icon="calendar-month-outline" label="Calendar" href="/calendar" />
+      </ScreenHeader>
       <View className="gap-3 border-b border-glass-border p-4">
         {/* Same pill language as the account/category/type filter chips
             below — accent border + soft accent fill when selected — rather

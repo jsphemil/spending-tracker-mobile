@@ -20,7 +20,7 @@ export type HintId = (typeof HINT_IDS)[number];
 export const HINTS: Record<HintId, { title: string; body: string }> = {
   dashboard: {
     title: "Your Dashboard answers three questions",
-    body: "Where do I stand, how is this month going, and what needs my attention. Tap the eye to reveal your net worth for this session, and the ⓘ in the header any time for the basics.",
+    body: "Where do I stand, how is this month going, and what needs my attention. Tap the eye to reveal your net worth for this session. Settings → Help & Support has the basics any time.",
   },
   accounts: {
     title: "Accounts are the foundation",
