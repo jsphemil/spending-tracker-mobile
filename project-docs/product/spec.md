@@ -1730,7 +1730,7 @@ overdrawn savings or wallet account appears in neither tile. Also flagged (code 
    lists, memoised synchronous reads — verified live updates on-device.
 8. 🚧 Accessibility: roles/states on controls, no text under 12px. Large
    system font check still needs the user (system setting).
-9. 🚧 Regression review + release build.
+9. 🚧 Regression: independent code review (approve with notes; all findings fixed, Full-history repeat bug reproduced and verified fixed) and test review (conditional go; added likeForLikeRanges + net-worth-change tests, 142 tests pass). Remaining: user large-font check, 4.0.0 EAS build → Internal testing (native widget change) → Production.
 
 ## 6. Explicitly out of scope for v1
 
