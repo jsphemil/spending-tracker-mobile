@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { Link } from "expo-router";
 import { Pressable, ScrollView, Text, View } from "react-native";
 
+import { AssetAllocationChart } from "../components/charts/AssetAllocationChart";
 import { ScreenHeader } from "../components/ScreenHeader";
 import { UnconvertedCurrenciesNote } from "../components/UnconvertedCurrenciesNote";
 import { Icon } from "../components/ui/Icon";
@@ -10,12 +11,18 @@ import { useMonthPosition } from "../hooks/useMonthPosition";
 import { toggleNetWorthHidden, useNetWorthHidden } from "../hooks/useNetWorthHidden";
 import { formatMoney } from "../services/format";
 import { currentMonthPeriod } from "../services/period";
-import { useThemeColors } from "../theme/palette";
+import { useThemeColors, type ThemeColors } from "../theme/palette";
+
+const ASSET_ALLOCATION_BUCKETS: { name: string; types: readonly string[]; chart: keyof ThemeColors }[] = [
+  { name: "Liquid (Savings/Wallet)", types: ["savings", "wallet"], chart: "chart1" },
+  { name: "Deposits (FD/RD)", types: ["deposit"], chart: "chart2" },
+  { name: "Invested", types: ["investment"], chart: "chart3" },
+];
 
 // Net worth detail (spec.md §5.24): the Dashboard shows one number; this
 // is where its parts live — the Assets/Debt/Earmarked/Unallocated tiles
 // and the "available this month" line that used to sit on the V2
-// Dashboard. Same useMonthPosition figures, current month, same privacy
+// Dashboard, and the asset allocation donut that used to sit on Analytics. Same useMonthPosition figures, current month, same privacy
 // mask as the Dashboard.
 export default function NetWorthScreen() {
   const colors = useThemeColors();
@@ -25,6 +32,16 @@ export default function NetWorthScreen() {
   const p = useMonthPosition(period);
   const hidden = useNetWorthHidden();
   const money = (minor: number) => (hidden ? "••••" : formatMoney(minor, baseCurrency));
+
+  // Moved verbatim from V2 Analytics: positive balances only, converted to
+  // base, as of the same cutoff as every other figure here.
+  const assetAllocation = ASSET_ALLOCATION_BUCKETS.map((bucket) => ({
+    name: bucket.name,
+    color: colors[bucket.chart],
+    valueMinor: (p.accounts ?? [])
+      .filter((a) => bucket.types.includes(a.type))
+      .reduce((sum, a) => sum + Math.max(0, p.toBaseMinor(p.accountBalanceAsOf.get(a.id) ?? 0, a.currency)), 0),
+  })).filter((b) => b.valueMinor > 0);
 
   return (
     <View className="flex-1 bg-bg">
@@ -58,6 +75,14 @@ export default function NetWorthScreen() {
             </>
           )}
         </Section>
+
+        {!hidden && assetAllocation.length > 0 && (
+          <Section title="How your assets are split">
+            <View className="mt-3">
+              <AssetAllocationChart data={assetAllocation} currency={baseCurrency} earmarkedMinor={p.earmarkedMinor} />
+            </View>
+          </Section>
+        )}
 
         <Section title="This month">
           <Row label="Start of month" value={money(p.carryForwardMinor)} />

@@ -1,25 +1,22 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "expo-router";
 import { Pressable, ScrollView, Text, View } from "react-native";
-import { Icon } from "../../components/ui/Icon";
 
-import { AssetAllocationChart } from "../../components/charts/AssetAllocationChart";
 import { CumulativeSpendChart } from "../../components/charts/CumulativeSpendChart";
 import { NetWorthTrendChart } from "../../components/charts/NetWorthTrendChart";
-import { UnconvertedCurrenciesNote } from "../../components/UnconvertedCurrenciesNote";
-import { ScreenHeader } from "../../components/ScreenHeader";
 import { FirstVisitHint } from "../../components/FirstVisitHint";
+import { ScreenHeader } from "../../components/ScreenHeader";
+import { UnconvertedCurrenciesNote } from "../../components/UnconvertedCurrenciesNote";
+import { Icon } from "../../components/ui/Icon";
 import { db } from "../../db/client";
-import { useAccounts } from "../../db/queries/accounts";
 import { useCategories } from "../../db/queries/categories";
-import { useFundAllocationsSubscription } from "../../db/queries/funds";
 import { useSettings } from "../../db/queries/settings";
 import { useFilteredTransactions } from "../../db/queries/transactions";
-import { getAccountBalanceMinor, getEarliestTransactionDate, getNetWorthSeries } from "../../services/balance";
+import { useMonthPosition } from "../../hooks/useMonthPosition";
+import { useNetWorthHidden } from "../../hooks/useNetWorthHidden";
+import { getEarliestTransactionDate, getNetWorthSeries } from "../../services/balance";
 import { addToBucket, sortedBuckets, type Bucket } from "../../services/breakdown";
 import { cumulativeDailySpend } from "../../services/cumulativeSpend";
-import { getFundBalances, sumEarmarkedMinor } from "../../services/funds";
-import { useBaseConverter } from "../../hooks/useBaseConverter";
 import { formatMoney } from "../../services/format";
 import {
   currentMonthPeriod,
@@ -30,48 +27,53 @@ import {
   shiftMonth,
   type MonthPeriod,
 } from "../../services/period";
-import { ensureMaterialized } from "../../services/recurrence";
-import { TAB_BAR_CLEARANCE } from "../../theme/tabBar";
 import { useThemeColors } from "../../theme/palette";
+import { TAB_BAR_CLEARANCE } from "../../theme/tabBar";
 import type { CategoryKind } from "../../db/schema";
 
-const ASSET_ALLOCATION_BUCKETS = [
-  { name: "Liquid (Savings/Wallet)", types: ["savings", "wallet"], chart: "chart1" },
-  { name: "Deposits (FD/RD)", types: ["deposit"], chart: "chart2" },
-  { name: "Invested", types: ["investment"], chart: "chart3" },
-] as const;
-
 const TREND_MONTHS_CAP = 24;
+const TOP_CATEGORIES = 5;
 
-// The deeper, exploratory counterpart to the concise Dashboard (spec.md
-// §5.19 "Analytics (new tab)") — category composition, a longer net worth
-// trend, and asset allocation, all reusing the same domain calculations the
-// old Dashboard and Account Detail already used. No new aggregates.
+const monthName = ({ year, month }: MonthPeriod) =>
+  new Date(year, month, 1).toLocaleDateString(undefined, { month: "long" });
+
+// Analytics V4 (spec.md §5.24): insight first, detail on request. Three
+// questions in order — how is spending going (a one-line comparison, then
+// the chart that explains it), where did the money go (top categories,
+// "Show all" for the rest), and how is net worth moving. Asset allocation
+// moved to the Net worth screen. Every figure is the same calculation V2
+// Analytics used; the headline comparison is the Dashboard's like-for-like
+// one from useMonthPosition.
 export default function AnalyticsScreen() {
   const colors = useThemeColors();
   const [period, setPeriod] = useState(currentMonthPeriod());
   const [kind, setKind] = useState<CategoryKind>("expense");
+  const [showAllCategories, setShowAllCategories] = useState(false);
   const range = useMemo(() => monthRange(period), [period]);
-  useEffect(() => {
-    ensureMaterialized(db, { through: range.end });
-  }, [range.end]);
 
   const { settings } = useSettings();
   const baseCurrency = settings?.baseCurrency ?? "INR";
-  const { data: accounts } = useAccounts();
   const { data: categories } = useCategories();
   const { data: monthTransactions } = useFilteredTransactions({ range });
   // Last month's rows for the cumulative-spend comparison (spec.md §5.22).
   const lastPeriod = useMemo(() => shiftMonth(period, -1), [period]);
   const lastRange = useMemo(() => monthRange(lastPeriod), [lastPeriod]);
   const { data: lastMonthTransactions } = useFilteredTransactions({ range: lastRange });
-  // Subscribed for the repaint only — getFundBalances is a synchronous read
-  // (same pattern as the Dashboard).
-  useFundAllocationsSubscription();
 
-  const { toBaseMinor, unconvertedCurrencies } = useBaseConverter(
-    (accounts ?? []).map((a) => a.currency),
-  );
+  const {
+    accounts,
+    toBaseMinor,
+    unconvertedCurrencies,
+    netWorthMinor,
+    netWorthChangeMinor,
+    expenseMinor,
+    comparisonDays,
+    expenseToDateMinor,
+    lastMonthSameDaysExpenseMinor,
+  } = useMonthPosition(period);
+
+  // Same session privacy mask as the Dashboard's net worth.
+  const netWorthHidden = useNetWorthHidden();
 
   const categoryInfo = (id: number | null) => categories?.find((c) => c.id === id);
 
@@ -96,20 +98,7 @@ export default function AnalyticsScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [monthTransactions, accounts, categories, kind, toBaseMinor]);
   const categoryTotal = byCategory.reduce((sum, b) => sum + b.totalMinor, 0);
-
-  const accountBalanceAtEnd = new Map(
-    (accounts ?? []).map((a) => [a.id, getAccountBalanceMinor(db, a.id, range.end)]),
-  );
-  const assetAllocation = ASSET_ALLOCATION_BUCKETS.map((bucket) => ({
-    name: bucket.name,
-    color: colors[bucket.chart],
-    valueMinor: (accounts ?? [])
-      .filter((a) => (bucket.types as readonly string[]).includes(a.type))
-      .reduce((sum, a) => sum + Math.max(0, toBaseMinor(accountBalanceAtEnd.get(a.id) ?? 0, a.currency)), 0),
-  })).filter((b) => b.valueMinor > 0);
-  // Earmarked as of the same range.end cutoff the balances above use, so
-  // the ring's inner arc agrees with the Dashboard for the same month.
-  const earmarkedMinor = sumEarmarkedMinor(getFundBalances(db, toBaseMinor, range.end));
+  const shownCategories = showAllCategories ? byCategory : byCategory.slice(0, TOP_CATEGORIES);
 
   const accountCurrencies = (accounts ?? []).map((a) => ({ id: a.id, currency: a.currency }));
   const thisMonthSpend = cumulativeDailySpend(monthTransactions ?? [], accountCurrencies, toBaseMinor, {
@@ -138,100 +127,120 @@ export default function AnalyticsScreen() {
     valueMinor: netWorthSeries[i] ?? 0,
   }));
 
-  const card = "rounded-card border border-glass-border bg-glass p-4";
-  const cardTitle = "mb-3 text-sm font-display text-fg";
+  // The headline sentence: same like-for-like comparison as the Dashboard.
+  const lastName = monthName(lastPeriod);
+  const changePercent =
+    lastMonthSameDaysExpenseMinor > 0
+      ? Math.round(((expenseToDateMinor - lastMonthSameDaysExpenseMinor) / lastMonthSameDaysExpenseMinor) * 100)
+      : null;
+  const span = viewingCurrentMonth ? `the first ${comparisonDays} days of ${lastName}` : lastName;
+  const spendingInsight =
+    changePercent === null
+      ? `No spending recorded in ${span} to compare with.`
+      : changePercent === 0
+        ? `About the same as ${span}.`
+        : `${Math.abs(changePercent)}% ${changePercent > 0 ? "more" : "less"} than ${span}.`;
+
+  const topCategory = kind === "expense" && byCategory.length > 0 && categoryTotal > 0 ? byCategory[0] : null;
 
   return (
     <View className="flex-1 bg-bg">
       <ScreenHeader title="Analytics" />
-      <ScrollView className="flex-1 bg-bg" contentContainerStyle={{ padding: 16, paddingBottom: TAB_BAR_CLEARANCE, gap: 12 }}>
-        <FirstVisitHint id="analytics" />
+      <ScrollView className="flex-1 bg-bg" contentContainerStyle={{ padding: 20, paddingBottom: TAB_BAR_CLEARANCE }}>
+        <FirstVisitHint id="analytics" className="mb-4" />
         <View className="flex-row items-center justify-between">
-          <Pressable onPress={() => setPeriod((p) => shiftMonth(p, -1))} className="p-3" hitSlop={8}>
-            <Icon name="chevron-left" size={28} color={colors.fg} />
+          <Pressable
+            onPress={() => setPeriod((p) => shiftMonth(p, -1))}
+            accessibilityRole="button"
+            accessibilityLabel="Previous month"
+            className="h-11 w-11 items-center justify-center"
+          >
+            <Icon name="chevron-left" size={24} color={colors.fg} />
           </Pressable>
-          <Text className="text-base font-medium text-fg">{monthLabel(period)}</Text>
-          <Pressable onPress={() => setPeriod((p) => shiftMonth(p, 1))} className="p-3" hitSlop={8}>
-            <Icon name="chevron-right" size={28} color={colors.fg} />
+          <Text accessibilityRole="header" className="text-base font-medium text-fg">
+            {monthLabel(period)}
+          </Text>
+          <Pressable
+            onPress={() => setPeriod((p) => shiftMonth(p, 1))}
+            accessibilityRole="button"
+            accessibilityLabel="Next month"
+            className="h-11 w-11 items-center justify-center"
+          >
+            <Icon name="chevron-right" size={24} color={colors.fg} />
           </Pressable>
         </View>
 
-        <View className={card}>
-          <View className="mb-1 flex-row items-center justify-between">
-            <Text className={cardTitle}>Net worth trend</Text>
-            <Text className="text-[10px] font-medium uppercase tracking-wide text-fg-subtle">
-              {trendLength >= TREND_MONTHS_CAP ? `Last ${TREND_MONTHS_CAP} months` : `Since ${monthShortLabel(trendMonths[0])}`}
-            </Text>
+        {/* 1 — How is spending going? */}
+        <View className="mt-4">
+          <Text className="text-sm text-fg-muted">Spending</Text>
+          <Text className="font-data text-3xl font-bold tabular-nums text-fg">
+            {formatMoney(expenseMinor, baseCurrency)}
+          </Text>
+          <Text className="mt-1 text-sm text-fg">
+            {viewingCurrentMonth ? "So far, " : ""}
+            {spendingInsight}
+          </Text>
+          <View className="mt-4">
+            <CumulativeSpendChart
+              thisMonth={thisMonthSpend}
+              lastMonth={lastMonthSpend}
+              currency={baseCurrency}
+              today={viewingCurrentMonth ? now.getDate() : undefined}
+            />
           </View>
-          <NetWorthTrendChart data={trendData} currency={baseCurrency} height={180} />
-          <UnconvertedCurrenciesNote currencies={unconvertedCurrencies} subject="Net worth" />
-        </View>
-
-        <View className={card}>
-          <View className="mb-1 flex-row items-center justify-between">
-            <Text className={cardTitle}>Spending so far</Text>
-            <Text className="text-[10px] font-medium uppercase tracking-wide text-fg-subtle">
-              vs {monthShortLabel(lastPeriod)}
-            </Text>
-          </View>
-          <CumulativeSpendChart
-            thisMonth={thisMonthSpend}
-            lastMonth={lastMonthSpend}
-            currency={baseCurrency}
-            today={viewingCurrentMonth ? now.getDate() : undefined}
-          />
           <UnconvertedCurrenciesNote currencies={unconvertedCurrencies} subject="Spending" />
         </View>
 
-        <View className={card}>
-          <Text className={cardTitle}>Asset allocation</Text>
-          {assetAllocation.length > 0 ? (
-            <AssetAllocationChart data={assetAllocation} currency={baseCurrency} earmarkedMinor={earmarkedMinor} />
-          ) : (
-            <Text className="text-sm text-fg-muted">No positive balances yet.</Text>
-          )}
-        </View>
+        <View className="my-6 h-px bg-border" />
 
-        <View className={card}>
-          <View className="mb-3 flex-row gap-2">
-            {(["expense", "income"] as const).map((k) => (
-              <Pressable
-                key={k}
-                onPress={() => setKind(k)}
-                className={`flex-1 items-center rounded-lg border py-2 ${
-                  kind === k ? "border-accent bg-accent-soft" : "border-glass-border"
-                }`}
-              >
-                <Text className={kind === k ? "text-accent" : "text-fg-muted"}>
-                  {k === "expense" ? "Spending by category" : "Income by category"}
-                </Text>
-              </Pressable>
-            ))}
+        {/* 2 — Where did my money go? */}
+        <View>
+          <View className="mb-1 flex-row items-center justify-between">
+            <Text accessibilityRole="header" className="font-display text-base text-fg">
+              {kind === "expense" ? "Where your money went" : "Where your money came from"}
+            </Text>
+            <Pressable
+              onPress={() => {
+                setKind((k) => (k === "expense" ? "income" : "expense"));
+                setShowAllCategories(false);
+              }}
+              accessibilityRole="button"
+              hitSlop={12}
+            >
+              <Text className="text-sm font-medium text-accent">{kind === "expense" ? "Show income" : "Show spending"}</Text>
+            </Pressable>
           </View>
+          {topCategory && (
+            <Text className="mb-3 text-sm text-fg-muted">
+              {topCategory.name} was {Math.round((topCategory.totalMinor / categoryTotal) * 100)}% of it.
+            </Text>
+          )}
           {byCategory.length === 0 ? (
-            <Text className="text-sm text-fg-muted">Nothing recorded this month.</Text>
+            <Text className="mt-2 text-sm text-fg-muted">Nothing recorded this month.</Text>
           ) : (
-            <View className="gap-2.5">
-              {byCategory.map((bucket) => {
+            <View className="mt-2 gap-3">
+              {shownCategories.map((bucket) => {
                 const fraction = categoryTotal > 0 ? bucket.totalMinor / categoryTotal : 0;
                 return (
                   <View key={bucket.key}>
                     <View className="flex-row items-center justify-between">
                       <View className="flex-1 flex-row items-center gap-2">
                         {bucket.iconType === "mdi" ? (
-                          <Icon name={bucket.icon} size={14} color={colors.fgMuted} />
+                          <Icon name={bucket.icon} size={16} color={colors.fgMuted} />
                         ) : (
                           <Text className="text-sm">{bucket.icon}</Text>
                         )}
-                        <Text className="text-sm text-fg">{bucket.name}</Text>
+                        <Text className="text-sm text-fg" numberOfLines={1}>
+                          {bucket.name}
+                        </Text>
                       </View>
-                      <Text className="font-data text-xs tabular-nums text-fg-muted">
+                      <Text className="font-data text-sm tabular-nums text-fg">
                         {formatMoney(bucket.totalMinor, baseCurrency)}
                       </Text>
                     </View>
-                    <View className="mt-1 h-1.5 overflow-hidden rounded-full bg-surface-2">
+                    <View className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-surface-3">
                       <View
-                        className={`h-full rounded-full ${kind === "expense" ? "bg-danger" : "bg-success"}`}
+                        className={`h-full rounded-full ${kind === "expense" ? "bg-accent" : "bg-success"}`}
                         style={{ width: `${Math.min(fraction, 1) * 100}%` }}
                       />
                     </View>
@@ -240,11 +249,48 @@ export default function AnalyticsScreen() {
               })}
             </View>
           )}
-          <Link href="/categories" asChild>
-            <Pressable className="mt-3">
-              <Text className="text-xs font-medium text-accent">Manage categories & budgets →</Text>
-            </Pressable>
-          </Link>
+          <View className="mt-4 flex-row items-center justify-between">
+            {byCategory.length > TOP_CATEGORIES ? (
+              <Pressable onPress={() => setShowAllCategories((s) => !s)} accessibilityRole="button" hitSlop={12}>
+                <Text className="text-sm font-medium text-accent">
+                  {showAllCategories ? "Show top 5" : `Show all ${byCategory.length}`}
+                </Text>
+              </Pressable>
+            ) : (
+              <View />
+            )}
+            <Link href="/categories" asChild>
+              <Pressable accessibilityRole="link" hitSlop={12}>
+                <Text className="text-sm font-medium text-accent">Categories & budgets</Text>
+              </Pressable>
+            </Link>
+          </View>
+        </View>
+
+        <View className="my-6 h-px bg-border" />
+
+        {/* 3 — How is my net worth moving? */}
+        <Link href="/net-worth" asChild>
+          <Pressable accessibilityRole="button" accessibilityHint="Opens net worth details">
+            <View className="flex-row items-center justify-between">
+              <Text className="font-display text-base text-fg">Net worth</Text>
+              <Text className="text-xs text-fg-subtle">
+                {trendLength >= TREND_MONTHS_CAP ? `Last ${TREND_MONTHS_CAP} months` : `Since ${monthShortLabel(trendMonths[0])}`}
+              </Text>
+            </View>
+            <Text className="font-data mt-1 text-2xl font-bold tabular-nums text-fg">
+              {netWorthHidden ? "••••••" : formatMoney(netWorthMinor, baseCurrency)}
+            </Text>
+            {!netWorthHidden && netWorthChangeMinor !== 0 && (
+              <Text className={`text-sm font-medium ${netWorthChangeMinor > 0 ? "text-success" : "text-danger"}`}>
+                {netWorthChangeMinor > 0 ? "↑" : "↓"} {formatMoney(Math.abs(netWorthChangeMinor), baseCurrency)} in{" "}
+                {monthName(period)}
+              </Text>
+            )}
+          </Pressable>
+        </Link>
+        <View className="mt-4">
+          <NetWorthTrendChart data={trendData} currency={baseCurrency} height={180} />
         </View>
       </ScrollView>
     </View>

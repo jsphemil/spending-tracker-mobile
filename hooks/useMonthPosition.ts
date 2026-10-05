@@ -121,6 +121,7 @@ export function useMonthPosition(period: MonthPeriod) {
   return {
     accounts,
     range,
+    accountBalanceAsOf,
     toBaseMinor,
     unconvertedCurrencies,
     netWorthMinor,

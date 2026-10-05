@@ -32,7 +32,7 @@ export const HINTS: Record<HintId, { title: string; body: string }> = {
   },
   analytics: {
     title: "The longer view",
-    body: "Net worth over time, how your assets are split, and this month's spending by category. Page back through the months with the arrows.",
+    body: "How this month's spending compares, where it went, and how your net worth is moving. Page back through the months with the arrows.",
   },
   funds: {
     title: "Earmark, don't move",

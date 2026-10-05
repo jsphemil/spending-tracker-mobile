@@ -85,7 +85,7 @@ export function CumulativeSpendChart({ thisMonth, lastMonth, currency, today, he
           <Path d={lastPath} fill="none" stroke={colors.fgSubtle} strokeWidth={1.5} strokeDasharray="4,4" />
         )}
         {thisMonthShown.length > 1 && (
-          <Path d={thisPath} fill="none" stroke={colors.danger} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+          <Path d={thisPath} fill="none" stroke={colors.accent} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
         )}
       </Svg>
 
@@ -103,7 +103,7 @@ export function CumulativeSpendChart({ thisMonth, lastMonth, currency, today, he
       </View>
 
       <View className="mt-2 flex-row items-center gap-4">
-        <LegendSwatch color={colors.danger} label="This month" />
+        <LegendSwatch color={colors.accent} label="This month" />
         <LegendSwatch color={colors.fgSubtle} label="Last month" dashed />
       </View>
       <Text className="mt-2 text-xs text-fg-muted">
