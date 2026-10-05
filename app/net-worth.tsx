@@ -62,7 +62,7 @@ export default function NetWorthScreen() {
         {!hidden && <UnconvertedCurrenciesNote currencies={p.unconvertedCurrencies} subject="Net worth" />}
 
         <Section title="What it's made of">
-          <Row label="Assets" hint="Savings, cash, deposits and investments in credit" value={money(p.assetsMinor)} />
+          <Row label="Assets" hint="Savings, cash, deposits and investments with a positive balance" value={money(p.assetsMinor)} />
           <Row
             label="Debt"
             hint="Owed on credit cards"

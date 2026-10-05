@@ -6,7 +6,7 @@ import { useFundAllocationsSubscription, useFunds } from "../db/queries/funds";
 import { useFilteredTransactions } from "../db/queries/transactions";
 import { getAccountBalanceMinor, getPeriodTotals } from "../services/balance";
 import { getFundBalances, getFundLinkedCurrencies, sumEarmarkedMinor } from "../services/funds";
-import { monthRange, shiftMonth, type MonthPeriod } from "../services/period";
+import { likeForLikeRanges, monthRange, type MonthPeriod } from "../services/period";
 import { ensureMaterialized } from "../services/recurrence";
 import { useBaseConverter } from "./useBaseConverter";
 
@@ -83,22 +83,8 @@ export function useMonthPosition(period: MonthPeriod) {
     const unallocatedMinor = netWorthMinor - earmarkedMinor;
 
     // ---- PERFORMANCE (viewed month) ----
-    // Like-for-like spending comparison: the first `days` days of this month
-    // against the same days of last month (capped at last month's length), so
-    // a month in progress isn't compared with a whole finished one. For a
-    // past month, `days` is the whole month.
-    const now = new Date();
-    const isCurrentMonth = now.getFullYear() === period.year && now.getMonth() === period.month;
-    const days = isCurrentMonth ? now.getDate() : Math.round((range.end.getTime() - range.start.getTime()) / 86400000);
-    const toDate = { start: range.start, end: new Date(period.year, period.month, days + 1) };
-    const lastRange = monthRange(shiftMonth(period, -1));
-    const lastToDate = {
-      start: lastRange.start,
-      end: new Date(Math.min(
-        new Date(lastRange.start.getFullYear(), lastRange.start.getMonth(), days + 1).getTime(),
-        lastRange.end.getTime(),
-      )),
-    };
+    // Like-for-like spending comparison — see likeForLikeRanges.
+    const { days, current: toDate, previous: lastToDate } = likeForLikeRanges(period, new Date());
     let incomeMinor = 0;
     let expenseMinor = 0;
     let carryForwardMinor = 0;

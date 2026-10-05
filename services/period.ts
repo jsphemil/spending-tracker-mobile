@@ -67,3 +67,31 @@ export function parseLocalDateString(dateStr: string): Date {
   const [year, month, day] = dateStr.split("-").map(Number);
   return new Date(year, month - 1, day);
 }
+
+// The Dashboard/Analytics "spending vs last month" windows (spec.md §5.24).
+// While the viewed month is the current one, compare its first `days` days
+// (today inclusive) with the same days of last month — capped at last
+// month's length, so 31 Mar compares with all of February rather than
+// spilling into March. Any other month is finished (or not started), so it
+// compares whole month with whole month. `end`s are exclusive, like
+// monthRange.
+export function likeForLikeRanges(
+  period: MonthPeriod,
+  now: Date,
+): { days: number; isPartial: boolean; current: { start: Date; end: Date }; previous: { start: Date; end: Date } } {
+  const range = monthRange(period);
+  const previous = monthRange(shiftMonth(period, -1));
+  const isPartial = now.getFullYear() === period.year && now.getMonth() === period.month;
+  if (!isPartial) {
+    const days = new Date(period.year, period.month + 1, 0).getDate();
+    return { days, isPartial, current: range, previous };
+  }
+  const days = now.getDate();
+  const cappedEnd = new Date(previous.start.getFullYear(), previous.start.getMonth(), days + 1);
+  return {
+    days,
+    isPartial,
+    current: { start: range.start, end: new Date(period.year, period.month, days + 1) },
+    previous: { start: previous.start, end: cappedEnd < previous.end ? cappedEnd : previous.end },
+  };
+}
