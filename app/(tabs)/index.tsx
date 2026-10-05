@@ -446,7 +446,7 @@ export default function DashboardScreen() {
               <AttentionRow
                 key={`commitment-${row.id}`}
                 icon="calendar-sync-outline"
-                tone="transfer"
+                tone="warning"
                 text={`${row.label} due ${row.date.toLocaleDateString(undefined, { month: "short", day: "numeric" })}`}
                 detail={row.detail}
                 href="/commitments"
@@ -456,7 +456,7 @@ export default function DashboardScreen() {
               <AttentionRow
                 key={`fund-${fund.id}`}
                 icon={fund.icon}
-                tone="transfer"
+                tone="warning"
                 text={`${fund.name} is ${formatMoney(progress.remainingMinor, baseCurrency)} short, needed by ${fund.targetDate!.toLocaleDateString(undefined, { month: "short", day: "numeric" })}`}
                 href="/fund"
               />
@@ -527,13 +527,13 @@ function AttentionRow({
   href,
 }: {
   icon: string;
-  tone: "danger" | "transfer";
+  tone: "danger" | "warning";
   text: string;
   detail?: string;
   href: "/categories" | "/commitments" | "/fund";
 }) {
   const colors = useThemeColors();
-  const toneColor = tone === "danger" ? colors.danger : colors.transfer;
+  const toneColor = tone === "danger" ? colors.danger : colors.warning;
   return (
     <Link href={href} asChild>
       <Pressable className="flex-row items-center gap-2.5">

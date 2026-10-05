@@ -1,13 +1,11 @@
 import { Pressable, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { LinearGradient } from "expo-linear-gradient";
 // React Navigation isn't a direct dependency — expo-router vendors it, and
 // re-exports the tab types from this entry point.
 import type { BottomTabBarProps } from "expo-router/js-tabs";
 
 import { Icon } from "./ui/Icon";
-import { GLOW_SHADOWS, GRADIENTS, NAV_SHADOW } from "../theme/gradients";
 import { useThemeColors } from "../theme/palette";
 import { FAB_SIZE, NAV_BAR_HEIGHT } from "../theme/tabBar";
 
@@ -77,7 +75,6 @@ export function BottomNavBar({ state, descriptors, navigation }: BottomTabBarPro
         borderTopWidth: 1,
         borderTopColor: colors.border,
         paddingBottom: insets.bottom,
-        ...NAV_SHADOW,
       }}
     >
       <View style={{ height: NAV_BAR_HEIGHT, flexDirection: "row", alignItems: "center" }}>
@@ -95,13 +92,11 @@ export function BottomNavBar({ state, descriptors, navigation }: BottomTabBarPro
           accessibilityRole="button"
           accessibilityLabel="Add transaction"
           onPress={() => router.push("/transaction/new")}
-          style={{ borderRadius: 9999, ...GLOW_SHADOWS.brand }}
+          style={{ borderRadius: 9999 }}
         >
-          <LinearGradient
-            colors={GRADIENTS.brand}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
+          <View
             style={{
+              backgroundColor: colors.accent,
               height: FAB_SIZE,
               width: FAB_SIZE,
               borderRadius: 9999,
@@ -113,8 +108,8 @@ export function BottomNavBar({ state, descriptors, navigation }: BottomTabBarPro
               borderColor: colors.surface,
             }}
           >
-            <Icon name="plus" size={26} color="#ffffff" strokeWidth={2.5} />
-          </LinearGradient>
+            <Icon name="plus" size={26} color={colors.onAccent} strokeWidth={2.5} />
+          </View>
         </Pressable>
       </View>
     </View>

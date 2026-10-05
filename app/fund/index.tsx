@@ -175,7 +175,7 @@ export default function FundsListScreen() {
           className="absolute h-14 w-14 items-center justify-center rounded-full bg-accent"
           style={{ bottom: insets.bottom + 20, right: 24 }}
         >
-          <Icon name="plus" size={26} color="#ffffff" strokeWidth={2.5} />
+          <Icon name="plus" size={26} color={colors.onAccent} strokeWidth={2.5} />
         </Pressable>
       </Link>
     </View>

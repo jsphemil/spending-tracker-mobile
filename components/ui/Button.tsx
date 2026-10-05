@@ -1,8 +1,5 @@
 import type { ReactNode } from "react";
 import { Pressable, Text, type PressableProps } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
-
-import { GRADIENTS } from "../../theme/gradients";
 
 export type ButtonVariant = "primary" | "success" | "danger" | "transfer" | "ghost";
 
@@ -27,25 +24,15 @@ const TONE_TEXT: Record<"success" | "danger" | "transfer", string> = {
 };
 
 export function Button({ variant = "primary", children, className, disabled, ...props }: ButtonProps) {
+  // V4 (spec.md §5.24): a solid accent fill — the brand gradient is gone.
   if (variant === "primary") {
     return (
-      <Pressable className={className} disabled={disabled} {...props}>
-        {({ pressed }) => (
-          <LinearGradient
-            colors={GRADIENTS.brand}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={{
-              borderRadius: 9999,
-              paddingVertical: 12,
-              alignItems: "center",
-              opacity: disabled ? 0.5 : pressed ? 0.85 : 1,
-              transform: [{ scale: pressed ? 0.96 : 1 }],
-            }}
-          >
-            <Text className="text-base font-semibold text-white">{children}</Text>
-          </LinearGradient>
-        )}
+      <Pressable
+        className={`items-center rounded-full bg-accent py-3 active:opacity-85 ${disabled ? "opacity-50" : ""} ${className ?? ""}`}
+        disabled={disabled}
+        {...props}
+      >
+        <Text className="text-base font-semibold text-on-accent">{children}</Text>
       </Pressable>
     );
   }

@@ -25,12 +25,15 @@ module.exports = {
         success: "rgb(var(--success) / <alpha-value>)",
         danger: "rgb(var(--danger) / <alpha-value>)",
         transfer: "rgb(var(--transfer) / <alpha-value>)",
+        warning: "rgb(var(--warning) / <alpha-value>)",
+        "on-accent": "rgb(var(--on-accent) / <alpha-value>)",
         // "Soft" tokens already carry their own alpha as rgba() — must NOT
         // go through the <alpha-value> wrapper, that would double-apply it.
         "accent-soft": "var(--accent-soft)",
         "success-soft": "var(--success-soft)",
         "danger-soft": "var(--danger-soft)",
         "transfer-soft": "var(--transfer-soft)",
+        "warning-soft": "var(--warning-soft)",
         // Erebor "glass" panel tiers — already carry their own alpha as
         // rgba(), same rule as the "-soft" tokens above.
         glass: "var(--glass-fill)",

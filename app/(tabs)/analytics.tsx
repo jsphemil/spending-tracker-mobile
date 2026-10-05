@@ -36,9 +36,9 @@ import { useThemeColors } from "../../theme/palette";
 import type { CategoryKind } from "../../db/schema";
 
 const ASSET_ALLOCATION_BUCKETS = [
-  { name: "Liquid (Savings/Wallet)", types: ["savings", "wallet"], color: "#7c6ef2" },
-  { name: "Deposits (FD/RD)", types: ["deposit"], color: "#f0a63a" },
-  { name: "Invested", types: ["investment"], color: "#3aa0c9" },
+  { name: "Liquid (Savings/Wallet)", types: ["savings", "wallet"], chart: "chart1" },
+  { name: "Deposits (FD/RD)", types: ["deposit"], chart: "chart2" },
+  { name: "Invested", types: ["investment"], chart: "chart3" },
 ] as const;
 
 const TREND_MONTHS_CAP = 24;
@@ -102,7 +102,7 @@ export default function AnalyticsScreen() {
   );
   const assetAllocation = ASSET_ALLOCATION_BUCKETS.map((bucket) => ({
     name: bucket.name,
-    color: bucket.color,
+    color: colors[bucket.chart],
     valueMinor: (accounts ?? [])
       .filter((a) => (bucket.types as readonly string[]).includes(a.type))
       .reduce((sum, a) => sum + Math.max(0, toBaseMinor(accountBalanceAtEnd.get(a.id) ?? 0, a.currency)), 0),

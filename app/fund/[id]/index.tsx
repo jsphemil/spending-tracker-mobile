@@ -215,7 +215,7 @@ export default function FundDetailScreen() {
               onPress={() => setSheetMode("add")}
               className="flex-1 items-center rounded-full bg-accent py-3"
             >
-              <Text className="text-base font-semibold text-white">Add money</Text>
+              <Text className="text-base font-semibold text-on-accent">Add money</Text>
             </Pressable>
             <Pressable
               onPress={() => setSheetMode("release")}

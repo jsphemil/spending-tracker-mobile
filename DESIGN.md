@@ -4,7 +4,9 @@
 >
 > This document defines how Erebor should look, feel, and behave. It is intentionally implementation-aware enough for Claude Code and future contributors to make consistent UI decisions without rediscovering the design language screen by screen.
 >
-> **Current direction: Erebor V2.** V2 supersedes the earlier six-tab, dark-only V1 presentation while preserving the underlying financial model, currency logic, local-first architecture, and Dropbox backup/restore behavior.
+> **Current direction: Erebor V4 visuals (spec.md §5.24) on the V2 structure.** Where V4 sections conflict with older V2 text below, V4 wins.
+>
+> **V2 structure:** V2 supersedes the earlier six-tab, dark-only V1 presentation while preserving the underlying financial model, currency logic, local-first architecture, and Dropbox backup/restore behavior.
 
 ---
 
@@ -76,139 +78,91 @@ The exact grouping can evolve, but unrelated controls should not be presented as
 
 ## 3. Visual language
 
+> **V4 (2026-10, spec.md §5.24) replaces the V2 "glassy neon" language.** The neon-cyan dark theme, brand gradient, coloured glows and card drop shadows are gone.
+
 ### 3.1 Overall aesthetic
 
-Erebor is a **premium glassy fintech interface** with a dark/modern visual base, strong semantic colors, subtle depth, and restrained neon accents.
+Erebor is a **calm, premium wealth-management app**: quiet neutrals, one muted indigo accent, and restrained semantic colour. It should feel mature and trustworthy, and make a financial position easy to grasp in a few seconds.
 
-It should feel closer to a high-end financial terminal than to a generic budgeting app, while remaining comfortable and readable on a phone.
+The guiding principle is **at a glance first, details when I ask for them.** A screen shows the few figures that answer its question; everything else is one tap away.
 
-Do not introduce decorative gradients, glows, shadows, or illustrations merely because they look attractive. Every visual effect must support hierarchy or state.
+Do not add gradients, glows, heavy shadows, decorative icons or illustrations. Confidence comes through restraint.
 
-### 3.2 Surfaces
+### 3.2 Surfaces and grouping
 
-Use a small, repeated set of surface tiers rather than inventing a new card treatment for every screen:
+Hierarchy, in order of preference:
 
-- Page background
-- Standard surface/card
-- Elevated surface
-- Strong elevated/interactive surface
-- Frosted/glass surface
+1. **Whitespace and typography** — the default way to group content.
+2. **Hairline dividers** between sections.
+3. **A surface (card)** — only when a block is genuinely a distinct, emphasised unit (e.g. an attention item, a summary band, a bottom sheet).
 
-The glass treatment is part of the Erebor language. It should read as a subtle translucent panel over the page background, not as a strong blur effect that harms legibility.
-
-Prefer one shared card/panel primitive with variants rather than custom containers per screen.
+Not every section needs a container, border, tint, icon and shadow. A card must communicate meaningful grouping or importance.
 
 ### 3.3 Borders and depth
 
-Depth should come primarily from:
-
-- surface contrast
-- restrained borders
-- translucency
-- spacing and grouping
-
-Avoid heavy drop shadows, especially in dark mode.
+No drop shadows on cards or the navigation bar. Depth comes from surface contrast (bg → surface → surface-2) and hairline borders only.
 
 ### 3.4 Accent philosophy
 
-The primary accent is a cool cyan/aqua family in the current dark theme, paired with a blue-violet secondary accent where needed.
-
-Accent should be used for interaction and emphasis, not sprayed across every label or card.
+The primary accent is a **muted indigo** in both themes. It marks primary actions, the selected tab, links and key interactive elements — nothing else. Do not make every selected element strongly indigo.
 
 ---
 
 ## 4. Color tokens
 
-Never hardcode UI colors in components. Components consume semantic token names.
+Never hardcode UI colors in components. Components consume semantic token names. `theme/palette.ts` is the source of truth (`cssVars()` drives the NativeWind CSS variables at runtime); `global.css` is a fallback copy kept in sync by hand.
 
-The current implementation exposes these concepts through `theme/palette.ts` and the corresponding NativeWind/CSS variables.
+### Semantic roles
 
-### Core semantic tokens
+| Role (palette.ts / className) | Meaning |
+|---|---|
+| `bg` | Page background |
+| `surface` / `surface-2` / `surface-3` | Surface, elevated surface, strongest tier (tracks, pressed) |
+| `border` / `border-strong` | Divider, emphasised divider |
+| `fg` / `fg-muted` / `fg-subtle` | Text primary / secondary / tertiary |
+| `accent` / `accent-strong` / `accent-soft` | Primary, primary pressed, primary container |
+| `on-accent` | Text and icons on a solid accent fill |
+| `success` / `success-soft` | Positive movement, income, gains |
+| `danger` / `danger-soft` | Debt, overspending, negative movement, destructive actions |
+| `warning` / `warning-soft` | Something needs the user's attention |
+| `transfer` / `transfer-soft` | Movement between the user's own accounts — neither good nor bad |
+| `chart1`–`chart3` | Categorical chart series (palette.ts only) |
+| `glass*` | Legacy names for the subtle panel fills/borders; no longer translucent "glass" |
 
-```text
-bg
-surface
-surface-2
-surface-3
-border
-border-strong
-fg
-fg-muted
-fg-subtle
-accent
-accent-strong
-accent-soft
-success
-success-soft
-danger
-danger-soft
-transfer
-transfer-soft
-```
+Disabled states use reduced opacity (`opacity-50`) on the control, not a separate colour.
 
-### Glass tokens
+### Palette reference
 
-```text
-glass-fill
-glass-fill-strong
-glass-fill-press
-glass-border
-glass-border-strong
-```
+Implementation values, not permission to bypass the tokens. Every text-bearing role clears WCAG AA (4.5:1) against `bg`, `surface` and `surface-2` in its theme — re-check when changing a value.
 
-### Current palette reference
+| Token | Light | Dark |
+|---|---|---|
+| bg | `#f6f6f8` | `#121318` |
+| surface | `#ffffff` | `#1a1b22` |
+| surface-2 | `#efeff3` | `#22232b` |
+| surface-3 | `#e4e4ea` | `#2b2c35` |
+| border | `#e2e2e8` | `#2a2b33` |
+| border-strong | `#c9c9d3` | `#3a3b45` |
+| fg | `#16171d` | `#e7e7ee` |
+| fg-muted | `#555867` | `#a4a6b3` |
+| fg-subtle | `#676a78` | `#8b8d9b` |
+| accent | `#4b51b0` | `#a3a8f0` |
+| on-accent | `#ffffff` | `#16173a` |
+| success | `#2b7a57` | `#7fc6a2` |
+| danger | `#b03f4c` | `#e8909a` |
+| warning | `#94600f` | `#dbb46c` |
+| transfer | `#4f6a84` | `#97adc4` |
 
-These are implementation values, not permission to bypass the token system.
-
-**Dark**
-
-```text
-bg              #0c1120
-surface         #131a2c
-surface-2       #1a2338
-surface-3       #212b45
-border          #1f2432
-border-strong   #2e323f
-fg              #f6f8fc
-fg-muted        #97a1bc
-fg-subtle       #5c6584
-accent          #48e7f5
-accent-strong   #4c7dff
-success         #2fe39b
-danger          #ff5c72
-transfer        #ffc24b
-```
-
-**Light**
-
-```text
-bg              #eef6f8
-surface         #ffffff
-surface-2       #e3eff3
-surface-3       #d5e6ec
-border          #d0e2e8
-border-strong   #b0c9d1
-fg              #0f1a1e
-fg-muted        #566a72
-fg-subtle       #89a1aa
-accent          #5b4fe0
-accent-strong   #4a3fd0
-success         #12a57c
-danger          #e0435a
-transfer        #b45309
-```
-
-Soft and glass values should continue to be maintained centrally in the theme implementation.
+Dark is designed for checking finances at night: a deep neutral (not black), off-white text (not pure white), desaturated accents. It is not a darkened copy of Light.
 
 ### Semantic color rules
 
-**Success** communicates positive financial flow or healthy status.
-
-**Danger** communicates spending, debt, destructive actions, or attention-required financial risk.
-
-**Transfer** is deliberately distinct from both income and expense. A transfer is movement between owned accounts, not profit or loss.
-
-Never use color alone to communicate a critical state. Pair it with text, iconography, position, or a number sign.
+- **Most information is neutral.** Do not colour every financial number.
+- **Spending amounts are neutral by default** (a leading "−" carries the meaning); use `danger` for debt, overspending, negative net movement and destructive actions.
+- **Income and gains** use `success`.
+- **Transfers** use `transfer` — distinct from both income and expense.
+- **Warning** is for attention only, never for a money direction.
+- Never use color alone to communicate meaning. Pair it with text, a sign (+/−/↑/↓), an icon or position.
 
 ---
 

@@ -2,12 +2,16 @@ import { useColorScheme } from "react-native";
 
 import { useSettings } from "../db/queries/settings";
 
-// Mirrors global.css's CSS-variable tokens as literal hex values, for the
-// handful of consumers that can't take a Tailwind className (react-native-svg
-// stroke/fill props, icon `color` props). Dark values are the
-// Erebor design system's tokens (Claude Design project
-// d5887e1e-2512-436b-9f64-e086c0c538de, tokens/colors.css) — keep both in
-// sync by hand if either changes, the token set is small and changes rarely.
+// The semantic colour roles (DESIGN.md §4). Mirrored into CSS variables by
+// cssVars() below for className consumers; read directly by the handful
+// that can't take a className (react-native-svg props, icon `color`).
+// global.css carries the same values as a pre-settings fallback — keep the
+// two in sync by hand.
+//
+// V4 (spec.md §5.24): calm, muted indigo in both themes, replacing the
+// neon-cyan dark / saturated-purple light pair. Every text-bearing role
+// below clears WCAG AA (4.5:1) against bg, surface and surface2 in its
+// own theme — re-check if you change a value.
 export interface ThemeColors {
   bg: string;
   surface: string;
@@ -18,13 +22,24 @@ export interface ThemeColors {
   fg: string;
   fgMuted: string;
   fgSubtle: string;
+  // Primary: actions, selected navigation, key interactive elements.
   accent: string;
   accentStrong: string;
+  // Text/icons drawn on a solid accent fill.
+  onAccent: string;
+  // Financial semantics: income/gains, expenses/debt/destructive.
   success: string;
   danger: string;
+  // Something needs attention — not a money direction.
+  warning: string;
+  // Money moving between the user's own accounts: neither good nor bad.
   transfer: string;
-  // Frosted-glass panel tiers (translucent — approximated with plain
-  // semi-transparent fills, no real blur; see spec's design-refresh plan).
+  // Categorical chart series, for charts that compare parts (allocation).
+  chart1: string;
+  chart2: string;
+  chart3: string;
+  // Panel tiers. Names kept from the glass era so no screen changes, but
+  // these are now plain subtle fills, not translucent "glass".
   glassFill: string;
   glassFillStrong: string;
   glassFillPress: string;
@@ -33,70 +48,82 @@ export interface ThemeColors {
 }
 
 export const palette: Record<"light" | "dark", ThemeColors> = {
-  // Aquatic light theme: the neutrals carry a cyan/teal cast rather than
-  // being pure greys, echoing the dark theme's cyan accent. The glass
-  // tokens are a deep teal at low alpha instead of plain black, so a card
-  // reads as tinted rather than merely darker than the page behind it.
+  // Soft cool-neutral page, white surfaces, muted indigo accent.
   light: {
-    bg: "#eef6f8",
+    bg: "#f6f6f8",
     surface: "#ffffff",
-    surface2: "#e3eff3",
-    surface3: "#d5e6ec",
-    border: "#d0e2e8",
-    borderStrong: "#b0c9d1",
-    fg: "#0f1a1e",
-    fgMuted: "#566a72",
-    fgSubtle: "#89a1aa",
-    accent: "#5b4fe0",
-    accentStrong: "#4a3fd0",
-    success: "#12a57c",
-    danger: "#e0435a",
-    transfer: "#b45309",
-    glassFill: "rgba(6, 74, 92, 0.05)",
-    glassFillStrong: "rgba(6, 74, 92, 0.09)",
-    glassFillPress: "rgba(6, 74, 92, 0.13)",
-    glassBorder: "rgba(6, 74, 92, 0.10)",
-    glassBorderStrong: "rgba(6, 74, 92, 0.18)",
+    surface2: "#efeff3",
+    surface3: "#e4e4ea",
+    border: "#e2e2e8",
+    borderStrong: "#c9c9d3",
+    fg: "#16171d",
+    fgMuted: "#555867",
+    fgSubtle: "#676a78",
+    accent: "#4b51b0",
+    accentStrong: "#3c4196",
+    onAccent: "#ffffff",
+    success: "#2b7a57",
+    danger: "#b03f4c",
+    warning: "#94600f",
+    transfer: "#4f6a84",
+    chart1: "#4b51b0",
+    chart2: "#b07a2a",
+    chart3: "#3f8a8c",
+    glassFill: "#ffffff",
+    glassFillStrong: "rgba(22, 23, 29, 0.05)",
+    glassFillPress: "rgba(22, 23, 29, 0.08)",
+    glassBorder: "rgba(22, 23, 29, 0.08)",
+    glassBorderStrong: "rgba(22, 23, 29, 0.14)",
   },
+  // Deep neutral (not black), slightly lifted surfaces, off-white text and
+  // desaturated accents — designed for checking finances at night, not a
+  // darkened copy of light.
   dark: {
-    bg: "#0c1120",
-    surface: "#131a2c",
-    surface2: "#1a2338",
-    surface3: "#212b45",
-    border: "#1f2432",
-    borderStrong: "#2e323f",
-    fg: "#f6f8fc",
-    fgMuted: "#97a1bc",
-    fgSubtle: "#5c6584",
-    accent: "#48e7f5",
-    accentStrong: "#4c7dff",
-    success: "#2fe39b",
-    danger: "#ff5c72",
-    transfer: "#ffc24b",
-    glassFill: "rgba(255, 255, 255, 0.06)",
-    glassFillStrong: "rgba(255, 255, 255, 0.10)",
-    glassFillPress: "rgba(255, 255, 255, 0.14)",
-    glassBorder: "rgba(255, 255, 255, 0.12)",
-    glassBorderStrong: "rgba(255, 255, 255, 0.20)",
+    bg: "#121318",
+    surface: "#1a1b22",
+    surface2: "#22232b",
+    surface3: "#2b2c35",
+    border: "#2a2b33",
+    borderStrong: "#3a3b45",
+    fg: "#e7e7ee",
+    fgMuted: "#a4a6b3",
+    fgSubtle: "#8b8d9b",
+    accent: "#a3a8f0",
+    accentStrong: "#bcc0f5",
+    onAccent: "#16173a",
+    success: "#7fc6a2",
+    danger: "#e8909a",
+    warning: "#dbb46c",
+    transfer: "#97adc4",
+    chart1: "#a3a8f0",
+    chart2: "#dbb46c",
+    chart3: "#7fbfc0",
+    glassFill: "rgba(255, 255, 255, 0.04)",
+    glassFillStrong: "rgba(255, 255, 255, 0.07)",
+    glassFillPress: "rgba(255, 255, 255, 0.10)",
+    glassBorder: "rgba(255, 255, 255, 0.08)",
+    glassBorderStrong: "rgba(255, 255, 255, 0.14)",
   },
 };
 
-// Soft (pre-alpha'd) tokens, same values as global.css — kept separate from
-// `palette` above since they're rgba() strings, not solid hex, and only
-// needed by the CSS-variable path (cssVars below), not by SVG/icon
-// consumers of `palette`.
-const SOFT: Record<"light" | "dark", Record<"accentSoft" | "successSoft" | "dangerSoft" | "transferSoft", string>> = {
+// Soft (pre-alpha'd) container tints — the "Positive/Negative/Warning
+// Container" roles. Separate from `palette` since they're rgba() strings,
+// only needed by the CSS-variable path.
+type SoftKey = "accentSoft" | "successSoft" | "dangerSoft" | "warningSoft" | "transferSoft";
+const SOFT: Record<"light" | "dark", Record<SoftKey, string>> = {
   light: {
-    accentSoft: "rgba(91, 79, 224, 0.1)",
-    successSoft: "rgba(18, 165, 124, 0.12)",
-    dangerSoft: "rgba(224, 67, 90, 0.1)",
-    transferSoft: "rgba(180, 83, 9, 0.1)",
+    accentSoft: "rgba(75, 81, 176, 0.10)",
+    successSoft: "rgba(43, 122, 87, 0.10)",
+    dangerSoft: "rgba(176, 63, 76, 0.09)",
+    warningSoft: "rgba(148, 96, 15, 0.10)",
+    transferSoft: "rgba(79, 106, 132, 0.10)",
   },
   dark: {
-    accentSoft: "rgba(72, 231, 245, 0.14)",
-    successSoft: "rgba(47, 227, 155, 0.14)",
-    dangerSoft: "rgba(255, 92, 114, 0.14)",
-    transferSoft: "rgba(255, 194, 75, 0.14)",
+    accentSoft: "rgba(163, 168, 240, 0.14)",
+    successSoft: "rgba(127, 198, 162, 0.13)",
+    dangerSoft: "rgba(232, 144, 154, 0.13)",
+    warningSoft: "rgba(219, 180, 108, 0.13)",
+    transferSoft: "rgba(151, 173, 196, 0.13)",
   },
 };
 
@@ -130,10 +157,13 @@ export function cssVars(scheme: "light" | "dark"): Record<string, string> {
     "--accent": hexToRgbTriplet(p.accent),
     "--accent-strong": hexToRgbTriplet(p.accentStrong),
     "--accent-soft": s.accentSoft,
+    "--on-accent": hexToRgbTriplet(p.onAccent),
     "--success": hexToRgbTriplet(p.success),
     "--success-soft": s.successSoft,
     "--danger": hexToRgbTriplet(p.danger),
     "--danger-soft": s.dangerSoft,
+    "--warning": hexToRgbTriplet(p.warning),
+    "--warning-soft": s.warningSoft,
     "--transfer": hexToRgbTriplet(p.transfer),
     "--transfer-soft": s.transferSoft,
     "--glass-fill": p.glassFill,

@@ -326,18 +326,18 @@ export default function AccountDetailScreen() {
 
             <View className="w-full flex-row gap-3">
               <Link href={`/transaction/new?accountId=${accountId}&type=income`} asChild>
-                <Pressable className="flex-1 items-center rounded-lg bg-success py-3">
-                  <Text className="font-semibold text-white">Income</Text>
+                <Pressable className="flex-1 items-center rounded-lg bg-success-soft py-3">
+                  <Text className="font-semibold text-success">Income</Text>
                 </Pressable>
               </Link>
               <Link href={`/transaction/new?accountId=${accountId}&type=expense`} asChild>
-                <Pressable className="flex-1 items-center rounded-lg bg-danger py-3">
-                  <Text className="font-semibold text-white">Expense</Text>
+                <Pressable className="flex-1 items-center rounded-lg bg-danger-soft py-3">
+                  <Text className="font-semibold text-danger">Expense</Text>
                 </Pressable>
               </Link>
               <Link href={`/transaction/new?accountId=${accountId}&type=transfer`} asChild>
-                <Pressable className="flex-1 items-center rounded-lg bg-transfer py-3">
-                  <Text className="font-semibold text-white">Transfer</Text>
+                <Pressable className="flex-1 items-center rounded-lg bg-transfer-soft py-3">
+                  <Text className="font-semibold text-transfer">Transfer</Text>
                 </Pressable>
               </Link>
             </View>

@@ -2,65 +2,66 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Design tokens ported from the source web app's src/app/globals.css
-   (values fetched and verified directly against that repo 2026-08-11, see
-   spec.md §5.12). Solid tokens are "R G B" triplets (no commas) so
-   Tailwind's rgb(var(--x) / <alpha-value>) wrapper in tailwind.config.js
-   can apply opacity modifiers; "soft" tokens already carry their own alpha
-   as a full rgba() and are consumed directly, not through that wrapper. */
-
-/* Light is the aquatic palette — cyan/teal-cast neutrals rather than pure
-   greys. Kept in sync with theme/palette.ts's `light` object by hand; note
-   that cssVars() there is what actually drives these at runtime, so
-   palette.ts is the value that matters if the two ever disagree. */
+/* Fallback copy of theme/palette.ts's tokens (V4, spec.md §5.24). At
+   runtime cssVars() in palette.ts drives these via NativeWind's vars(), so
+   palette.ts is the value that matters if the two ever disagree. Solid
+   tokens are "R G B" triplets so Tailwind's rgb(var(--x) / <alpha-value>)
+   wrapper can apply opacity; "-soft" and glass tokens carry their own
+   alpha and are consumed directly. */
 :root {
-  --bg: 238 246 248;
+  --bg: 246 246 248;
   --surface: 255 255 255;
-  --surface-2: 227 239 243;
-  --surface-3: 213 230 236;
-  --border: 208 226 232;
-  --border-strong: 176 201 209;
-  --fg: 15 26 30;
-  --fg-muted: 86 106 114;
-  --fg-subtle: 137 161 170;
-  --accent: 91 79 224;
-  --accent-strong: 74 63 208;
-  --accent-soft: rgba(91, 79, 224, 0.1);
-  --success: 18 165 124;
-  --success-soft: rgba(18, 165, 124, 0.12);
-  --danger: 224 67 90;
-  --danger-soft: rgba(224, 67, 90, 0.1);
-  --transfer: 180 83 9;
-  --transfer-soft: rgba(180, 83, 9, 0.1);
+  --surface-2: 239 239 243;
+  --surface-3: 228 228 234;
+  --border: 226 226 232;
+  --border-strong: 201 201 211;
+  --fg: 22 23 29;
+  --fg-muted: 85 88 103;
+  --fg-subtle: 103 106 120;
+  --accent: 75 81 176;
+  --accent-strong: 60 65 150;
+  --accent-soft: rgba(75, 81, 176, 0.10);
+  --on-accent: 255 255 255;
+  --success: 43 122 87;
+  --success-soft: rgba(43, 122, 87, 0.10);
+  --danger: 176 63 76;
+  --danger-soft: rgba(176, 63, 76, 0.09);
+  --warning: 148 96 15;
+  --warning-soft: rgba(148, 96, 15, 0.10);
+  --transfer: 79 106 132;
+  --transfer-soft: rgba(79, 106, 132, 0.10);
+  --glass-fill: #ffffff;
+  --glass-fill-strong: rgba(22, 23, 29, 0.05);
+  --glass-fill-press: rgba(22, 23, 29, 0.08);
+  --glass-border: rgba(22, 23, 29, 0.08);
+  --glass-border-strong: rgba(22, 23, 29, 0.14);
 }
 
-/* Erebor design system (Claude Design project
-   d5887e1e-2512-436b-9f64-e086c0c538de, tokens/colors.css) — dark-only, so
-   this is the only palette that's actually reachable (see
-   theme/palette.ts's useResolvedTheme). Kept in sync with palette.ts's
-   `dark` object and its cssVars() output by hand. */
 .dark {
-  --bg: 12 17 32;
-  --surface: 19 26 44;
-  --surface-2: 26 35 56;
-  --surface-3: 33 43 69;
-  --border: 31 36 50;
-  --border-strong: 46 50 63;
-  --fg: 246 248 252;
-  --fg-muted: 151 161 188;
-  --fg-subtle: 92 101 132;
-  --accent: 72 231 245;
-  --accent-strong: 76 125 255;
-  --accent-soft: rgba(72, 231, 245, 0.14);
-  --success: 47 227 155;
-  --success-soft: rgba(47, 227, 155, 0.14);
-  --danger: 255 92 114;
-  --danger-soft: rgba(255, 92, 114, 0.14);
-  --transfer: 255 194 75;
-  --transfer-soft: rgba(255, 194, 75, 0.14);
-  --glass-fill: rgba(255, 255, 255, 0.06);
-  --glass-fill-strong: rgba(255, 255, 255, 0.10);
-  --glass-fill-press: rgba(255, 255, 255, 0.14);
-  --glass-border: rgba(255, 255, 255, 0.12);
-  --glass-border-strong: rgba(255, 255, 255, 0.20);
+  --bg: 18 19 24;
+  --surface: 26 27 34;
+  --surface-2: 34 35 43;
+  --surface-3: 43 44 53;
+  --border: 42 43 51;
+  --border-strong: 58 59 69;
+  --fg: 231 231 238;
+  --fg-muted: 164 166 179;
+  --fg-subtle: 139 141 155;
+  --accent: 163 168 240;
+  --accent-strong: 188 192 245;
+  --accent-soft: rgba(163, 168, 240, 0.14);
+  --on-accent: 22 23 58;
+  --success: 127 198 162;
+  --success-soft: rgba(127, 198, 162, 0.13);
+  --danger: 232 144 154;
+  --danger-soft: rgba(232, 144, 154, 0.13);
+  --warning: 219 180 108;
+  --warning-soft: rgba(219, 180, 108, 0.13);
+  --transfer: 151 173 196;
+  --transfer-soft: rgba(151, 173, 196, 0.13);
+  --glass-fill: rgba(255, 255, 255, 0.04);
+  --glass-fill-strong: rgba(255, 255, 255, 0.07);
+  --glass-fill-press: rgba(255, 255, 255, 0.10);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-border-strong: rgba(255, 255, 255, 0.14);
 }
