@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { useLiveQuery } from "drizzle-orm/expo-sqlite";
 import { router, useLocalSearchParams } from "expo-router";
-import { Text, View } from "react-native";
+import { BackHandler, Text, View } from "react-native";
 
 import { TransactionForm } from "../../components/TransactionForm";
 import { db } from "../../db/client";
@@ -28,6 +28,14 @@ export default function NewTransactionScreen() {
   // duplicating one wouldn't make sense outside the account-edit flow.
   const duplicateSource = duplicateRows?.find((t) => !t.isOpeningBalance);
   const duplicateTagIds = useTransactionTagIds(duplicateSource?.id ?? -1);
+
+  // The widget and launcher shortcuts deep-link straight here, so on a cold
+  // start this screen is the whole stack and router.back() has nowhere to
+  // go — the form stayed open after saving and a second tap saved the
+  // transaction again. In that case the user came from their home screen,
+  // so send them back there: exitApp finishes the activity (the JS work —
+  // the save and the widget refresh — has already run).
+  const close = () => (router.canGoBack() ? router.back() : BackHandler.exitApp());
 
   // Still loading the source row — avoid rendering the form with stale
   // "new" defaults for a moment before the duplicate data arrives.
@@ -75,11 +83,11 @@ export default function NewTransactionScreen() {
         }
         onSubmit={(values) => {
           createTransaction(values);
-          router.back();
+          close();
         }}
         onSubmitRecurring={(values, schedule) => {
           createRecurringSeries(db, values, schedule);
-          router.back();
+          close();
         }}
       />
     </View>
