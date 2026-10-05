@@ -16,6 +16,14 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "3.2.1",
+    date: "2026-10-05",
+    title: "Quick add that closes itself",
+    highlights: [
+      "Adding a transaction from the home screen widget or an app shortcut now takes you straight back to your home screen once it's saved, instead of leaving the form open — so a second tap can no longer save it twice.",
+    ],
+  },
+  {
     version: "3.2.0",
     date: "2026-10-04",
     title: "What's coming up, and room to tap it",
