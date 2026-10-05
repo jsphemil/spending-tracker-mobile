@@ -470,8 +470,6 @@ export default function AccountDetailScreen() {
             toAccountName={item.type === "transfer" ? otherAccountName(item.toAccountId) : undefined}
             accountName={account.name}
             viewingAccountId={accountId}
-            showActionIcons
-            showDuplicateIcon
             onDelete={() => confirmDeleteTransaction(db, item, () => {})}
           />
         )}

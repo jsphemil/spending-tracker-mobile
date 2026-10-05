@@ -108,8 +108,6 @@ export default function TagSummaryScreen() {
             }
             accountName={item.accountName}
             hideTag={tagName}
-            showActionIcons
-            showDuplicateIcon
             onDelete={() => confirmDeleteTransaction(db, item.transaction, () => {})}
           />
         )}

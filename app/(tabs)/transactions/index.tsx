@@ -1,44 +1,76 @@
 import { useEffect, useMemo, useState } from "react";
-import DateTimePicker from "@react-native-community/datetimepicker";
-import { FlatList, Pressable, ScrollView, Text, View } from "react-native";
-import { Icon } from "../../../components/ui/Icon";
+import { Pressable, SectionList, Text, View } from "react-native";
+import { Searchbar } from "react-native-paper";
 
 import { confirmDeleteTransaction } from "../../../components/confirmDeleteTransaction";
 import { HeaderAction, ScreenHeader } from "../../../components/ScreenHeader";
 import { FirstVisitHint } from "../../../components/FirstVisitHint";
-import { SummaryBand } from "../../../components/SummaryBand";
+import {
+  MODE_LABELS,
+  TransactionFilterSheet,
+  TYPE_LABELS,
+  type TransactionFilters,
+} from "../../../components/TransactionFilterSheet";
 import { UnconvertedCurrenciesNote } from "../../../components/UnconvertedCurrenciesNote";
 import { TransactionListItem } from "../../../components/TransactionListItem";
 import { EmptyState } from "../../../components/ui/EmptyState";
+import { Icon } from "../../../components/ui/Icon";
 import { db } from "../../../db/client";
 import { useAccounts } from "../../../db/queries/accounts";
 import { useCategories } from "../../../db/queries/categories";
 import { useSettings } from "../../../db/queries/settings";
 import { useFilteredTransactions } from "../../../db/queries/transactions";
 import { useBaseConverter } from "../../../hooks/useBaseConverter";
-import { } from "../../../services/format";
+import { formatMoney } from "../../../services/format";
 import { currentMonthPeriod, monthLabel, monthRange, shiftMonth } from "../../../services/period";
 import { ensureMaterialized } from "../../../services/recurrence";
 import { resolveAccountSettings } from "../../../services/settings";
 import { TAB_BAR_CLEARANCE } from "../../../theme/tabBar";
 import { useThemeColors } from "../../../theme/palette";
 
-type FilterMode = "month" | "custom" | "allTime";
-type TypeFilter = "all" | "recurring" | "transfer";
+function defaultFilters(): TransactionFilters {
+  return {
+    mode: "month",
+    customFrom: monthRange(currentMonthPeriod()).start,
+    customTo: new Date(),
+    accountId: undefined,
+    categoryId: undefined,
+    type: "all",
+  };
+}
 
+const shortDate = (d: Date) => d.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+
+// "Today", "Yesterday", else e.g. "Mon, 20 Oct" (with the year when it
+// isn't this year).
+function dayHeading(day: Date, today: Date): string {
+  const diff = Math.round((today.getTime() - day.getTime()) / 86400000);
+  if (diff === 0) return "Today";
+  if (diff === 1) return "Yesterday";
+  return day.toLocaleDateString(undefined, {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    ...(day.getFullYear() !== today.getFullYear() ? { year: "numeric" } : {}),
+  });
+}
+
+// Transactions V4 (spec.md §5.24): the list first. Filters live in a sheet
+// behind the Filter action (its dot and the chips under the summary show
+// what's applied), search sits behind the Search action, and the list is
+// grouped by day. The filtering, totals and future-hiding rules are V2's,
+// unchanged — only where the controls live has moved.
 export default function TransactionsListScreen() {
   const colors = useThemeColors();
   const { settings } = useSettings();
   const baseCurrency = settings?.baseCurrency ?? "INR";
-  const [filterMode, setFilterMode] = useState<FilterMode>("month");
+  const [filters, setFilters] = useState<TransactionFilters>(defaultFilters);
   const [period, setPeriod] = useState(currentMonthPeriod());
-  const [customFrom, setCustomFrom] = useState(() => monthRange(currentMonthPeriod()).start);
-  const [customTo, setCustomTo] = useState(() => new Date());
-  const [showFromPicker, setShowFromPicker] = useState(false);
-  const [showToPicker, setShowToPicker] = useState(false);
-  const [accountId, setAccountId] = useState<number | undefined>(undefined);
-  const [categoryId, setCategoryId] = useState<number | undefined>(undefined);
-  const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const { mode: filterMode, customFrom, customTo, accountId, categoryId, type: typeFilter } = filters;
+  const update = (next: Partial<TransactionFilters>) => setFilters((f) => ({ ...f, ...next }));
 
   const { data: accounts } = useAccounts();
   const { data: categories } = useCategories();
@@ -60,25 +92,40 @@ export default function TransactionsListScreen() {
   }, [range?.end]);
   const { data: rows } = useFilteredTransactions({ accountId, categoryId, range });
 
-  // Requested 2026-08-21: filter down to just recurring-generated rows or
-  // just transfers, on top of the existing account/category filters —
-  // applied here (client-side, over the already-fetched rows) rather than
-  // in the query, matching how future-hiding is layered on below. Unlike
-  // future-hiding this is a real filter, not a declutter toggle, so it
-  // affects totals too, not just which rows are listed.
+  const categoryName = (id: number | null) => categories?.find((c) => c.id === id)?.name;
+  const accountName = (id: number | null) => accounts?.find((a) => a.id === id)?.name;
+
+  // Type filter, applied client-side over the already-fetched rows (as V2's
+  // Recurring/Transfers filter was). A real filter, not a declutter toggle,
+  // so it affects totals too. Income/Expense added in V4.
   const typeFilteredRows = (rows ?? []).filter((t) => {
     if (typeFilter === "recurring") return t.recurringRuleId != null;
     if (typeFilter === "transfer") return t.type === "transfer";
+    if (typeFilter === "income") return t.type === "income";
+    if (typeFilter === "expense") return t.type === "expense";
     return true;
   });
 
-  // Spec 5.6: same declutter-only semantics as Account Detail — hides
-  // future-dated *rows*, never touches totals, and only while genuinely
-  // viewing the current month (a future/custom/all-time view has no
-  // "haven't happened yet" concept to declutter). With one account
-  // selected, its own override (if any) wins over the global setting; with
-  // "All Accounts" there's no single account to resolve an override
-  // against, so it's the global setting alone.
+  // Search narrows the same rows the totals are built from, so the summary
+  // answers "how much on X" as well as listing it. Matches the note,
+  // category, account names and the amount.
+  const q = query.trim().toLowerCase();
+  const searchedRows = q
+    ? typeFilteredRows.filter((t) =>
+        [
+          t.description,
+          categoryName(t.categoryId),
+          accountName(t.accountId),
+          accountName(t.toAccountId),
+          (t.amountMinor / 100).toFixed(2),
+        ].some((field) => field?.toLowerCase().includes(q)),
+      )
+    : typeFilteredRows;
+
+  // Spec 5.6: hides future-dated *rows* only (a declutter toggle — totals
+  // stay complete), and only while genuinely viewing the current month.
+  // With one account selected, its own override (if any) wins over the
+  // global setting; with "All accounts" it's the global setting alone.
   const now = new Date();
   const todayDateOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const isCurrentMonth =
@@ -89,26 +136,18 @@ export default function TransactionsListScreen() {
       ? resolveAccountSettings(selectedAccount, settings).showFutureTxEnabled
       : settings?.showFutureTxGlobal ?? true;
   const hidingFuture = isCurrentMonth && !showFutureTxEnabled;
-  const visibleRows = hidingFuture
-    ? typeFilteredRows.filter((t) => t.date <= todayDateOnly)
-    : typeFilteredRows;
-  const hiddenFutureCount = typeFilteredRows.length - visibleRows.length;
+  const visibleRows = hidingFuture ? searchedRows.filter((t) => t.date <= todayDateOnly) : searchedRows;
+  const hiddenFutureCount = searchedRows.length - visibleRows.length;
 
-  // When a single account is selected every row already shares that
-  // account's currency, so the band shows it natively. Across "All
-  // Accounts" the rows can mix currencies — everything gets converted to
-  // the base currency before summing (matching the Dashboard's
-  // toBaseMinor pattern) instead of adding raw minor units of different
-  // currencies together.
+  // With a single account selected every row already shares that account's
+  // currency, so totals show natively. Across "All accounts" rows can mix
+  // currencies — everything is converted to the base currency before
+  // summing rather than adding raw minor units of different currencies.
   const currency = accountId
     ? accounts?.find((a) => a.id === accountId)?.currency ?? baseCurrency
     : baseCurrency;
-
-  const { toBaseMinor, unconvertedCurrencies } = useBaseConverter(
-    (accounts ?? []).map((a) => a.currency),
-  );
-
-  const totals = typeFilteredRows.reduce(
+  const { toBaseMinor, unconvertedCurrencies } = useBaseConverter((accounts ?? []).map((a) => a.currency));
+  const totals = searchedRows.reduce(
     (acc, t) => {
       const txCurrency = accounts?.find((a) => a.id === t.accountId)?.currency ?? "INR";
       const amountMinor = accountId ? t.amountMinor : toBaseMinor(t.amountMinor, txCurrency);
@@ -119,208 +158,145 @@ export default function TransactionsListScreen() {
     { incomeMinor: 0, expenseMinor: 0 },
   );
 
-  const categoryName = (id: number | null) => categories?.find((c) => c.id === id)?.name;
-  const accountName = (id: number | null) => accounts?.find((a) => a.id === id)?.name;
+  // Rows arrive newest first; group consecutive days.
+  const sections: { title: string; data: typeof visibleRows }[] = [];
+  for (const t of visibleRows) {
+    const title = dayHeading(new Date(t.date.getFullYear(), t.date.getMonth(), t.date.getDate()), todayDateOnly);
+    const last = sections[sections.length - 1];
+    if (last?.title === title) last.data.push(t);
+    else sections.push({ title, data: [t] });
+  }
+
+  // What's applied, as removable chips — the screen's only filter UI.
+  const activeChips: { key: string; label: string; clear: () => void }[] = [];
+  if (filterMode !== "month") {
+    activeChips.push({
+      key: "mode",
+      label: filterMode === "custom" ? `${shortDate(customFrom)} – ${shortDate(customTo)}` : MODE_LABELS.allTime,
+      clear: () => update({ mode: "month" }),
+    });
+  }
+  if (typeFilter !== "all") activeChips.push({ key: "type", label: TYPE_LABELS[typeFilter], clear: () => update({ type: "all" }) });
+  if (accountId !== undefined) {
+    activeChips.push({ key: "account", label: accountName(accountId) ?? "Account", clear: () => update({ accountId: undefined }) });
+  }
+  if (categoryId !== undefined) {
+    activeChips.push({ key: "category", label: categoryName(categoryId) ?? "Category", clear: () => update({ categoryId: undefined }) });
+  }
+
+  const listHeader = (
+    <View className="gap-3 pb-2">
+      {searchOpen && (
+        <Searchbar
+          placeholder="Search notes, categories, accounts"
+          value={query}
+          onChangeText={setQuery}
+          autoFocus
+          style={{ backgroundColor: colors.surface2, elevation: 0 }}
+          inputStyle={{ color: colors.fg }}
+          placeholderTextColor={colors.fgSubtle}
+          iconColor={colors.fgMuted}
+        />
+      )}
+      {filterMode === "month" && (
+        <View className="flex-row items-center justify-between">
+          <Pressable
+            onPress={() => setPeriod((p) => shiftMonth(p, -1))}
+            accessibilityRole="button"
+            accessibilityLabel="Previous month"
+            className="h-11 w-11 items-center justify-center"
+          >
+            <Icon name="chevron-left" size={24} color={colors.fg} />
+          </Pressable>
+          <Text accessibilityRole="header" className="text-base font-medium text-fg">
+            {monthLabel(period)}
+          </Text>
+          <Pressable
+            onPress={() => setPeriod((p) => shiftMonth(p, 1))}
+            accessibilityRole="button"
+            accessibilityLabel="Next month"
+            className="h-11 w-11 items-center justify-center"
+          >
+            <Icon name="chevron-right" size={24} color={colors.fg} />
+          </Pressable>
+        </View>
+      )}
+
+      <View className="flex-row rounded-2xl border border-border bg-surface px-4 py-3">
+        <View className="flex-1">
+          <Text className="text-xs text-fg-muted">Income</Text>
+          <Text className="font-data text-lg font-semibold tabular-nums text-success">
+            {formatMoney(totals.incomeMinor, currency)}
+          </Text>
+        </View>
+        <View className="flex-1 items-end">
+          <Text className="text-xs text-fg-muted">Spending</Text>
+          <Text className="font-data text-lg font-semibold tabular-nums text-fg">
+            {formatMoney(totals.expenseMinor, currency)}
+          </Text>
+        </View>
+      </View>
+
+      {activeChips.length > 0 && (
+        <View className="flex-row flex-wrap gap-2">
+          {activeChips.map((chip) => (
+            <Pressable
+              key={chip.key}
+              onPress={chip.clear}
+              accessibilityRole="button"
+              accessibilityLabel={`Remove filter ${chip.label}`}
+              className="min-h-9 flex-row items-center gap-1.5 rounded-full bg-accent-soft px-3"
+            >
+              <Text className="text-sm text-accent">{chip.label}</Text>
+              <Icon name="close" size={14} color={colors.accent} />
+            </Pressable>
+          ))}
+        </View>
+      )}
+
+      {/* Only meaningful across "All accounts": with one account selected
+          its rows already share that account's currency. */}
+      {!accountId && <UnconvertedCurrenciesNote currencies={unconvertedCurrencies} subject="These totals" />}
+      {hiddenFutureCount > 0 && (
+        <Text className="text-xs text-fg-muted">
+          {hiddenFutureCount} upcoming transaction{hiddenFutureCount === 1 ? "" : "s"} hidden — Show Future
+          Transactions is off.
+        </Text>
+      )}
+      <FirstVisitHint id="transactions" />
+    </View>
+  );
 
   return (
     <View className="flex-1 bg-bg">
       <ScreenHeader title="Transactions">
+        <HeaderAction
+          icon="magnify"
+          label={searchOpen ? "Close search" : "Search"}
+          active={q.length > 0}
+          onPress={() => {
+            if (searchOpen) setQuery("");
+            setSearchOpen((o) => !o);
+          }}
+        />
+        <HeaderAction icon="filter-variant" label="Filter" active={activeChips.length > 0} onPress={() => setFilterOpen(true)} />
         <HeaderAction icon="calendar-month-outline" label="Calendar" href="/calendar" />
       </ScreenHeader>
-      <View className="gap-3 border-b border-glass-border p-4">
-        {/* Same pill language as the account/category/type filter chips
-            below — accent border + soft accent fill when selected — rather
-            than the tray-and-raised-tab segmented control this used to be,
-            which matched nothing else in the app. Full width because this
-            switches the whole screen's mode, unlike the chips that scroll
-            horizontally beneath it. */}
-        <View className="flex-row gap-2">
-          {(
-            [
-              ["month", "This month"],
-              ["custom", "Custom range"],
-              ["allTime", "All time"],
-            ] as const
-          ).map(([mode, label]) => (
-            <Pressable
-              key={mode}
-              onPress={() => setFilterMode(mode)}
-              accessibilityRole="button"
-              accessibilityState={filterMode === mode ? { selected: true } : {}}
-              className={`flex-1 items-center rounded-full border px-3 py-1.5 ${
-                filterMode === mode ? "border-accent bg-accent-soft" : "border-glass-border"
-              }`}
-            >
-              <Text
-                numberOfLines={1}
-                className={`text-sm font-medium ${filterMode === mode ? "text-accent" : "text-fg-muted"}`}
-              >
-                {label}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
 
-        {filterMode === "month" && (
-          <View className="flex-row items-center justify-between">
-            <Pressable
-              onPress={() => setPeriod((p) => shiftMonth(p, -1))}
-              className="p-3"
-              hitSlop={8}
-            >
-              <Icon name="chevron-left" size={28} color={colors.fg} />
-            </Pressable>
-            <Text className="text-base font-medium text-fg">{monthLabel(period)}</Text>
-            <Pressable
-              onPress={() => setPeriod((p) => shiftMonth(p, 1))}
-              className="p-3"
-              hitSlop={8}
-            >
-              <Icon name="chevron-right" size={28} color={colors.fg} />
-            </Pressable>
-          </View>
-        )}
-
-        {filterMode === "custom" && (
-          <View className="flex-row items-center gap-2">
-            <Pressable
-              onPress={() => setShowFromPicker(true)}
-              className="flex-1 rounded-lg border border-glass-border bg-glass px-3 py-2"
-            >
-              <Text className="text-xs text-fg-muted">From</Text>
-              <Text className="text-sm text-fg">{customFrom.toDateString()}</Text>
-            </Pressable>
-            <Pressable
-              onPress={() => setShowToPicker(true)}
-              className="flex-1 rounded-lg border border-glass-border bg-glass px-3 py-2"
-            >
-              <Text className="text-xs text-fg-muted">To</Text>
-              <Text className="text-sm text-fg">{customTo.toDateString()}</Text>
-            </Pressable>
-            {showFromPicker && (
-              <DateTimePicker
-                value={customFrom}
-                mode="date"
-                onChange={(_, selected) => {
-                  setShowFromPicker(false);
-                  if (selected) setCustomFrom(selected);
-                }}
-              />
-            )}
-            {showToPicker && (
-              <DateTimePicker
-                value={customTo}
-                mode="date"
-                onChange={(_, selected) => {
-                  setShowToPicker(false);
-                  if (selected) setCustomTo(selected);
-                }}
-              />
-            )}
-          </View>
-        )}
-
-        {filterMode === "allTime" && (
-          <Text className="text-center text-base font-medium text-fg">All time</Text>
-        )}
-
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row gap-2">
-          <Pressable
-            onPress={() => setAccountId(undefined)}
-            className={`mr-2 rounded-full border px-3 py-1.5 ${
-              accountId === undefined ? "border-accent bg-accent-soft" : "border-glass-border"
-            }`}
-          >
-            <Text className={accountId === undefined ? "text-accent" : "text-fg-muted"}>
-              All Accounts
-            </Text>
-          </Pressable>
-          {(accounts ?? []).map((a) => (
-            <Pressable
-              key={a.id}
-              onPress={() => setAccountId(a.id)}
-              className={`mr-2 rounded-full border px-3 py-1.5 ${
-                accountId === a.id ? "border-accent bg-accent-soft" : "border-glass-border"
-              }`}
-            >
-              <Text className={accountId === a.id ? "text-accent" : "text-fg-muted"}>
-                {a.name}
-              </Text>
-            </Pressable>
-          ))}
-        </ScrollView>
-
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row gap-2">
-          <Pressable
-            onPress={() => setCategoryId(undefined)}
-            className={`mr-2 rounded-full border px-3 py-1.5 ${
-              categoryId === undefined ? "border-accent bg-accent-soft" : "border-glass-border"
-            }`}
-          >
-            <Text className={categoryId === undefined ? "text-accent" : "text-fg-muted"}>
-              All Categories
-            </Text>
-          </Pressable>
-          {(categories ?? []).map((c) => (
-            <Pressable
-              key={c.id}
-              onPress={() => setCategoryId(c.id)}
-              className={`mr-2 rounded-full border px-3 py-1.5 ${
-                categoryId === c.id ? "border-accent bg-accent-soft" : "border-glass-border"
-              }`}
-            >
-              <Text className={categoryId === c.id ? "text-accent" : "text-fg-muted"}>
-                {c.name}
-              </Text>
-            </Pressable>
-          ))}
-        </ScrollView>
-
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row gap-2">
-          {(
-            [
-              ["all", "All Types"],
-              ["recurring", "Recurring"],
-              ["transfer", "Transfers"],
-            ] as const
-          ).map(([value, label]) => (
-            <Pressable
-              key={value}
-              onPress={() => setTypeFilter(value)}
-              className={`mr-2 rounded-full border px-3 py-1.5 ${
-                typeFilter === value ? "border-accent bg-accent-soft" : "border-glass-border"
-              }`}
-            >
-              <Text className={typeFilter === value ? "text-accent" : "text-fg-muted"}>{label}</Text>
-            </Pressable>
-          ))}
-        </ScrollView>
-
-        <SummaryBand
-          incomeMinor={totals.incomeMinor}
-          expenseMinor={totals.expenseMinor}
-          currency={currency}
-        />
-        {/* Only meaningful across "All Accounts": with one account selected
-            its rows already share that account's currency and nothing is
-            converted. */}
-        {!accountId && (
-          <UnconvertedCurrenciesNote currencies={unconvertedCurrencies} subject="These totals" />
-        )}
-        {hiddenFutureCount > 0 && (
-          <Text className="text-xs text-fg-muted">
-            {hiddenFutureCount} upcoming transaction{hiddenFutureCount === 1 ? "" : "s"} hidden — Show
-            Future Transactions is off.
+      <SectionList
+        sections={sections}
+        keyExtractor={(item) => String(item.id)}
+        stickySectionHeadersEnabled={false}
+        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: TAB_BAR_CLEARANCE }}
+        ListHeaderComponent={listHeader}
+        ListEmptyComponent={
+          <EmptyState message={q ? `Nothing matches "${query.trim()}".` : "No transactions for these filters."} />
+        }
+        renderSectionHeader={({ section }) => (
+          <Text accessibilityRole="header" className="mt-4 text-xs font-medium text-fg-muted">
+            {section.title}
           </Text>
         )}
-      </View>
-
-      <FlatList
-        data={visibleRows}
-        keyExtractor={(item) => String(item.id)}
-        contentContainerStyle={{ padding: 16, paddingBottom: TAB_BAR_CLEARANCE }}
-        ListHeaderComponent={<FirstVisitHint id="transactions" className="mb-3" />}
-        ListEmptyComponent={<EmptyState message="No transactions for this filter." />}
         renderItem={({ item }) => (
           <TransactionListItem
             transaction={item}
@@ -330,12 +306,23 @@ export default function TransactionsListScreen() {
             toAccountName={item.type === "transfer" ? accountName(item.toAccountId) : undefined}
             accountName={accountName(item.accountId)}
             viewingAccountId={accountId}
-            showActionIcons
-            showDuplicateIcon
+            showDate={false}
             onDelete={() => confirmDeleteTransaction(db, item, () => {})}
           />
         )}
       />
+
+      {filterOpen && (
+        <TransactionFilterSheet
+          filters={filters}
+          onChange={update}
+          onReset={() => setFilters(defaultFilters())}
+          onClose={() => setFilterOpen(false)}
+          accounts={accounts ?? []}
+          categories={categories ?? []}
+          resultCount={visibleRows.length}
+        />
+      )}
     </View>
   );
 }

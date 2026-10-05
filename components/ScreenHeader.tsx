@@ -57,27 +57,31 @@ export function ScreenHeader({
 }
 
 // A 44dp icon button for ScreenHeader's trailing slot — a link when given
-// `href`, a plain button when given `onPress`.
+// `href`, a plain button when given `onPress`. `active` adds an accent dot
+// (e.g. Filter while a filter is applied) and says so to screen readers.
 export function HeaderAction({
   icon,
   label,
   href,
   onPress,
+  active = false,
 }: {
   icon: string;
   label: string;
   href?: Href;
   onPress?: () => void;
+  active?: boolean;
 }) {
   const colors = useThemeColors();
   const button = (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={label}
+      accessibilityLabel={active ? `${label}, active` : label}
       className="h-11 w-11 items-center justify-center rounded-full active:bg-glass-press"
     >
       <Icon name={icon} size={22} color={colors.fg} />
+      {active && <View className="absolute right-2 top-2 h-2 w-2 rounded-full bg-accent" />}
     </Pressable>
   );
   return href ? (

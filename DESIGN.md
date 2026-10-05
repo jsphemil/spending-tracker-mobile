@@ -270,7 +270,7 @@ An icon identifier such as `wallet-outline` is implementation data, not user-fac
 
 ### 7.4 Row actions
 
-Repeated actions such as Edit and Delete belong in a compact trailing action area rather than repeated text links.
+**V4:** rows carry no always-visible action icons. Tap opens the item (for a transaction, its edit screen); long-press opens a bottom sheet with Edit, Duplicate and — separated, last and the only red item — Delete.
 
 The content column should be allowed to truncate; the action column should not shrink.
 

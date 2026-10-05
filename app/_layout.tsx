@@ -10,6 +10,7 @@ import { Stack } from "expo-router";
 import { vars } from "nativewind";
 import { useMigrations } from "drizzle-orm/expo-sqlite/migrator";
 import { useFonts } from "expo-font";
+import { PaperProvider } from "react-native-paper";
 import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold } from "@expo-google-fonts/inter";
 import { Manrope_600SemiBold, Manrope_700Bold, Manrope_800ExtraBold } from "@expo-google-fonts/manrope";
 
@@ -22,6 +23,7 @@ import { useAppLock } from "../hooks/useAppLock";
 import { runAutoBackupIfDue } from "../services/dropbox";
 import { rescheduleExpenseReminder } from "../services/notifications";
 import { cssVars, useResolvedTheme, useThemeColors } from "../theme/palette";
+import { paperTheme } from "../theme/paper";
 import migrations from "../drizzle/migrations";
 
 export default function RootLayout() {
@@ -87,6 +89,7 @@ export default function RootLayout() {
           theme/palette.ts's cssVars comment for why). */}
       <View style={[{ flex: 1 }, vars(cssVars(scheme))]}>
       <SafeAreaProvider>
+      <PaperProvider theme={paperTheme(scheme)}>
         <StatusBar style={scheme === "dark" ? "light" : "dark"} />
         {error ? (
           <View className="flex-1 items-center justify-center bg-bg p-6">
@@ -179,6 +182,7 @@ export default function RootLayout() {
             />
           </Stack>
         )}
+      </PaperProvider>
       </SafeAreaProvider>
       </View>
       </KeyboardProvider>
