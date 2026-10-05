@@ -71,7 +71,9 @@ export default function DashboardScreen() {
     earmarkedMinor,
     incomeMinor,
     expenseMinor,
-    lastMonthExpenseMinor,
+    comparisonDays,
+    expenseToDateMinor,
+    lastMonthSameDaysExpenseMinor,
   } = useMonthPosition(period);
 
   const activeFunds = (funds ?? []).filter((f) => f.status === "active");
@@ -212,8 +214,14 @@ export default function DashboardScreen() {
   const whatsNewVisible = settings ? shouldShowWhatsNew(settings, appVersion) : false;
 
   const lastMonthName = monthName(shiftMonth(period, -1));
+  // Like-for-like: the first N days of this month against the same N days
+  // of last month (see useMonthPosition), not a part month against a whole one.
   const spendChangePercent =
-    lastMonthExpenseMinor > 0 ? Math.round(((expenseMinor - lastMonthExpenseMinor) / lastMonthExpenseMinor) * 100) : null;
+    lastMonthSameDaysExpenseMinor > 0
+      ? Math.round(((expenseToDateMinor - lastMonthSameDaysExpenseMinor) / lastMonthSameDaysExpenseMinor) * 100)
+      : null;
+  const comparisonLabel =
+    comparisonDays === 1 ? `1 ${lastMonthName}` : `1–${comparisonDays} ${lastMonthName}`;
 
   // Dashboard customisation (spec.md §5.22): each section is a value in
   // this map and the saved layout decides order and visibility.
@@ -268,8 +276,8 @@ export default function DashboardScreen() {
               {spendChangePercent !== null && (
                 <Text className="mt-0.5 text-xs text-fg-muted">
                   {spendChangePercent === 0
-                    ? `Same as ${lastMonthName}`
-                    : `${spendChangePercent > 0 ? "↑" : "↓"} ${Math.abs(spendChangePercent)}% vs ${lastMonthName}`}
+                    ? `So far, same as ${comparisonLabel}`
+                    : `So far ${spendChangePercent > 0 ? "↑" : "↓"} ${Math.abs(spendChangePercent)}% vs ${comparisonLabel}`}
                 </Text>
               )}
             </View>

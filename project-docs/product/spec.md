@@ -1697,7 +1697,8 @@ overdrawn savings or wallet account appears in neither tile.
 3. ✅ Verified on-device 2026-10-05 — Dashboard. Four sections with dividers,
    no cards: Net worth (+ change this month) → new `/net-worth` detail screen
    holding Assets/Debt/Earmarked/Unallocated and the month breakdown;
-   current month Income/Spending with % vs last month → Analytics; up to three
+   current month Income/Spending with a like-for-like % (first N days vs the
+   same days of last month) → Analytics; up to three
    funds; Needs attention as one summary row per kind. Month arrows and
    shortcut tiles removed; Funds/Commitments/Categories/Tags gained a Settings
    → Manage group. Figures moved verbatim into `hooks/useMonthPosition.ts`

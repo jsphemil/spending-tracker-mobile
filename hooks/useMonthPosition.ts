@@ -17,8 +17,9 @@ const ASSET_TYPES = ["savings", "wallet", "deposit", "investment"] as const;
 // worth detail screen read exactly the same numbers. No new formulas:
 // every figure is the existing services/balance.ts and services/funds.ts
 // calculation, composed the same way it was on the V2 Dashboard. The two
-// V4 additions — netWorthChangeMinor and lastMonthExpenseMinor — are plain
-// differences of figures already computed here.
+// V4 additions — netWorthChangeMinor and the like-for-like spending pair —
+// are the same getAccountBalanceMinor/getPeriodTotals calls over
+// different cutoffs.
 export function useMonthPosition(period: MonthPeriod) {
   const { data: accounts } = useAccounts();
   const range = useMemo(() => monthRange(period), [period]);
@@ -80,18 +81,35 @@ export function useMonthPosition(period: MonthPeriod) {
   // reactive on its own. Deliberately called for the subscription alone —
   // don't "clean up" the bare call.
   useFilteredTransactions({ range });
+  // Like-for-like spending comparison: the first `days` days of this month
+  // against the same days of last month (capped at last month's length), so
+  // a month in progress isn't compared with a whole finished one. For a
+  // past month, `days` is the whole month.
+  const now = new Date();
+  const isCurrentMonth = now.getFullYear() === period.year && now.getMonth() === period.month;
+  const days = isCurrentMonth ? now.getDate() : Math.round((range.end.getTime() - range.start.getTime()) / 86400000);
+  const toDate = { start: range.start, end: new Date(period.year, period.month, days + 1) };
   const lastRange = monthRange(shiftMonth(period, -1));
+  const lastToDate = {
+    start: lastRange.start,
+    end: new Date(Math.min(
+      new Date(lastRange.start.getFullYear(), lastRange.start.getMonth(), days + 1).getTime(),
+      lastRange.end.getTime(),
+    )),
+  };
   let incomeMinor = 0;
   let expenseMinor = 0;
   let carryForwardMinor = 0;
-  let lastMonthExpenseMinor = 0;
+  let expenseToDateMinor = 0;
+  let lastMonthSameDaysExpenseMinor = 0;
   for (const account of accounts ?? []) {
     const totals = getPeriodTotals(db, { accountId: account.id, ...range });
     incomeMinor += toBaseMinor(totals.incomeMinor, account.currency);
     expenseMinor += toBaseMinor(totals.expenseMinor, account.currency);
     carryForwardMinor += toBaseMinor(getAccountBalanceMinor(db, account.id, range.start), account.currency);
-    lastMonthExpenseMinor += toBaseMinor(
-      getPeriodTotals(db, { accountId: account.id, ...lastRange }).expenseMinor,
+    expenseToDateMinor += toBaseMinor(getPeriodTotals(db, { accountId: account.id, ...toDate }).expenseMinor, account.currency);
+    lastMonthSameDaysExpenseMinor += toBaseMinor(
+      getPeriodTotals(db, { accountId: account.id, ...lastToDate }).expenseMinor,
       account.currency,
     );
   }
@@ -114,7 +132,9 @@ export function useMonthPosition(period: MonthPeriod) {
     unallocatedMinor,
     incomeMinor,
     expenseMinor,
-    lastMonthExpenseMinor,
+    comparisonDays: days,
+    expenseToDateMinor,
+    lastMonthSameDaysExpenseMinor,
     carryForwardMinor,
     availableThisMonthMinor,
   };
