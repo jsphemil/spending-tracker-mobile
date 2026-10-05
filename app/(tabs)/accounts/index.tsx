@@ -1,30 +1,36 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "expo-router";
-import { FlatList, Pressable, Text, View } from "react-native";
-import { Icon } from "../../../components/ui/Icon";
+import { Pressable, SectionList, Text, View } from "react-native";
 
+import { CurrencyAmount } from "../../../components/CurrencyAmount";
+import { FirstVisitHint } from "../../../components/FirstVisitHint";
+import { HeaderAction, ScreenHeader } from "../../../components/ScreenHeader";
+import { EmptyState } from "../../../components/ui/EmptyState";
+import { Icon } from "../../../components/ui/Icon";
+import { ACCOUNT_TYPE_LABELS } from "../../../constants/accountTypes";
 import { db } from "../../../db/client";
 import { useAccounts } from "../../../db/queries/accounts";
 import { useFilteredTransactions } from "../../../db/queries/transactions";
-import { ACCOUNT_TYPE_LABELS } from "../../../constants/accountTypes";
+import type { AccountType } from "../../../db/schema";
 import { getAccountBalanceMinor } from "../../../services/balance";
-import { formatMoney } from "../../../services/format";
 import { currentMonthPeriod, monthLabel, monthRange, shiftMonth } from "../../../services/period";
 import { ensureMaterialized } from "../../../services/recurrence";
-import { CurrencyAmount } from "../../../components/CurrencyAmount";
-import { EmptyState } from "../../../components/ui/EmptyState";
-import { HeaderAction, ScreenHeader } from "../../../components/ScreenHeader";
-import { FirstVisitHint } from "../../../components/FirstVisitHint";
-import { TAB_BAR_CLEARANCE } from "../../../theme/tabBar";
 import { useThemeColors } from "../../../theme/palette";
+import { TAB_BAR_CLEARANCE } from "../../../theme/tabBar";
 
-interface AccountFlow {
-  incomeMinor: number;
-  expenseMinor: number;
-  transferInMinor: number;
-  transferOutMinor: number;
-}
+// Every account type, in the order its group appears. A presentation
+// grouping only — nothing about how a type is stored or calculated.
+const GROUPS: { title: string; types: AccountType[] }[] = [
+  { title: "Cash & bank", types: ["savings", "wallet"] },
+  { title: "Credit cards", types: ["credit_card"] },
+  { title: "Deposits", types: ["deposit"] },
+  { title: "Investments", types: ["investment"] },
+];
 
+// Accounts V4 (spec.md §5.24): a clean list — name, type and balance, grouped
+// by kind of account. Month arrows stay (balances are "as of the end of the
+// viewed month", same as before); each account's month in/out figures live
+// on its Account Detail screen rather than repeating on every row.
 export default function AccountsListScreen() {
   const colors = useThemeColors();
   const { data: accounts } = useAccounts();
@@ -33,119 +39,87 @@ export default function AccountsListScreen() {
   useEffect(() => {
     ensureMaterialized(db, { through: range.end });
   }, [range.end]);
-  const { data: monthTransactions } = useFilteredTransactions({ range });
+  // Subscribed for the repaint, not the rows: balances below are
+  // synchronous reads, so an edit elsewhere needs this live query to
+  // re-render the list.
+  useFilteredTransactions({ range });
 
-  // One pass over this month's transactions (not one query per account,
-  // and not the mixed-currency-unsafe raw-summing bug fixed elsewhere) —
-  // each account's flow stays in that account's own native currency, same
-  // as the real app's per-account cards.
-  const flowByAccount = new Map<number, AccountFlow>();
-  // Accounts with no movement this month never get an entry, so rows read
-  // through this shared zero rather than having getFlow insert one for them:
-  // renderItem runs after the render pass, and mutating a map built during
-  // render from inside it is exactly what makes a row's output depend on
-  // which rows happened to render before it.
-  const NO_FLOW: AccountFlow = {
-    incomeMinor: 0,
-    expenseMinor: 0,
-    transferInMinor: 0,
-    transferOutMinor: 0,
-  };
-  // Only called from the aggregation loop below, during render.
-  function getFlow(id: number): AccountFlow {
-    let f = flowByAccount.get(id);
-    if (!f) {
-      f = { incomeMinor: 0, expenseMinor: 0, transferInMinor: 0, transferOutMinor: 0 };
-      flowByAccount.set(id, f);
-    }
-    return f;
-  }
-  for (const t of monthTransactions ?? []) {
-    if (t.type === "income") getFlow(t.accountId).incomeMinor += t.amountMinor;
-    else if (t.type === "expense") getFlow(t.accountId).expenseMinor += t.amountMinor;
-    else if (t.type === "transfer") {
-      getFlow(t.accountId).transferOutMinor += t.amountMinor;
-      if (t.toAccountId != null) getFlow(t.toAccountId).transferInMinor += t.amountMinor;
-    }
-  }
+  const sections = GROUPS.map((g) => ({
+    title: g.title,
+    data: (accounts ?? []).filter((a) => g.types.includes(a.type)),
+  })).filter((s) => s.data.length > 0);
 
   return (
     <View className="flex-1 bg-bg">
       <ScreenHeader title="Accounts">
         <HeaderAction icon="plus" label="New account" href="/account/new" />
       </ScreenHeader>
-      <FlatList
-        data={accounts ?? []}
+      <SectionList
+        sections={sections}
         keyExtractor={(item) => String(item.id)}
-        contentContainerStyle={{ padding: 16, paddingBottom: TAB_BAR_CLEARANCE, gap: 12 }}
+        stickySectionHeadersEnabled={false}
+        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: TAB_BAR_CLEARANCE }}
         ListHeaderComponent={
           <View className="gap-3">
             <FirstVisitHint id="accounts" />
-            <View className="mb-3 flex-row items-center justify-between gap-2">
-            <Pressable onPress={() => setPeriod((p) => shiftMonth(p, -1))} className="p-3" hitSlop={8}>
-              <Icon name="chevron-left" size={28} color={colors.fg} />
-            </Pressable>
-            <Text className="flex-1 text-center text-base font-medium text-fg">{monthLabel(period)}</Text>
-            <Pressable onPress={() => setPeriod((p) => shiftMonth(p, 1))} className="p-3" hitSlop={8}>
-              <Icon name="chevron-right" size={28} color={colors.fg} />
-            </Pressable>
+            <View className="flex-row items-center justify-between">
+              <Pressable
+                onPress={() => setPeriod((p) => shiftMonth(p, -1))}
+                accessibilityRole="button"
+                accessibilityLabel="Previous month"
+                className="h-11 w-11 items-center justify-center"
+              >
+                <Icon name="chevron-left" size={24} color={colors.fg} />
+              </Pressable>
+              <Text accessibilityRole="header" className="text-base font-medium text-fg">
+                {monthLabel(period)}
+              </Text>
+              <Pressable
+                onPress={() => setPeriod((p) => shiftMonth(p, 1))}
+                accessibilityRole="button"
+                accessibilityLabel="Next month"
+                className="h-11 w-11 items-center justify-center"
+              >
+                <Icon name="chevron-right" size={24} color={colors.fg} />
+              </Pressable>
             </View>
           </View>
         }
-        ListEmptyComponent={<EmptyState message="No accounts yet." />}
+        ListEmptyComponent={<EmptyState message="No accounts yet. Tap + to add the first place your money lives." />}
+        renderSectionHeader={({ section }) => (
+          <Text accessibilityRole="header" className="mt-6 text-sm font-medium text-fg-muted">
+            {section.title}
+          </Text>
+        )}
         renderItem={({ item }) => {
-          const flow = flowByAccount.get(item.id) ?? NO_FLOW;
-          const netTransfer = flow.transferInMinor - flow.transferOutMinor;
-          // "As of" the viewed month's end, not always today — matches
-          // the Dashboard/Account Detail's period-scoped balance.
+          // "As of" the viewed month's end, not always today — matches the
+          // Dashboard/Account Detail's period-scoped balance.
           const balanceMinor = getAccountBalanceMinor(db, item.id, range.end);
-
           return (
             <Link href={`/accounts/${item.id}`} asChild>
-              <Pressable className="rounded-card border border-glass-border bg-glass p-4">
-                <View className="flex-row items-center justify-between">
-                  <View className="flex-row items-center gap-3">
-                    <View
-                      style={{ backgroundColor: item.color }}
-                      className="h-10 w-10 items-center justify-center rounded-full"
-                    >
-                      <Icon name={item.icon} size={18} color="#fff" />
-                    </View>
-                    <View>
-                      <Text className="text-base font-medium text-fg">{item.name}</Text>
-                      <Text className="text-sm text-fg-muted">{ACCOUNT_TYPE_LABELS[item.type]}</Text>
-                    </View>
-                  </View>
-                  <CurrencyAmount
-                    amountMinor={balanceMinor}
-                    currency={item.currency}
-                    className="text-base font-semibold text-fg"
-                  />
+              <Pressable
+                accessibilityRole="button"
+                className="min-h-16 flex-row items-center gap-3 border-b border-border py-3 active:opacity-70"
+              >
+                <View
+                  style={{ backgroundColor: item.color }}
+                  className="h-10 w-10 items-center justify-center rounded-full"
+                >
+                  <Icon name={item.icon} size={18} color="#fff" />
                 </View>
-
-                <View className="mt-3 flex-row gap-4 border-t border-glass-border pt-3">
-                  <View className="flex-1">
-                    <Text className="text-xs text-fg-muted">Income</Text>
-                    <Text className="font-data text-xs font-medium tabular-nums text-success">
-                      {formatMoney(flow.incomeMinor, item.currency)}
-                    </Text>
-                  </View>
-                  <View className="flex-1">
-                    <Text className="text-xs text-fg-muted">Expense</Text>
-                    <Text className="font-data text-xs font-medium tabular-nums text-danger">
-                      {formatMoney(flow.expenseMinor, item.currency)}
-                    </Text>
-                  </View>
-                  <View className="flex-1">
-                    <Text className="text-xs text-fg-muted">Transfers</Text>
-                    <Text
-                      className={`font-data text-xs font-medium tabular-nums ${netTransfer >= 0 ? "text-accent" : "text-danger"}`}
-                    >
-                      {netTransfer >= 0 ? "+" : ""}
-                      {formatMoney(netTransfer, item.currency)}
-                    </Text>
-                  </View>
+                <View className="flex-1">
+                  <Text className="text-base text-fg" numberOfLines={1}>
+                    {item.name}
+                  </Text>
+                  <Text className="text-xs text-fg-subtle">{ACCOUNT_TYPE_LABELS[item.type]}</Text>
                 </View>
+                <CurrencyAmount
+                  amountMinor={balanceMinor}
+                  currency={item.currency}
+                  stacked
+                  align="flex-end"
+                  className="text-base font-semibold text-fg"
+                />
               </Pressable>
             </Link>
           );

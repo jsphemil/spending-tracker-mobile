@@ -24,7 +24,7 @@ export const HINTS: Record<HintId, { title: string; body: string }> = {
   },
   accounts: {
     title: "Accounts are the foundation",
-    body: "Add every place your money lives — bank, cash, cards, deposits, investments. Each shows its balance as of the end of the month you're viewing, with this month's income and spending beside it.",
+    body: "Add every place your money lives — bank, cash, cards, deposits, investments. Each shows its balance as of the end of the month you're viewing — tap one for that month in detail.",
   },
   transactions: {
     title: "Moving your own money isn't spending",
