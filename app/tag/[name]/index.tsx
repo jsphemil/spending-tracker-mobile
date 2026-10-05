@@ -2,7 +2,7 @@ import { Link, Stack, useLocalSearchParams } from "expo-router";
 import { FlatList, Pressable, Text, View } from "react-native";
 
 import { confirmDeleteTransaction } from "../../../components/confirmDeleteTransaction";
-import { TransactionListItem } from "../../../components/TransactionListItem";
+import { TransactionListItem, useTransactionRowExtras } from "../../../components/TransactionListItem";
 import { EmptyState } from "../../../components/ui/EmptyState";
 import { Icon } from "../../../components/ui/Icon";
 import { db } from "../../../db/client";
@@ -27,6 +27,7 @@ export default function TagSummaryScreen() {
   const { settings } = useSettings();
   const { data: accounts } = useAccounts();
   const { data: categories } = useCategories();
+  const rowExtras = useTransactionRowExtras();
   const baseCurrency = settings?.baseCurrency ?? "INR";
 
   const { toBaseMinor } = useBaseConverter((rows ?? []).map((r) => r.accountCurrency));
@@ -109,6 +110,7 @@ export default function TagSummaryScreen() {
             accountName={item.accountName}
             hideTag={tagName}
             onDelete={() => confirmDeleteTransaction(db, item.transaction, () => {})}
+            extras={rowExtras}
           />
         )}
       />

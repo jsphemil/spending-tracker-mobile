@@ -186,12 +186,18 @@ export function cssVars(scheme: "light" | "dark"): Record<string, string> {
 // settings.themePreference against the OS scheme for "system"; while
 // settings hasn't loaded yet (first paint, mid-migration) falls back to
 // "dark" so there's no flash of an unstyled/wrong-token screen.
+export function resolveTheme(
+  preference: "light" | "dark" | "system" | undefined,
+  systemScheme: string | null | undefined,
+): "light" | "dark" {
+  const p = preference ?? "dark";
+  if (p === "system") return systemScheme === "light" ? "light" : "dark";
+  return p;
+}
+
 export function useResolvedTheme(): "light" | "dark" {
   const { settings } = useSettings();
-  const systemScheme = useColorScheme();
-  const preference = settings?.themePreference ?? "dark";
-  if (preference === "system") return systemScheme === "light" ? "light" : "dark";
-  return preference;
+  return resolveTheme(settings?.themePreference, useColorScheme());
 }
 
 export function useThemeColors(): ThemeColors {

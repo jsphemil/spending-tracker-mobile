@@ -42,7 +42,14 @@ export default function AccountsListScreen() {
   // Subscribed for the repaint, not the rows: balances below are
   // synchronous reads, so an edit elsewhere needs this live query to
   // re-render the list.
-  useFilteredTransactions({ range });
+  const { data: txSignal } = useFilteredTransactions({ range });
+  // One read per account per change, not per row render. Performance,
+  // spec.md §5.24.
+  const balances = useMemo(
+    () => new Map((accounts ?? []).map((a) => [a.id, getAccountBalanceMinor(db, a.id, range.end)])),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- txSignal is the change signal
+    [accounts, range, txSignal],
+  );
 
   const sections = GROUPS.map((g) => ({
     title: g.title,
@@ -94,7 +101,7 @@ export default function AccountsListScreen() {
         renderItem={({ item }) => {
           // "As of" the viewed month's end, not always today — matches the
           // Dashboard/Account Detail's period-scoped balance.
-          const balanceMinor = getAccountBalanceMinor(db, item.id, range.end);
+          const balanceMinor = balances.get(item.id) ?? 0;
           return (
             <Link href={`/accounts/${item.id}`} asChild>
               <Pressable

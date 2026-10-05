@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link, useRouter, type Href } from "expo-router";
 import { Modal, Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useFunds } from "../db/queries/funds";
-import { useTransactionTags } from "../db/queries/tags";
+import { useTransactionTagMap, type TagChip } from "../db/queries/tags";
 import type { transactions } from "../db/schema";
 import { formatMoney } from "../services/format";
 import { useThemeColors } from "../theme/palette";
@@ -12,6 +12,25 @@ import { CurrencyAmount } from "./CurrencyAmount";
 import { Icon } from "./ui/Icon";
 
 type Transaction = typeof transactions.$inferSelect;
+
+export interface TransactionRowExtras {
+  tagsByTx: Map<number, TagChip[]>;
+  fundsById: Map<number, { id: number; name: string; icon: string }>;
+}
+
+// Tags and funds for every row of a list, loaded once by the list rather
+// than by each row (spec.md §5.24 performance — rows used to run two live
+// queries each, re-run on every write).
+export function useTransactionRowExtras(): TransactionRowExtras {
+  const tagsByTx = useTransactionTagMap();
+  const { data: funds } = useFunds();
+  return useMemo(
+    () => ({ tagsByTx, fundsById: new Map((funds ?? []).map((f) => [f.id, f])) }),
+    [tagsByTx, funds],
+  );
+}
+
+const NO_TAGS: TagChip[] = [];
 
 interface TransactionListItemProps {
   transaction: Transaction;
@@ -55,6 +74,8 @@ interface TransactionListItemProps {
    * which case it's dealing with. Without it the sheet offers no Delete.
    */
   onDelete?: () => void;
+  /** From the list's useTransactionRowExtras(). */
+  extras: TransactionRowExtras;
 }
 
 // Amount colour follows DESIGN.md §4: spending stays neutral (the "−"
@@ -78,17 +99,12 @@ export function TransactionListItem({
   viewingAccountId,
   showDate = true,
   onDelete,
+  extras,
 }: TransactionListItemProps) {
-  const rowTags = useTransactionTags(transaction.id).filter((tag) => tag.name !== hideTag);
+  const rowTags = (extras.tagsByTx.get(transaction.id) ?? NO_TAGS).filter((tag) => tag.name !== hideTag);
   const colors = useThemeColors();
   const [actionsOpen, setActionsOpen] = useState(false);
-  // One live query per row, same as the tag names above — funds is a tiny
-  // table (a handful of rows), so looking the name up here keeps this row
-  // self-contained rather than threading a fund name through every screen
-  // that renders it.
-  const { data: funds } = useFunds();
-  const linkedFund =
-    transaction.fundId != null ? funds?.find((f) => f.id === transaction.fundId) : undefined;
+  const linkedFund = transaction.fundId != null ? extras.fundsById.get(transaction.fundId) : undefined;
 
   const category = categoryName ?? "Uncategorized";
   const note = transaction.isOpeningBalance ? null : transaction.description?.trim() || null;

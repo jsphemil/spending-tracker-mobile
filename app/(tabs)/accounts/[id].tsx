@@ -8,7 +8,7 @@ import { confirmDeleteTransaction } from "../../../components/confirmDeleteTrans
 import { CreditUsageRing } from "../../../components/rings/CreditUsageRing";
 import { GaugeRing } from "../../../components/rings/GaugeRing";
 import { CurrencyAmount } from "../../../components/CurrencyAmount";
-import { TransactionListItem } from "../../../components/TransactionListItem";
+import { TransactionListItem, useTransactionRowExtras } from "../../../components/TransactionListItem";
 import { EmptyState } from "../../../components/ui/EmptyState";
 import { db } from "../../../db/client";
 import { useAccount, useAccounts } from "../../../db/queries/accounts";
@@ -47,6 +47,7 @@ export default function AccountDetailScreen() {
   const { data: accounts } = useAccounts();
   const { settings } = useSettings();
   const colors = useThemeColors();
+  const rowExtras = useTransactionRowExtras();
   const [period, setPeriod] = useState(currentMonthPeriod());
   const { data: categories } = useCategories();
   const range = useMemo(() => monthRange(period), [period]);
@@ -249,6 +250,11 @@ export default function AccountDetailScreen() {
       <FlatList
         data={visibleTransactions}
         keyExtractor={(item) => String(item.id)}
+        // Low-end devices (spec.md §5.24): render in small batches.
+        initialNumToRender={12}
+        maxToRenderPerBatch={8}
+        windowSize={7}
+        removeClippedSubviews
         contentContainerStyle={{ padding: 16, paddingBottom: TAB_BAR_CLEARANCE, gap: 4 }}
         ListHeaderComponent={
           <View className="mb-6 gap-4">
@@ -457,6 +463,7 @@ export default function AccountDetailScreen() {
             accountName={account.name}
             viewingAccountId={accountId}
             onDelete={() => confirmDeleteTransaction(db, item, () => {})}
+            extras={rowExtras}
           />
         )}
       />

@@ -13,7 +13,7 @@ import {
   type TransactionFilters,
 } from "../../../components/TransactionFilterSheet";
 import { UnconvertedCurrenciesNote } from "../../../components/UnconvertedCurrenciesNote";
-import { TransactionListItem } from "../../../components/TransactionListItem";
+import { TransactionListItem, useTransactionRowExtras } from "../../../components/TransactionListItem";
 import { EmptyState } from "../../../components/ui/EmptyState";
 import { Icon } from "../../../components/ui/Icon";
 import { db } from "../../../db/client";
@@ -86,6 +86,7 @@ export default function TransactionsListScreen() {
 
   const { data: accounts } = useAccounts();
   const { data: categories } = useCategories();
+  const rowExtras = useTransactionRowExtras();
   const monthRangeValue = useMemo(() => monthRange(period), [period]);
   // Custom range's `end` is exclusive everywhere else in the app (matches
   // range.end/asOfDate convention), so the picked "To" date needs +1 day to
@@ -299,6 +300,11 @@ export default function TransactionsListScreen() {
         sections={sections}
         keyExtractor={(item) => String(item.id)}
         stickySectionHeadersEnabled={false}
+        // Low-end devices (spec.md §5.24): render in small batches.
+        initialNumToRender={12}
+        maxToRenderPerBatch={8}
+        windowSize={7}
+        removeClippedSubviews
         contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: TAB_BAR_CLEARANCE }}
         ListHeaderComponent={listHeader}
         ListEmptyComponent={
@@ -320,6 +326,7 @@ export default function TransactionsListScreen() {
             viewingAccountId={accountId}
             showDate={false}
             onDelete={() => confirmDeleteTransaction(db, item, () => {})}
+            extras={rowExtras}
           />
         )}
       />

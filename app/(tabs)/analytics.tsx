@@ -112,20 +112,28 @@ export default function AnalyticsScreen() {
   const now = new Date();
   const viewingCurrentMonth = period.year === now.getFullYear() && period.month === now.getMonth();
 
-  const earliestTransactionDate = getEarliestTransactionDate(db);
-  const earliestPeriod: MonthPeriod = earliestTransactionDate
-    ? { year: earliestTransactionDate.getFullYear(), month: earliestTransactionDate.getMonth() }
-    : period;
-  const trendLength = Math.min(TREND_MONTHS_CAP, Math.max(1, monthsBetween(earliestPeriod, period) + 1));
-  const trendMonths = Array.from({ length: trendLength }, (_, i) => shiftMonth(period, i - (trendLength - 1)));
-  const trendCutoffs = trendMonths.map((mk) => monthRange(mk).end);
-  const netWorthSeries = accounts
-    ? getNetWorthSeries(db, accounts.map((a) => ({ id: a.id, currency: a.currency })), trendCutoffs, toBaseMinor)
-    : [];
-  const trendData = trendMonths.map((mk, i) => ({
-    label: monthShortLabel(mk),
-    valueMinor: netWorthSeries[i] ?? 0,
-  }));
+  // Up to 24 months × every account of synchronous balance reads — the
+  // heaviest thing on this screen, so it re-runs only when transactions
+  // (monthTransactions re-emits on any change to the table), accounts,
+  // rates or the month do. Performance, spec.md §5.24.
+  const { trendLength, trendMonths, trendData } = useMemo(() => {
+    const earliestTransactionDate = getEarliestTransactionDate(db);
+    const earliestPeriod: MonthPeriod = earliestTransactionDate
+      ? { year: earliestTransactionDate.getFullYear(), month: earliestTransactionDate.getMonth() }
+      : period;
+    const trendLength = Math.min(TREND_MONTHS_CAP, Math.max(1, monthsBetween(earliestPeriod, period) + 1));
+    const trendMonths = Array.from({ length: trendLength }, (_, i) => shiftMonth(period, i - (trendLength - 1)));
+    const trendCutoffs = trendMonths.map((mk) => monthRange(mk).end);
+    const netWorthSeries = accounts
+      ? getNetWorthSeries(db, accounts.map((a) => ({ id: a.id, currency: a.currency })), trendCutoffs, toBaseMinor)
+      : [];
+    const trendData = trendMonths.map((mk, i) => ({
+      label: monthShortLabel(mk),
+      valueMinor: netWorthSeries[i] ?? 0,
+    }));
+    return { trendLength, trendMonths, trendData };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- monthTransactions is the change signal
+  }, [accounts, toBaseMinor, period, monthTransactions]);
 
   // The headline sentence: same like-for-like comparison as the Dashboard.
   const lastName = monthName(lastPeriod);

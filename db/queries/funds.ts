@@ -33,8 +33,10 @@ export function useFund(id: number) {
 // something else forced a render. Call it for the subscription and ignore
 // the rows; same trick (and same reason) as the Dashboard's bare
 // useFilteredTransactions call. Don't "clean up" the unused result.
+// Returns the rows only so a caller can use them as a memo dependency
+// ("something in fund_allocations changed").
 export function useFundAllocationsSubscription() {
-  useLiveQuery(db.select({ id: fundAllocations.id }).from(fundAllocations));
+  return useLiveQuery(db.select({ id: fundAllocations.id }).from(fundAllocations)).data;
 }
 
 // The manual add/release entries for one fund, newest first. The fund's

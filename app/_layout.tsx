@@ -1,7 +1,7 @@
 import "../global.css";
 
 import { useEffect } from "react";
-import { Text, View } from "react-native";
+import { Text, useColorScheme, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -17,20 +17,23 @@ import { Manrope_600SemiBold, Manrope_700Bold, Manrope_800ExtraBold } from "@exp
 import { LockScreen } from "../components/LockScreen";
 import { OnboardingFlow } from "../components/OnboardingFlow";
 import { db } from "../db/client";
-import { useSettings } from "../db/queries/settings";
+import { SettingsProvider, useSettingsQuery } from "../db/queries/settings";
 import { ensureSeeded } from "../db/seed";
 import { useAppLock } from "../hooks/useAppLock";
 import { runAutoBackupIfDue } from "../services/dropbox";
 import { rescheduleExpenseReminder } from "../services/notifications";
-import { cssVars, useResolvedTheme, useThemeColors } from "../theme/palette";
+import { cssVars, palette, resolveTheme } from "../theme/palette";
 import { paperTheme } from "../theme/paper";
 import migrations from "../drizzle/migrations";
 
 export default function RootLayout() {
   const { success, error } = useMigrations(db, migrations);
-  const scheme = useResolvedTheme();
-  const colors = useThemeColors();
-  const { settings } = useSettings();
+  // The one settings live query for the whole app, shared below via
+  // SettingsProvider. This component sits above the provider, so it
+  // resolves the theme from the row directly.
+  const settings = useSettingsQuery();
+  const scheme = resolveTheme(settings?.themePreference, useColorScheme());
+  const colors = palette[scheme];
   // Biometric app lock (spec.md §5.23). Passed undefined until settings
   // load so a cold start stays locked rather than opening on a default.
   const { locked, unlock } = useAppLock(settings?.appLockEnabled);
@@ -74,6 +77,7 @@ export default function RootLayout() {
   }, [settings?.id, settings?.expenseReminderEnabled, settings?.expenseReminderTime]);
 
   return (
+    <SettingsProvider value={settings}>
     <GestureHandlerRootView style={{ flex: 1 }}>
       {/* Keyboard handling (spec.md §5.19): the app is edge-to-edge, so
           Android never resizes the window for the keyboard and forms have to
@@ -187,5 +191,6 @@ export default function RootLayout() {
       </View>
       </KeyboardProvider>
     </GestureHandlerRootView>
+    </SettingsProvider>
   );
 }
