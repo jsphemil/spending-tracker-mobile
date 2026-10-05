@@ -76,22 +76,22 @@ export default function FundsListScreen() {
         contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 96, gap: 16 }}
       >
         <FirstVisitHint id="funds" />
-        <View className="rounded-card border border-glass-border bg-glass p-4">
-          <Text className="text-xs font-semibold uppercase tracking-wide text-fg-muted">
+        <View>
+          <Text className="text-sm text-fg-muted">
             Unallocated
           </Text>
           <Text className="font-data mt-1 text-3xl font-bold tabular-nums text-fg">
             {formatMoney(unallocatedMinor, baseCurrency)}
           </Text>
-          <View className="mt-3 flex-row gap-3">
-            <View className="flex-1 rounded-card bg-surface-2 p-3">
-              <Text className="text-[11px] text-fg-muted">Net worth</Text>
+          <View className="mt-3 flex-row gap-4">
+            <View className="flex-1">
+              <Text className="text-xs text-fg-muted">Net worth</Text>
               <Text className="font-data mt-1 text-base font-semibold tabular-nums text-fg">
                 {formatMoney(netWorthMinor, baseCurrency)}
               </Text>
             </View>
-            <View className="flex-1 rounded-card bg-surface-2 p-3">
-              <Text className="text-[11px] text-fg-muted">Earmarked</Text>
+            <View className="flex-1">
+              <Text className="text-xs text-fg-muted">Earmarked</Text>
               <Text className="font-data mt-1 text-base font-semibold tabular-nums text-accent">
                 {formatMoney(earmarkedMinor, baseCurrency)}
               </Text>
@@ -110,7 +110,7 @@ export default function FundsListScreen() {
         </View>
 
         {activeFunds.length === 0 ? (
-          <View className="rounded-card border border-glass-border bg-glass p-4">
+          <View className="border-t border-border pt-4">
             <EmptyState message="No funds yet. Set money aside for something specific — a laptop, a trip, next year's insurance — without moving it out of your accounts." />
             <Link href="/fund/new" asChild>
               <Pressable className="mt-2 items-center rounded-full border border-glass-border bg-glass py-3">
@@ -119,7 +119,7 @@ export default function FundsListScreen() {
             </Link>
           </View>
         ) : (
-          <View className="gap-4 rounded-card border border-glass-border bg-glass p-4">
+          <View className="gap-5 border-t border-border pt-5">
             {activeFunds.map((fund) => (
               <FundRow
                 key={fund.id}
@@ -136,8 +136,10 @@ export default function FundsListScreen() {
         )}
 
         {closedFunds.length > 0 && (
-          <View className="rounded-card border border-glass-border bg-glass p-4">
+          <View className="border-t border-border pt-4">
             <Pressable
+              accessibilityRole="button"
+              accessibilityState={{ expanded: showClosed }}
               onPress={() => setShowClosed((v) => !v)}
               className="flex-row items-center justify-between"
             >

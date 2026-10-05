@@ -51,10 +51,16 @@ export function TransactionFilterSheet({
   onReset: () => void;
   onClose: () => void;
   accounts: { id: number; name: string }[];
-  categories: { id: number; name: string }[];
+  categories: { id: number; name: string; kind: string }[];
   resultCount: number;
 }) {
   const [picker, setPicker] = useState<"from" | "to" | null>(null);
+  // An income and an expense category can share a name ("Adjusting");
+  // only then say which is which.
+  const nameCount = new Map<string, number>();
+  for (const c of categories) nameCount.set(c.name, (nameCount.get(c.name) ?? 0) + 1);
+  const categoryLabel = (c: { name: string; kind: string }) =>
+    (nameCount.get(c.name) ?? 0) > 1 ? `${c.name} (${c.kind})` : c.name;
 
   return (
     <Modal visible animationType="slide" onRequestClose={onClose} transparent>
@@ -111,7 +117,7 @@ export function TransactionFilterSheet({
               <Group title="Category">
                 <Chip label="All categories" selected={filters.categoryId === undefined} onPress={() => onChange({ categoryId: undefined })} />
                 {categories.map((c) => (
-                  <Chip key={c.id} label={c.name} selected={filters.categoryId === c.id} onPress={() => onChange({ categoryId: c.id })} />
+                  <Chip key={c.id} label={categoryLabel(c)} selected={filters.categoryId === c.id} onPress={() => onChange({ categoryId: c.id })} />
                 ))}
               </Group>
             </ScrollView>

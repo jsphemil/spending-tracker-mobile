@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useLocalSearchParams } from "expo-router";
 import { Pressable, SectionList, Text, View } from "react-native";
 import { Searchbar } from "react-native-paper";
 
@@ -71,6 +72,17 @@ export default function TransactionsListScreen() {
   const [query, setQuery] = useState("");
   const { mode: filterMode, customFrom, customTo, accountId, categoryId, type: typeFilter } = filters;
   const update = (next: Partial<TransactionFilters>) => setFilters((f) => ({ ...f, ...next }));
+
+  // Account Detail's "Full history" links here with ?accountId= — apply it
+  // as the account filter (it shows as a removable chip like any other).
+  // Adjusted during render rather than in an effect, so a new link applies
+  // before the first paint instead of flashing the unfiltered list.
+  const { accountId: accountIdParam } = useLocalSearchParams<{ accountId?: string }>();
+  const [appliedParam, setAppliedParam] = useState<string | undefined>(undefined);
+  if (accountIdParam !== appliedParam) {
+    setAppliedParam(accountIdParam);
+    if (accountIdParam) setFilters((f) => ({ ...f, accountId: Number(accountIdParam), mode: "allTime" }));
+  }
 
   const { data: accounts } = useAccounts();
   const { data: categories } = useCategories();

@@ -83,7 +83,7 @@ export default function CategoriesScreen() {
       <FlatList
         data={categories ?? []}
         keyExtractor={(item) => String(item.id)}
-        contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 96, gap: 8 }}
+        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 96 }}
         ListHeaderComponent={<FirstVisitHint id="categories" className="mb-3" />}
         ListEmptyComponent={<EmptyState message="No categories yet." />}
         renderItem={({ item }) => {
@@ -95,7 +95,7 @@ export default function CategoriesScreen() {
 
           return (
             <Link href={`/category/${item.id}/edit`} asChild>
-              <Pressable className="gap-2 rounded-card border border-glass-border bg-glass p-3">
+              <Pressable accessibilityRole="button" className="gap-2 border-b border-border py-3 active:opacity-70">
                 <View className="flex-row items-center gap-3">
                   <View
                     style={{ backgroundColor: item.color }}

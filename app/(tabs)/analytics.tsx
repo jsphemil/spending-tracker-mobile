@@ -289,9 +289,15 @@ export default function AnalyticsScreen() {
             )}
           </Pressable>
         </Link>
-        <View className="mt-4">
-          <NetWorthTrendChart data={trendData} currency={baseCurrency} height={180} />
-        </View>
+        {/* The trend's axis labels are amounts too, so it follows the same
+            session privacy mask as the figure above. */}
+        {netWorthHidden ? (
+          <Text className="mt-3 text-sm text-fg-muted">Hidden — tap the eye on the Dashboard to show amounts.</Text>
+        ) : (
+          <View className="mt-4">
+            <NetWorthTrendChart data={trendData} currency={baseCurrency} height={180} />
+          </View>
+        )}
       </ScrollView>
     </View>
   );
