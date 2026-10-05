@@ -354,7 +354,10 @@ build. Straight to Production, no track.
 
 Build `5c96268e-7b03-4567-b266-12a10fbfa1dc`; AAB at
 `https://expo.dev/artifacts/eas/IMyOInhZw63TxJBfvpRSgNzmJ_-lCXjBYypnoz8iwlY.aab`.
-**Upload to Production pending (manual, by the user).**
+**Submitted to Production on 2026-10-05, in review.** Verified on-device
+first — the navigation-bar clearance across forms, settings, the intro
+and the currency list, plus the commitment due dates and the Dashboard's
+attention rows.
 
 Release notes to use (3.2.0):
 ```
