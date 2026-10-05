@@ -84,7 +84,10 @@ export function useMonthPosition(period: MonthPeriod) {
 
     // ---- PERFORMANCE (viewed month) ----
     // Like-for-like spending comparison — see likeForLikeRanges.
-    const { days, current: toDate, previous: lastToDate } = likeForLikeRanges(period, new Date());
+    const { current: toDate, previous: lastToDate } = likeForLikeRanges(period, new Date());
+    // Days covered on last month's side — what the label should name
+    // (31 Oct compares with 1–30 Sep, not "1–31").
+    const days = Math.round((lastToDate.end.getTime() - lastToDate.start.getTime()) / 86400000);
     let incomeMinor = 0;
     let expenseMinor = 0;
     let carryForwardMinor = 0;

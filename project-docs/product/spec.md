@@ -1680,7 +1680,7 @@ flagged separately, not silently fixed.
 
 **Flagged, not changed:** Dashboard *Debt* counts only negative
 credit-card balances and *Assets* only positive balances, so an
-overdrawn savings or wallet account appears in neither tile.
+overdrawn savings or wallet account appears in neither tile. Also flagged (code review, 2026-10-06): the Dashboard's "↑ X this month" is net worth at month end minus at month start, so an opening balance dated this month, or a recurring row already materialised for later this month (e.g. the 28th's salary on the 5th), counts as this month's change — consistent with the existing net worth and income cutoffs, left as is.
 
 **Phases:**
 1. ✅ Verified on-device (Pixel 10, Light + Dark) 2026-10-05 — semantic colour

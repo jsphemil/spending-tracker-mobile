@@ -409,11 +409,15 @@ export default function AccountDetailScreen() {
               <View className="mt-2 gap-3">
                 <View className="flex-row items-center justify-between">
                   <Text accessibilityRole="header" className="text-base font-display text-fg">Breakdown</Text>
-                  <Link href={`/transactions?accountId=${accountId}`} asChild>
-                    <Pressable accessibilityRole="link" hitSlop={12}>
-                      <Text className="text-sm font-medium text-accent">Full history</Text>
-                    </Pressable>
-                  </Link>
+                  {/* `at` makes every tap a new param, so Transactions re-applies
+                      the filter even if this account was linked before. */}
+                  <Pressable
+                    accessibilityRole="link"
+                    hitSlop={12}
+                    onPress={() => router.navigate(`/transactions?accountId=${accountId}&at=${Date.now()}`)}
+                  >
+                    <Text className="text-sm font-medium text-accent">Full history</Text>
+                  </Pressable>
                 </View>
                 {breakdownSections.map((section) => (
                   <View key={section.title}>

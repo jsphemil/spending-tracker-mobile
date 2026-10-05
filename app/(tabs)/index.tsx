@@ -1,6 +1,6 @@
-import { Fragment, useEffect, useMemo, type ReactNode } from "react";
-import { Link, type Href } from "expo-router";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { Fragment, useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { Link, useFocusEffect, type Href } from "expo-router";
+import { AppState, Pressable, ScrollView, Text, View } from "react-native";
 
 import { FundRow } from "../../components/FundRow";
 import { HeaderAction, ScreenHeader } from "../../components/ScreenHeader";
@@ -60,7 +60,20 @@ export default function DashboardScreen() {
   const { data: categories } = useCategories();
   const { data: funds } = useFunds();
 
-  const period = useMemo(() => currentMonthPeriod(), []);
+  // The tab stays mounted, so "today" is re-read whenever the Dashboard is
+  // focused or the app returns to the foreground — otherwise an app left in
+  // memory across midnight (or a month end) kept showing yesterday's month,
+  // and V4 has no month arrows to move on with.
+  const [dayKey, setDayKey] = useState(() => new Date().toDateString());
+  const refreshDay = useCallback(() => setDayKey(new Date().toDateString()), []);
+  useFocusEffect(refreshDay);
+  useEffect(() => {
+    const sub = AppState.addEventListener("change", (s) => s === "active" && refreshDay());
+    return () => sub.remove();
+  }, [refreshDay]);
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- dayKey is the refresh signal
+  const period = useMemo(() => currentMonthPeriod(), [dayKey]);
   const {
     accounts,
     toBaseMinor,
@@ -80,7 +93,7 @@ export default function DashboardScreen() {
   const dashboardFunds = activeFunds.slice(0, DASHBOARD_FUND_LIMIT);
 
   // ---- ATTENTION (always "right now") ----
-  const currentRange = useMemo(() => monthRange(currentMonthPeriod()), []);
+  const currentRange = useMemo(() => monthRange(period), [period]);
   const { data: currentMonthTx } = useFilteredTransactions({ range: currentRange });
 
   const spendByCategory = new Map<number, number>();
@@ -97,7 +110,8 @@ export default function DashboardScreen() {
   const today = useMemo(() => {
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- dayKey is the refresh signal
+  }, [dayKey]);
   const lookaheadEnd = useMemo(
     () => new Date(today.getFullYear(), today.getMonth(), today.getDate() + COMMITMENT_LOOKAHEAD_DAYS),
     [today],
@@ -149,11 +163,9 @@ export default function DashboardScreen() {
         ),
       }))
       .filter(({ progress }) => !progress.isFullyFunded);
-    // fundBalances is rebuilt every render from a synchronous read, so it
-    // can't be a dependency without defeating the memo; the fund rows and
-    // today are what actually change the result.
+    // activeFunds is derived from `funds` each render; funds is its source.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [funds, today]);
+  }, [funds, fundBalances, today]);
 
   const overEarmarked = earmarkedMinor > netWorthMinor;
 
@@ -222,6 +234,7 @@ export default function DashboardScreen() {
       : null;
   const comparisonLabel =
     comparisonDays === 1 ? `1 ${lastMonthName}` : `1–${comparisonDays} ${lastMonthName}`;
+  // comparisonDays is already capped at last month's length (31 Oct vs 1–30 Sep).
 
   // Dashboard customisation (spec.md §5.22): each section is a value in
   // this map and the saved layout decides order and visibility.

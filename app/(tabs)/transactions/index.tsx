@@ -22,7 +22,7 @@ import { useCategories } from "../../../db/queries/categories";
 import { useSettings } from "../../../db/queries/settings";
 import { useFilteredTransactions } from "../../../db/queries/transactions";
 import { useBaseConverter } from "../../../hooks/useBaseConverter";
-import { formatMoney } from "../../../services/format";
+import { formatMoney, minorToMajor, minorUnitsFor } from "../../../services/format";
 import { currentMonthPeriod, monthLabel, monthRange, shiftMonth } from "../../../services/period";
 import { ensureMaterialized } from "../../../services/recurrence";
 import { resolveAccountSettings } from "../../../services/settings";
@@ -38,6 +38,11 @@ function defaultFilters(): TransactionFilters {
     categoryId: undefined,
     type: "all",
   };
+}
+
+function amountForms(amountMinor: number, currency: string): string[] {
+  const major = minorToMajor(amountMinor, currency);
+  return [String(major), major.toFixed(minorUnitsFor(currency))];
 }
 
 const shortDate = (d: Date) => d.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
@@ -77,10 +82,11 @@ export default function TransactionsListScreen() {
   // as the account filter (it shows as a removable chip like any other).
   // Adjusted during render rather than in an effect, so a new link applies
   // before the first paint instead of flashing the unfiltered list.
-  const { accountId: accountIdParam } = useLocalSearchParams<{ accountId?: string }>();
+  const { accountId: accountIdParam, at } = useLocalSearchParams<{ accountId?: string; at?: string }>();
+  const linkKey = accountIdParam ? `${accountIdParam}@${at ?? ""}` : undefined;
   const [appliedParam, setAppliedParam] = useState<string | undefined>(undefined);
-  if (accountIdParam !== appliedParam) {
-    setAppliedParam(accountIdParam);
+  if (linkKey !== appliedParam) {
+    setAppliedParam(linkKey);
     if (accountIdParam) setFilters((f) => ({ ...f, accountId: Number(accountIdParam), mode: "allTime" }));
   }
 
@@ -130,7 +136,8 @@ export default function TransactionsListScreen() {
           categoryName(t.categoryId),
           accountName(t.accountId),
           accountName(t.toAccountId),
-          (t.amountMinor / 100).toFixed(2),
+          // Both "149" and "149.00" match; decimals follow the account currency.
+          ...amountForms(t.amountMinor, accounts?.find((a) => a.id === t.accountId)?.currency ?? baseCurrency),
         ].some((field) => field?.toLowerCase().includes(q)),
       )
     : typeFilteredRows;

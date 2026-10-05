@@ -185,8 +185,9 @@ export default function AnalyticsScreen() {
             {formatMoney(expenseMinor, baseCurrency)}
           </Text>
           <Text className="mt-1 text-sm text-fg">
-            {viewingCurrentMonth ? "So far, " : ""}
-            {spendingInsight}
+            {viewingCurrentMonth && changePercent !== null
+              ? `So far, ${spendingInsight.charAt(0).toLowerCase()}${spendingInsight.slice(1)}`
+              : spendingInsight}
           </Text>
           <View className="mt-4">
             <CumulativeSpendChart
@@ -299,6 +300,7 @@ export default function AnalyticsScreen() {
         </Link>
         {/* The trend's axis labels are amounts too, so it follows the same
             session privacy mask as the figure above. */}
+        {!netWorthHidden && <UnconvertedCurrenciesNote currencies={unconvertedCurrencies} subject="Net worth" />}
         {netWorthHidden ? (
           <Text className="mt-3 text-sm text-fg-muted">Hidden — tap the eye on the Dashboard to show amounts.</Text>
         ) : (
