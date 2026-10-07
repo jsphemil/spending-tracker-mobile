@@ -361,6 +361,11 @@ checked on the Internal testing build.
 
 Build `df5ffa7a-169b-4641-ab28-f2aa9d9266e2`; AAB at
 `https://expo.dev/artifacts/eas/pxpIpFPcmqtnNG95vD-PnBpVbFLR4IsEqcAaYxiOycE.aab`.
+**Internal testing → checked on the Pixel 10 → promoted; live in
+Production 2026-10-07.** Getting the Pixel onto the internal track took
+re-joining: its account had only been in the old EWM Alpha closed test,
+and the internal opt-in page must show "You're a tester" → *Download
+test app* (not *Leave test program*).
 **versionCode 23** (`fb633da3…`, 2026-10-06) was the same release minus
 the save banner and the Scheduled month; it was uploaded to Internal
 testing but never reached the tester's Pixel — superseded by 24, do not

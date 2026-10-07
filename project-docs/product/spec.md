@@ -10,7 +10,7 @@
 ## Status Dashboard
 
 _Kept current per CLAUDE.md's Idea Backlog Protocol — updated the
-moment a status genuinely changes, not batched. Last updated: 2026-10-05._
+moment a status genuinely changes, not batched. Last updated: 2026-10-07._
 
 **Legend:** ✅ Built & Verified (built *and* confirmed working on a
 real device/build) · 🚧 In Progress (code exists, not yet verified, or
@@ -45,7 +45,7 @@ pushed to a later phase) · ❌ Dropped (cut from scope).
 | §5.21 | Funds | ✅ Built & Verified | **New, built 2026-09-09, verified on-device 2026-09-10** across 7 test groups (cold open, live refresh, earmarking leaving net worth untouched, spend/edit/delete, overspend and overfunding, close/reopen, and a full regression sweep), plus a Dropbox backup→restore round trip. **Shipped as versionCode 15, versionName 2.2.0** — closed-testing update 5. A new financial primitive: money you still own but have earmarked for a future purpose, sitting as a logical allocation layer *above* the accounting model. Account balances and net worth are completely unchanged; the app additionally reports **Earmarked** and **Unallocated** (net worth − earmarked). Not a budget, not an account, and deliberately not a renamed Goal — **§5.17 Goals is being removed and replaced by this**. Fund balances are **derived, never stored**, so editing or deleting a fund-linked expense reverses correctly with zero write hooks. Full plan and phasing in the §5.21 body below. |
 | §5.22 | Version 3 — Testers Community round | ✅ Built & Verified | **Built and verified on-device 2026-09-11**, shipped as **3.0.0** (closed-testing update 7). Six enhancement suggestions from a paid tester pass that found no bugs: FAQ + Send feedback (closes §5.15), What's new, first-visit hints + replayable intro, Dashboard customisation, three Analytics chart changes. Two suggestions (Google/email sign-in) declined as contrary to §3/§4. One migration (`0017`), shared with §5.23. |
 | §5.23 | Biometric App Lock | ✅ Built & Verified | **Built and verified on-device 2026-09-11**, shipped in 3.0.0. `expo-local-authentication` (the release's only native change), device PIN/pattern fallback allowed, 30 s background grace, lock screen rendered instead of the navigator so nothing underneath can be captured. Nothing stored by the app. |
-| §5.24 | Erebor V4 — Calm UI/UX Redesign | 🚧 In Progress | **Started 2026-10-05** on `redesign/v4`, shipping as 4.0.0. Presentation-only: Octet blue palette for Light and Dark, progressive-disclosure Dashboard/Analytics, Transactions filter sheet + search, grouped Accounts, rethemed widgets. Financial logic and schema untouched. Phases 1–7 verified on-device 2026-10-05; performance pass done; version 4.0.0. |
+| §5.24 | Erebor V4 — Calm UI/UX Redesign | ✅ Built & Verified | **Live in Production 2026-10-07 as 4.0.0, versionCode 24** (Internal testing first, then promoted; merged to master). Started 2026-10-05. Presentation-only: Octet blue palette for Light and Dark, progressive-disclosure Dashboard/Analytics, Transactions filter sheet + search, grouped Accounts, rethemed widgets. Financial logic and schema untouched. Phases 1–7 verified on-device 2026-10-05; performance pass done; version 4.0.0. |
 
 **Remaining known gaps** (everything else above is fully verified,
 carried forward unchanged from the last audit — none of these have
@@ -1646,7 +1646,7 @@ against the non-judgemental philosophy.
   straight into the add screen with the account preselected; toggling
   off ends the prompts. Shipped in 3.0.0.
 
-### 5.24 Erebor V4 — Calm UI/UX Redesign 🚧 In Progress
+### 5.24 Erebor V4 — Calm UI/UX Redesign ✅ Built & Verified
 
 **Started 2026-10-05**, on branch `redesign/v4`, shipping as one release
 (**4.0.0**). The goal is a calm, premium, easy-to-scan app: "at a glance
@@ -1734,9 +1734,9 @@ overdrawn savings or wallet account appears in neither tile. Also flagged (code 
    with a new generic (no personal data) widget-picker preview.
    Performance: one shared settings query, list-level row data, batched
    lists, memoised synchronous reads — verified live updates on-device.
-8. 🚧 Accessibility: roles/states on controls, no text under 12px. Large
-   system font check still needs the user (system setting).
-9. 🚧 Regression: independent code review (approve with notes; all findings fixed, Full-history repeat bug reproduced and verified fixed) and test review (conditional go; added likeForLikeRanges + net-worth-change tests, 142 tests pass). Remaining: user large-font check, 4.0.0 EAS build → Internal testing (native widget change) → Production.
+8. ✅ Accessibility: roles/states on controls, no text under 12px. (A very
+   large system-font pass on the user's own phone is still worth doing.)
+9. ✅ Regression: independent code review (approve with notes; all findings fixed, Full-history repeat bug reproduced and verified fixed) and test review (conditional go; added likeForLikeRanges + net-worth-change tests, 142 tests pass). Shipped: vc24 → Internal testing (verified on the user's Pixel 10) → Production 2026-10-07.
 
 ## 6. Explicitly out of scope for v1
 
