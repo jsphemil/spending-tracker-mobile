@@ -330,6 +330,68 @@ All 3 required updates for the 14-day window are now shipped
 (versionCode 9, 12, 13 — see step 9 below for the production-access
 application, the next gate).
 
+**4.0.0 built as versionCode 24 (2026-10-07)** — release name
+`Erebor 4.0.0 — Calm & Clear`. The V4 redesign (spec.md §5.24), built
+from `redesign/v4` with master's 3.2.1 fix merged in:
+
+- **Octet blue** palette for Light and Dark (#0D51FB fills; #5C8DFF for
+  blue text in Dark), semantic tokens, no gradients/glows/card shadows.
+- **Dashboard** at a glance: net worth + change this month (tap → new
+  Net worth screen), this month vs the same days of last month, funds,
+  one summary row per attention item. Shortcut tiles gone — Funds,
+  Commitments, Categories, Tags under Settings → Manage.
+- **Transactions**: search, filter sheet with removable chips,
+  Income/Expense type filters, day groups, long-press Edit / Duplicate /
+  Delete. **Accounts** grouped by type. **Analytics** insight-first;
+  future months show as "Scheduled".
+- **"+" sheet** (Expense / Income / Transfer) and a **save
+  confirmation** banner with Account / Transactions shortcuts (user
+  request 2026-10-07); a system toast on the widget cold-start path.
+- **Accounts widget** and its setup screen rethemed; generic
+  widget-picker preview (no personal data). **Native change → Internal
+  testing first**, then Promote.
+- Performance for low-end phones: one shared settings query, list-level
+  row data, batched lists, memoised synchronous reads.
+
+`tsc`, `expo lint` and 142 tests clean. Independent code review (approve
+with notes, all fixed) and test review (conditional go; tests added).
+Verified on the Nothing Phone 1 debug device; the save banner and the
+Scheduled month were added after that device went away and are first
+checked on the Internal testing build.
+
+Build `df5ffa7a-169b-4641-ab28-f2aa9d9266e2`; AAB at
+`https://expo.dev/artifacts/eas/pxpIpFPcmqtnNG95vD-PnBpVbFLR4IsEqcAaYxiOycE.aab`.
+**versionCode 23** (`fb633da3…`, 2026-10-06) was the same release minus
+the save banner and the Scheduled month; it was uploaded to Internal
+testing but never reached the tester's Pixel — superseded by 24, do not
+promote it.
+
+Release notes to use (4.0.0):
+```
+<en-GB>
+A calmer, clearer Erebor: a new look in light and dark. The Dashboard shows your net worth and how it moved, this month's income and spending, your funds and anything needing attention. Transactions gains search, filters and day grouping; press and hold for duplicate or delete. Saving a transaction now confirms it. Accounts are grouped by type and Analytics leads with what changed. Funds, Commitments, Categories and Tags are under Settings > Manage. Runs lighter on older phones.
+</en-GB>
+```
+
+**3.2.1 built as versionCode 22 (2026-10-05)** — release name
+`Erebor 3.2.1 — Quick Add Fix`. One fix, built from `master` via a
+worktree: opening Add Transaction from the widget (or a launcher
+shortcut) on a cold start made it the only screen, so `router.back()`
+after saving did nothing ("GO_BACK was not handled"), the form stayed
+open and a second tap saved a duplicate. Now saving returns to the home
+screen when there's nothing to go back to. Reproduced on-device before
+the fix, verified after. Also carried by 4.0.0.
+
+Build `4e5c11a5-82ac-4569-acca-ae33503d3399`; AAB at
+`https://expo.dev/artifacts/eas/IaoIlK5ZV7os2vTKtW_JwrgQ2h7hjSjo8VUD1tW6gJg.aab`.
+
+Release notes to use (3.2.1):
+```
+<en-GB>
+Adding a transaction from the home screen widget or an app shortcut now returns you to your home screen once it's saved, instead of leaving the form open - so a second tap can no longer save it twice.
+</en-GB>
+```
+
 **3.2.0 built as versionCode 21 (2026-10-04)** — release name
 `Erebor 3.2.0 — Upcoming & Reach`. Three changes, all from using the
 published app:
@@ -354,7 +416,7 @@ build. Straight to Production, no track.
 
 Build `5c96268e-7b03-4567-b266-12a10fbfa1dc`; AAB at
 `https://expo.dev/artifacts/eas/IMyOInhZw63TxJBfvpRSgNzmJ_-lCXjBYypnoz8iwlY.aab`.
-**Submitted to Production on 2026-10-05, in review.** Verified on-device
+**Submitted to Production on 2026-10-05; live (confirmed by the user 2026-10-06).** Verified on-device
 first — the navigation-bar clearance across forms, settings, the intro
 and the currency list, plus the commitment due dates and the Dashboard's
 attention rows.
