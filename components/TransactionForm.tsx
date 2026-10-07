@@ -269,6 +269,8 @@ export function TransactionForm({
           <Pressable
             key={t}
             onPress={() => setType(t)}
+            accessibilityRole="radio"
+            accessibilityState={{ selected: type === t }}
             className={`flex-1 items-center rounded-lg border py-2 ${
               type === t ? TYPE_STYLES[t].selected : "border-glass-border bg-glass"
             }`}
@@ -302,6 +304,8 @@ export function TransactionForm({
             <Pressable
               key={a.id}
               onPress={() => setAccountId(a.id)}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: accountId === a.id }}
               className={`rounded-full border px-3 py-2 ${
                 accountId === a.id ? "border-accent bg-accent-soft" : "border-glass-border bg-glass"
               }`}
@@ -324,6 +328,8 @@ export function TransactionForm({
                 <Pressable
                   key={a.id}
                   onPress={() => setToAccountId(a.id)}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected: toAccountId === a.id }}
                   className={`rounded-full border px-3 py-2 ${
                     toAccountId === a.id ? "border-transfer bg-transfer-soft" : "border-glass-border bg-glass"
                   }`}
@@ -341,7 +347,7 @@ export function TransactionForm({
         <View className="gap-2">
           <View className="flex-row items-center justify-between">
             <Text className="text-sm font-medium text-fg-muted">Category</Text>
-            <Pressable onPress={() => setAddingCategory((v) => !v)}>
+            <Pressable onPress={() => setAddingCategory((v) => !v)} accessibilityRole="button" hitSlop={12}>
               <Text className="text-xs font-medium text-accent">
                 {addingCategory ? "Cancel" : "+ New category"}
               </Text>
@@ -352,6 +358,8 @@ export function TransactionForm({
               <Pressable
                 key={c.id}
                 onPress={() => setCategoryId(c.id)}
+                accessibilityRole="radio"
+                accessibilityState={{ selected: categoryId === c.id }}
                 className={`rounded-full border px-3 py-2 ${
                   categoryId === c.id ? "border-accent bg-accent-soft" : "border-glass-border bg-glass"
                 }`}
@@ -393,6 +401,8 @@ export function TransactionForm({
               <Pressable
                 key={f.id}
                 onPress={() => setFundId(fundId === f.id ? null : f.id)}
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: fundId === f.id }}
                 className={`flex-row items-center gap-1.5 rounded-full border px-3 py-2 ${
                   fundId === f.id ? "border-accent bg-accent-soft" : "border-glass-border bg-glass"
                 }`}
@@ -420,6 +430,8 @@ export function TransactionForm({
         <Text className="text-sm font-medium text-fg-muted">Date</Text>
         <Pressable
           onPress={() => setShowDatePicker(true)}
+          accessibilityRole="button"
+          accessibilityLabel={`Date, ${date.toDateString()}`}
           className="rounded-lg border border-glass-border bg-glass px-3 py-2"
         >
           <Text className="text-fg">{date.toDateString()}</Text>
@@ -511,6 +523,8 @@ export function TransactionForm({
                     <Pressable
                       key={unit}
                       onPress={() => setIntervalUnit(unit)}
+                      accessibilityRole="radio"
+                      accessibilityState={{ selected: intervalUnit === unit }}
                       className={`rounded-full border px-2.5 py-1.5 ${
                         intervalUnit === unit ? "border-accent bg-accent-soft" : "border-glass-border bg-glass"
                       }`}

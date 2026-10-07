@@ -2,16 +2,18 @@ import { ScrollView, Text, View } from "react-native";
 
 import { Button } from "./ui/Button";
 import { Icon } from "./ui/Icon";
+import { useThemeColors } from "../theme/palette";
 
 // The three explanatory intro slides (spec.md §5.13 / §5.19 onboarding
 // steps 1–3), shared by first-run onboarding (OnboardingFlow, which adds
-// its currency step), the Settings "Replay the intro" route, and the
-// header's ⓘ sheet — one copy of the words rather than three (§5.22).
+// its currency step) and the Settings "Replay the intro" route — one
+// copy of the words (§5.22).
 
 export function WelcomeStep({ onNext, cta = "Let’s get started" }: { onNext: () => void; cta?: string }) {
+  const colors = useThemeColors();
   return (
     <ScrollView contentContainerStyle={{ padding: 24, gap: 20, flexGrow: 1 }}>
-      <Icon name="logo" size={32} color="#48e7f5" />
+      <Icon name="logo" size={32} color={colors.accent} />
       <Text className="text-2xl font-display-xbold text-fg">Welcome to Erebor</Text>
       <Text className="text-base font-semibold text-fg">
         Take control of your money. Build your wealth.
@@ -62,6 +64,7 @@ const FEATURE_CARDS = [
 ] as const;
 
 export function FeaturesStep({ onNext }: { onNext: () => void }) {
+  const colors = useThemeColors();
   return (
     <ScrollView contentContainerStyle={{ padding: 24, gap: 20, flexGrow: 1 }}>
       <Text className="text-2xl font-display-xbold text-fg">
@@ -75,8 +78,8 @@ export function FeaturesStep({ onNext }: { onNext: () => void }) {
       <View className="gap-4">
         {FEATURE_CARDS.map((f) => (
           <View key={f.title} className="flex-row gap-3">
-            <View className="h-9 w-9 items-center justify-center rounded-full bg-glass-fill-strong">
-              <Icon name={f.icon} size={16} color="#48e7f5" />
+            <View className="h-9 w-9 items-center justify-center rounded-full bg-accent-soft">
+              <Icon name={f.icon} size={16} color={colors.accent} />
             </View>
             <View className="flex-1">
               <Text className="text-base font-semibold text-fg">{f.title}</Text>
@@ -92,9 +95,8 @@ export function FeaturesStep({ onNext }: { onNext: () => void }) {
   );
 }
 
-// The four habits. HowToUseBody is the list on its own so the header's ⓘ
-// sheet can show exactly this content without the slide's title and CTA.
-export function HowToUseBody() {
+// The four habits.
+function HowToUseBody() {
   return (
     <>
       <HowToStep
@@ -166,7 +168,7 @@ export function StepDots({ count, current }: { count: number; current: number })
       {Array.from({ length: count }).map((_, i) => (
         <View
           key={i}
-          className={`h-1.5 w-8 rounded-full ${i <= current ? "bg-accent" : "bg-surface-3"}`}
+          className={`h-1.5 w-8 rounded-full ${i <= current ? "bg-accent-fill" : "bg-surface-3"}`}
         />
       ))}
     </View>

@@ -85,25 +85,25 @@ export function CumulativeSpendChart({ thisMonth, lastMonth, currency, today, he
           <Path d={lastPath} fill="none" stroke={colors.fgSubtle} strokeWidth={1.5} strokeDasharray="4,4" />
         )}
         {thisMonthShown.length > 1 && (
-          <Path d={thisPath} fill="none" stroke={colors.danger} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+          <Path d={thisPath} fill="none" stroke={colors.accent} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
         )}
       </Svg>
 
       <View style={{ position: "absolute", left: 0, top: TOP_PADDING - 6 }}>
         {Array.from({ length: GRID_LINES + 1 }, (_, i) => (
-          <Text key={i} className="text-[10px] text-fg-subtle" style={{ height: plotHeight / GRID_LINES }}>
+          <Text key={i} className="text-xs text-fg-subtle" style={{ height: plotHeight / GRID_LINES }}>
             {formatCompactMoney(ceiling * (1 - i / GRID_LINES), currency)}
           </Text>
         ))}
       </View>
 
       <View className="mt-1 flex-row justify-between px-1">
-        <Text className="text-[10px] text-fg-subtle">Day 1</Text>
-        <Text className="text-[10px] text-fg-subtle">Day {days}</Text>
+        <Text className="text-xs text-fg-subtle">Day 1</Text>
+        <Text className="text-xs text-fg-subtle">Day {days}</Text>
       </View>
 
       <View className="mt-2 flex-row items-center gap-4">
-        <LegendSwatch color={colors.danger} label="This month" />
+        <LegendSwatch color={colors.accent} label="This month" />
         <LegendSwatch color={colors.fgSubtle} label="Last month" dashed />
       </View>
       <Text className="mt-2 text-xs text-fg-muted">
@@ -129,7 +129,7 @@ function LegendSwatch({ color, label, dashed }: { color: string; label: string; 
           borderStyle: dashed ? "dashed" : "solid",
         }}
       />
-      <Text className="text-[10px] text-fg-subtle">{label}</Text>
+      <Text className="text-xs text-fg-subtle">{label}</Text>
     </View>
   );
 }

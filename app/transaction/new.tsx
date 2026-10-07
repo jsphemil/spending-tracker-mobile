@@ -1,11 +1,14 @@
 import { eq } from "drizzle-orm";
 import { useLiveQuery } from "drizzle-orm/expo-sqlite";
 import { router, useLocalSearchParams } from "expo-router";
-import { BackHandler, Text, View } from "react-native";
+import { BackHandler, Text, ToastAndroid, View } from "react-native";
 
+import { showSaved } from "../../components/SaveConfirmation";
 import { TransactionForm } from "../../components/TransactionForm";
 import { db } from "../../db/client";
 import { createTransaction } from "../../db/actions/transactions";
+import { useAccounts } from "../../db/queries/accounts";
+import { formatMoney } from "../../services/format";
 import { useTransactionTagIds } from "../../db/queries/tags";
 import { transactions, type TransactionType } from "../../db/schema";
 import { parseLocalDateString } from "../../services/period";
@@ -36,6 +39,22 @@ export default function NewTransactionScreen() {
   // so send them back there: exitApp finishes the activity (the JS work —
   // the save and the widget refresh — has already run).
   const close = () => (router.canGoBack() ? router.back() : BackHandler.exitApp());
+
+  // Confirm the save (spec.md §5.24, user request 2026-10-07): an in-app
+  // banner with shortcuts to the account and Transactions, or — when the
+  // widget opened this screen and saving returns to the home screen — a
+  // system toast, since there's no app left on screen to show a banner.
+  const { data: accounts } = useAccounts();
+  const confirm = (values: { type: TransactionType; amountMinor: number; accountId: number; toAccountId?: number | null }, recurring: boolean) => {
+    const account = accounts?.find((a) => a.id === values.accountId);
+    const to = accounts?.find((a) => a.id === values.toAccountId);
+    const kind = values.type === "income" ? "Income" : values.type === "expense" ? "Expense" : "Transfer";
+    const title = recurring ? `Recurring ${kind.toLowerCase()} set up` : `${kind} recorded`;
+    const amount = formatMoney(values.amountMinor, account?.currency ?? "INR");
+    const where = values.type === "transfer" ? `${account?.name ?? "?"} → ${to?.name ?? "?"}` : (account?.name ?? "");
+    if (router.canGoBack()) showSaved({ title, detail: `${amount} · ${where}`, accountId: values.accountId });
+    else ToastAndroid.show(`${title}: ${amount}`, ToastAndroid.SHORT);
+  };
 
   // Still loading the source row — avoid rendering the form with stale
   // "new" defaults for a moment before the duplicate data arrives.
@@ -83,10 +102,12 @@ export default function NewTransactionScreen() {
         }
         onSubmit={(values) => {
           createTransaction(values);
+          confirm(values, false);
           close();
         }}
         onSubmitRecurring={(values, schedule) => {
           createRecurringSeries(db, values, schedule);
+          confirm(values, true);
           close();
         }}
       />

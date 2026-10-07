@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Icon } from "../components/ui/Icon";
 
 import { CalendarMonthGrid } from "../components/CalendarMonthGrid";
-import { GlobalHeader } from "../components/GlobalHeader";
+import { ScreenHeader } from "../components/ScreenHeader";
 import { db } from "../db/client";
 import { useAccounts } from "../db/queries/accounts";
 import { useSettings } from "../db/queries/settings";
@@ -69,7 +69,7 @@ export default function CalendarScreen() {
 
   return (
     <View className="flex-1 bg-bg">
-      <GlobalHeader />
+      <ScreenHeader title="Calendar" back />
       <ScrollView
         className="flex-1 bg-bg"
         contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 96 }}

@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Erebor V4 Navy</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<style>
+:root{--page:#e9e9ee;--ink:#16171d}
+@media (prefers-color-scheme: dark){:root{--page:#0b0b0e;--ink:#e7e7ee}}
+body{margin:0;background:var(--page);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+h1{font-size:18px;font-weight:600;text-align:center;margin:20px 16px 4px}
+p.note{font-size:13px;text-align:center;opacity:.7;margin:0 16px 12px}
+.grid{display:flex;gap:20px;justify-content:center;flex-wrap:wrap;padding:12px 16px 24px}
+.cap{font-size:12px;opacity:.7;text-align:center;margin-bottom:6px}
+.ph{width:300px;max-width:100%;border-radius:28px;padding:14px 0 0;overflow:hidden;border:1px solid rgba(128,128,128,.25)}
+.L{--bg:#f6f6f8;--s:#ffffff;--b:#e2e2e8;--fg:#16171d;--m:#555867;--sub:#676a78;--a:#203d6e;--on:#ffffff;--as:rgba(32,61,110,.08);--ok:#2b7a57;--w:#94600f;--ws:rgba(148,96,15,.10);--tr:#6a5f88;--tk:#e4e4ea}
+.D{--bg:#121318;--s:#1a1b22;--b:#2a2b33;--fg:#e7e7ee;--m:#a4a6b3;--sub:#8b8d9b;--a:#a3c4f2;--on:#0e1a30;--as:rgba(163,196,242,.14);--ok:#7fc6a2;--w:#dbb46c;--ws:rgba(219,180,108,.13);--tr:#b6abd4;--tk:#2b2c35}
+.ph{background:var(--bg);color:var(--fg)}
+.pad{padding:0 18px}.lab{font-size:12px;color:var(--m)}.sec{font-size:15px;font-weight:600}.lnk{font-size:12px;color:var(--a)}
+.hr{height:1px;background:var(--b);margin:16px 18px}.bar{height:5px;border-radius:9px;background:var(--tk);margin-top:6px}.bar i{display:block;height:100%;border-radius:9px;background:var(--a)}
+.nav{display:flex;justify-content:space-around;align-items:center;background:var(--s);border-top:1px solid var(--b);height:58px;margin-top:16px;position:relative;font-size:11px;color:var(--sub)}
+.nav span{display:flex;flex-direction:column;align-items:center;gap:2px}.nav i{font-size:19px}
+.fab{position:absolute;left:50%;top:-24px;transform:translateX(-50%);width:48px;height:48px;border-radius:50%;background:var(--a);color:var(--on);display:flex;align-items:center;justify-content:center;border:4px solid var(--s);font-size:22px}
+.row{display:flex;justify-content:space-between;align-items:center;padding:9px 0}
+.top{display:flex;justify-content:space-between;align-items:center;padding:0 18px 10px}
+.fi{width:26px;height:26px;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;font-size:14px;margin-right:8px;vertical-align:middle}
+</style>
+</head>
+<body>
+<h1>Erebor V4 — Navy</h1>
+<p class="note">Dashboard and Transactions, light and dark. Sample figures.</p>
+<div class="grid">
+  <div><div class="cap">Dashboard · Light</div><div class="ph L" data-s="dash"></div></div>
+  <div><div class="cap">Dashboard · Dark</div><div class="ph D" data-s="dash"></div></div>
+  <div><div class="cap">Transactions · Light</div><div class="ph L" data-s="tx"></div></div>
+  <div><div class="cap">Transactions · Dark</div><div class="ph D" data-s="tx"></div></div>
+</div>
+<script>
+const nav=(sel)=>`<div class="nav"><span style="${sel==0?'color:var(--a)':''}"><i class="ti ti-layout-dashboard"></i>Dashboard</span><span><i class="ti ti-wallet"></i>Accounts</span><span style="width:40px"></span><span style="${sel==2?'color:var(--a)':''}"><i class="ti ti-arrows-exchange"></i>Transactions</span><span><i class="ti ti-chart-line"></i>Analytics</span><div class="fab"><i class="ti ti-plus"></i></div></div>`;
+const dash=`<div class="top"><span style="font-size:15px;font-weight:600;display:flex;align-items:center;gap:6px"><i class="ti ti-mountain" style="color:var(--a)"></i>Erebor</span><i class="ti ti-settings" style="font-size:19px"></i></div>
+<div class="pad"><div style="font-size:16px;font-weight:600">Good evening, Emil</div>
+<div class="lab" style="margin-top:16px;display:flex;justify-content:space-between">Net worth ›<i class="ti ti-eye"></i></div>
+<div style="font-size:30px;font-weight:700;margin-top:2px">₹12,61,110</div>
+<div style="font-size:12px;color:var(--ok);margin-top:2px">↑ ₹42,300 this month</div></div>
+<div class="hr"></div>
+<div class="pad"><div class="sec">October</div>
+<div style="display:flex;margin-top:8px"><div style="flex:1"><div class="lab">Income</div><div style="font-size:17px;font-weight:600">₹1,54,418</div></div>
+<div style="flex:1"><div class="lab">Spending</div><div style="font-size:17px;font-weight:600">₹52,167</div><div style="font-size:11px;color:var(--m)">↓ 8% vs September</div></div></div></div>
+<div class="hr"></div>
+<div class="pad"><div style="display:flex;justify-content:space-between"><span class="sec">Funds</span><span class="lnk">See all</span></div>
+<div style="margin-top:10px;font-size:13px;display:flex;justify-content:space-between;align-items:center"><span><span class="fi" style="background:rgba(132,204,22,.15);color:#65a30d"><i class="ti ti-plane"></i></span>Amsterdam trip</span><span style="color:var(--m)">₹0 / ₹5,00,000</span></div><div class="bar"><i style="width:1%"></i></div>
+<div style="margin-top:12px;font-size:13px;display:flex;justify-content:space-between;align-items:center"><span><span class="fi" style="background:rgba(234,179,8,.15);color:#ca8a04"><i class="ti ti-pig"></i></span>Wolverine PS5</span><span style="color:var(--m)">₹1,000 / ₹5,000</span></div><div class="bar"><i style="width:20%"></i></div></div>
+<div class="hr"></div>
+<div class="pad"><div class="sec">Needs attention</div>
+<div style="margin-top:8px;display:flex;align-items:center;gap:10px;background:var(--ws);border-radius:14px;padding:10px 12px"><i class="ti ti-calendar-repeat" style="color:var(--w);font-size:18px"></i><span style="flex:1"><span style="font-size:13px;display:block">3 commitments due this week</span><span style="font-size:11px;color:var(--m)">Next: YouTube Premium, ₹299 on 5 Oct</span></span><i class="ti ti-chevron-right" style="color:var(--sub)"></i></div></div>`+nav(0);
+const tx=`<div class="top"><span style="font-size:17px;font-weight:600">Transactions</span><span style="font-size:18px;display:flex;gap:14px"><i class="ti ti-search"></i><span style="position:relative"><i class="ti ti-adjustments-horizontal"></i><b style="position:absolute;top:-2px;right:-4px;width:7px;height:7px;border-radius:50%;background:var(--a)"></b></span><i class="ti ti-calendar"></i></span></div>
+<div class="pad"><div style="display:flex;justify-content:space-between;align-items:center;font-size:14px"><i class="ti ti-chevron-left" style="color:var(--m)"></i>October 2026<i class="ti ti-chevron-right" style="color:var(--m)"></i></div>
+<div style="display:flex;margin-top:10px;background:var(--s);border:1px solid var(--b);border-radius:14px;padding:10px 12px"><div style="flex:1"><div class="lab">Income</div><div style="font-weight:600;color:var(--ok)">₹1,54,418</div></div><div style="flex:1;text-align:right"><div class="lab">Spending</div><div style="font-weight:600">₹52,167</div></div></div>
+<div style="margin-top:8px;display:inline-flex;gap:6px;align-items:center;background:var(--as);color:var(--a);font-size:11px;border-radius:99px;padding:3px 10px">HDFC Salary <i class="ti ti-x"></i></div>
+<div class="lab" style="margin-top:14px">Today</div>
+<div class="row" style="border-bottom:1px solid var(--b)"><div><div style="font-size:14px">Microsoft OneDrive</div><div style="font-size:11px;color:var(--sub)">Subscriptions · HDFC Salary</div></div><div style="font-size:14px">−₹149</div></div>
+<div class="row" style="border-bottom:1px solid var(--b)"><div><div style="font-size:14px">Salary</div><div style="font-size:11px;color:var(--sub)">Income · HDFC Salary</div></div><div style="font-size:14px;color:var(--ok)">+₹1,50,000</div></div>
+<div class="lab" style="margin-top:10px">20 Oct</div>
+<div class="row" style="border-bottom:1px solid var(--b)"><div><div style="font-size:14px">Claude Pro</div><div style="font-size:11px;color:var(--sub)">Subscriptions · HDFC Salary</div></div><div style="font-size:14px">−₹1,999</div></div>
+<div class="row"><div><div style="font-size:14px">HDFC Salary → INR Wallet</div><div style="font-size:11px;color:var(--sub)">Transfer</div></div><div style="font-size:14px;color:var(--tr)">₹5,000</div></div></div>`+nav(2);
+document.querySelectorAll('[data-s]').forEach(el=>el.innerHTML=el.dataset.s==='dash'?dash:tx);
+</script>
+</body>
+</html>

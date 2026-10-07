@@ -8,7 +8,7 @@ import { confirmDeleteTransaction } from "../../../components/confirmDeleteTrans
 import { CreditUsageRing } from "../../../components/rings/CreditUsageRing";
 import { GaugeRing } from "../../../components/rings/GaugeRing";
 import { CurrencyAmount } from "../../../components/CurrencyAmount";
-import { TransactionListItem } from "../../../components/TransactionListItem";
+import { TransactionListItem, useTransactionRowExtras } from "../../../components/TransactionListItem";
 import { EmptyState } from "../../../components/ui/EmptyState";
 import { db } from "../../../db/client";
 import { useAccount, useAccounts } from "../../../db/queries/accounts";
@@ -47,6 +47,7 @@ export default function AccountDetailScreen() {
   const { data: accounts } = useAccounts();
   const { settings } = useSettings();
   const colors = useThemeColors();
+  const rowExtras = useTransactionRowExtras();
   const [period, setPeriod] = useState(currentMonthPeriod());
   const { data: categories } = useCategories();
   const range = useMemo(() => monthRange(period), [period]);
@@ -188,18 +189,18 @@ export default function AccountDetailScreen() {
 
   const breakdownSections = [
     { title: "Income by category", buckets: sortedBuckets(incomeByCategory), total: incomeMinor, color: "text-success" },
-    { title: "Expense by category", buckets: sortedBuckets(expenseByCategory), total: expenseMinor, color: "text-danger" },
+    { title: "Expense by category", buckets: sortedBuckets(expenseByCategory), total: expenseMinor, color: "text-fg" },
     {
       title: "Transfers in by account",
       buckets: sortedBuckets(transferInByAccount),
       total: transferInMinor,
-      color: "text-accent",
+      color: "text-transfer",
     },
     {
       title: "Transfers out by account",
       buckets: sortedBuckets(transferOutByAccount),
       total: transferOutMinor,
-      color: "text-danger",
+      color: "text-transfer",
     },
   ].filter((section) => section.buckets.length > 0);
 
@@ -249,24 +250,31 @@ export default function AccountDetailScreen() {
       <FlatList
         data={visibleTransactions}
         keyExtractor={(item) => String(item.id)}
+        // Low-end devices (spec.md §5.24): render in small batches.
+        initialNumToRender={12}
+        maxToRenderPerBatch={8}
+        windowSize={7}
+        removeClippedSubviews
         contentContainerStyle={{ padding: 16, paddingBottom: TAB_BAR_CLEARANCE, gap: 4 }}
         ListHeaderComponent={
           <View className="mb-6 gap-4">
             <View className="w-full flex-row items-center justify-between">
               <Pressable
                 onPress={() => setPeriod((p) => shiftMonth(p, -1))}
-                className="p-3"
-                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel="Previous month"
+                className="h-11 w-11 items-center justify-center"
               >
-                <Icon name="chevron-left" size={28} color={colors.fg} />
+                <Icon name="chevron-left" size={24} color={colors.fg} />
               </Pressable>
-              <Text className="text-base font-medium text-fg">{monthLabel(period)}</Text>
+              <Text accessibilityRole="header" className="text-base font-medium text-fg">{monthLabel(period)}</Text>
               <Pressable
                 onPress={() => setPeriod((p) => shiftMonth(p, 1))}
-                className="p-3"
-                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel="Next month"
+                className="h-11 w-11 items-center justify-center"
               >
-                <Icon name="chevron-right" size={28} color={colors.fg} />
+                <Icon name="chevron-right" size={24} color={colors.fg} />
               </Pressable>
             </View>
 
@@ -326,24 +334,24 @@ export default function AccountDetailScreen() {
 
             <View className="w-full flex-row gap-3">
               <Link href={`/transaction/new?accountId=${accountId}&type=income`} asChild>
-                <Pressable className="flex-1 items-center rounded-lg bg-success py-3">
-                  <Text className="font-semibold text-white">Income</Text>
+                <Pressable accessibilityRole="button" className="min-h-11 flex-1 items-center justify-center rounded-full bg-success-soft">
+                  <Text className="font-semibold text-success">Income</Text>
                 </Pressable>
               </Link>
               <Link href={`/transaction/new?accountId=${accountId}&type=expense`} asChild>
-                <Pressable className="flex-1 items-center rounded-lg bg-danger py-3">
-                  <Text className="font-semibold text-white">Expense</Text>
+                <Pressable accessibilityRole="button" className="min-h-11 flex-1 items-center justify-center rounded-full bg-danger-soft">
+                  <Text className="font-semibold text-danger">Expense</Text>
                 </Pressable>
               </Link>
               <Link href={`/transaction/new?accountId=${accountId}&type=transfer`} asChild>
-                <Pressable className="flex-1 items-center rounded-lg bg-transfer py-3">
-                  <Text className="font-semibold text-white">Transfer</Text>
+                <Pressable accessibilityRole="button" className="min-h-11 flex-1 items-center justify-center rounded-full bg-transfer-soft">
+                  <Text className="font-semibold text-transfer">Transfer</Text>
                 </Pressable>
               </Link>
             </View>
 
             {budgetActive && (
-              <View className="gap-1.5 rounded-card bg-surface-2 p-3.5">
+              <View className="gap-1.5 rounded-2xl bg-surface-2 p-3.5">
                 <View className="flex-row items-center justify-between">
                   <Text className="text-sm font-medium text-fg">Budget Mode</Text>
                   <Text className={`text-sm ${overBudget ? "font-medium text-danger" : "text-fg-muted"}`}>
@@ -353,7 +361,7 @@ export default function AccountDetailScreen() {
                 </View>
                 <View className="h-1.5 overflow-hidden rounded-full bg-surface-3">
                   <View
-                    className={`h-full ${overBudget ? "bg-danger" : "bg-accent"}`}
+                    className={`h-full ${overBudget ? "bg-danger" : "bg-accent-fill"}`}
                     style={{ width: `${Math.min(100, (totalOutMinor / account.budgetMonthlyMinor!) * 100)}%` }}
                   />
                 </View>
@@ -366,41 +374,25 @@ export default function AccountDetailScreen() {
               </View>
             )}
 
-            <View className="flex-row flex-wrap gap-3">
-              <View className="min-w-[45%] flex-1 rounded-card bg-surface-2 p-3.5">
-                <Text className="text-xs text-fg-muted">Carry forward</Text>
-                <CurrencyAmount
-                  amountMinor={carryForwardMinor}
-                  currency={account.currency}
-                  className="font-data mt-1.5 text-base font-semibold tabular-nums text-fg"
-                />
-              </View>
-              <View className="min-w-[45%] flex-1 rounded-card bg-surface-2 p-3.5">
-                <Text className="text-xs text-fg-muted">Total in</Text>
-                <CurrencyAmount
-                  amountMinor={totalInMinor}
-                  currency={account.currency}
-                  prefix="+"
-                  className="font-data mt-1.5 text-base font-semibold tabular-nums text-success"
-                />
-              </View>
-              <View className="min-w-[45%] flex-1 rounded-card bg-surface-2 p-3.5">
-                <Text className="text-xs text-fg-muted">Total out</Text>
-                <CurrencyAmount
-                  amountMinor={totalOutMinor}
-                  currency={account.currency}
-                  prefix="−"
-                  className="font-data mt-1.5 text-base font-semibold tabular-nums text-danger"
-                />
-              </View>
-              <View className="min-w-[45%] flex-1 rounded-card bg-surface-2 p-3.5">
-                <Text className="text-xs text-fg-muted">Left to spend</Text>
+            {/* V4 (spec.md §5.24): the month's four figures as divider rows,
+                not tiles. Same values; "out" is neutral like all spending. */}
+            <View>
+              <FigureRow label="Carry forward">
+                <CurrencyAmount amountMinor={carryForwardMinor} currency={account.currency} className="text-base text-fg" />
+              </FigureRow>
+              <FigureRow label="Total in">
+                <CurrencyAmount amountMinor={totalInMinor} currency={account.currency} prefix="+" className="text-base text-success" />
+              </FigureRow>
+              <FigureRow label="Total out">
+                <CurrencyAmount amountMinor={totalOutMinor} currency={account.currency} prefix="−" className="text-base text-fg" />
+              </FigureRow>
+              <FigureRow label="Left to spend">
                 <CurrencyAmount
                   amountMinor={leftToSpendMinor}
                   currency={account.currency}
-                  className={`font-data mt-1.5 text-base font-semibold tabular-nums ${leftToSpendMinor >= 0 ? "text-success" : "text-danger"}`}
+                  className={`text-base font-semibold ${leftToSpendMinor >= 0 ? "text-fg" : "text-danger"}`}
                 />
-              </View>
+              </FigureRow>
             </View>
 
             {safeToSpendPerDayMinor !== null && (
@@ -414,14 +406,18 @@ export default function AccountDetailScreen() {
             )}
 
             {breakdownSections.length > 0 && (
-              <View className="gap-3 rounded-card border border-glass-border bg-glass p-4">
+              <View className="mt-2 gap-3">
                 <View className="flex-row items-center justify-between">
-                  <Text className="text-sm font-display text-fg">Breakdown</Text>
-                  <Link href={`/transactions?accountId=${accountId}`} asChild>
-                    <Pressable>
-                      <Text className="text-xs font-medium text-accent">Full history</Text>
-                    </Pressable>
-                  </Link>
+                  <Text accessibilityRole="header" className="text-base font-display text-fg">Breakdown</Text>
+                  {/* `at` makes every tap a new param, so Transactions re-applies
+                      the filter even if this account was linked before. */}
+                  <Pressable
+                    accessibilityRole="link"
+                    hitSlop={12}
+                    onPress={() => router.navigate(`/transactions?accountId=${accountId}&at=${Date.now()}`)}
+                  >
+                    <Text className="text-sm font-medium text-accent">Full history</Text>
+                  </Pressable>
                 </View>
                 {breakdownSections.map((section) => (
                   <View key={section.title}>
@@ -451,7 +447,7 @@ export default function AccountDetailScreen() {
               </View>
             )}
 
-            <Text className="text-sm font-display text-fg">{monthLabel(period)} transactions</Text>
+            <Text accessibilityRole="header" className="mt-2 text-base font-display text-fg">{monthLabel(period)} transactions</Text>
             {hiddenFutureCount > 0 && (
               <Text className="text-xs text-fg-muted">
                 {hiddenFutureCount} upcoming transaction{hiddenFutureCount === 1 ? "" : "s"} hidden — Show
@@ -470,12 +466,20 @@ export default function AccountDetailScreen() {
             toAccountName={item.type === "transfer" ? otherAccountName(item.toAccountId) : undefined}
             accountName={account.name}
             viewingAccountId={accountId}
-            showActionIcons
-            showDuplicateIcon
             onDelete={() => confirmDeleteTransaction(db, item, () => {})}
+            extras={rowExtras}
           />
         )}
       />
+    </View>
+  );
+}
+
+function FigureRow({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <View className="flex-row items-center justify-between border-b border-border py-3">
+      <Text className="text-sm text-fg-muted">{label}</Text>
+      {children}
     </View>
   );
 }

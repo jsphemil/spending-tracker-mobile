@@ -10,7 +10,7 @@
 ## Status Dashboard
 
 _Kept current per CLAUDE.md's Idea Backlog Protocol — updated the
-moment a status genuinely changes, not batched. Last updated: 2026-09-11._
+moment a status genuinely changes, not batched. Last updated: 2026-10-05._
 
 **Legend:** ✅ Built & Verified (built *and* confirmed working on a
 real device/build) · 🚧 In Progress (code exists, not yet verified, or
@@ -45,6 +45,7 @@ pushed to a later phase) · ❌ Dropped (cut from scope).
 | §5.21 | Funds | ✅ Built & Verified | **New, built 2026-09-09, verified on-device 2026-09-10** across 7 test groups (cold open, live refresh, earmarking leaving net worth untouched, spend/edit/delete, overspend and overfunding, close/reopen, and a full regression sweep), plus a Dropbox backup→restore round trip. **Shipped as versionCode 15, versionName 2.2.0** — closed-testing update 5. A new financial primitive: money you still own but have earmarked for a future purpose, sitting as a logical allocation layer *above* the accounting model. Account balances and net worth are completely unchanged; the app additionally reports **Earmarked** and **Unallocated** (net worth − earmarked). Not a budget, not an account, and deliberately not a renamed Goal — **§5.17 Goals is being removed and replaced by this**. Fund balances are **derived, never stored**, so editing or deleting a fund-linked expense reverses correctly with zero write hooks. Full plan and phasing in the §5.21 body below. |
 | §5.22 | Version 3 — Testers Community round | ✅ Built & Verified | **Built and verified on-device 2026-09-11**, shipped as **3.0.0** (closed-testing update 7). Six enhancement suggestions from a paid tester pass that found no bugs: FAQ + Send feedback (closes §5.15), What's new, first-visit hints + replayable intro, Dashboard customisation, three Analytics chart changes. Two suggestions (Google/email sign-in) declined as contrary to §3/§4. One migration (`0017`), shared with §5.23. |
 | §5.23 | Biometric App Lock | ✅ Built & Verified | **Built and verified on-device 2026-09-11**, shipped in 3.0.0. `expo-local-authentication` (the release's only native change), device PIN/pattern fallback allowed, 30 s background grace, lock screen rendered instead of the navigator so nothing underneath can be captured. Nothing stored by the app. |
+| §5.24 | Erebor V4 — Calm UI/UX Redesign | 🚧 In Progress | **Started 2026-10-05** on `redesign/v4`, shipping as 4.0.0. Presentation-only: Octet blue palette for Light and Dark, progressive-disclosure Dashboard/Analytics, Transactions filter sheet + search, grouped Accounts, rethemed widgets. Financial logic and schema untouched. Phases 1–7 verified on-device 2026-10-05; performance pass done; version 4.0.0. |
 
 **Remaining known gaps** (everything else above is fully verified,
 carried forward unchanged from the last audit — none of these have
@@ -1644,6 +1645,98 @@ against the non-judgemental philosophy.
   away → prompt; the widget's Expense pill from a locked state unlocks
   straight into the add screen with the account preselected; toggling
   off ends the prompts. Shipped in 3.0.0.
+
+### 5.24 Erebor V4 — Calm UI/UX Redesign 🚧 In Progress
+
+**Started 2026-10-05**, on branch `redesign/v4`, shipping as one release
+(**4.0.0**). The goal is a calm, premium, easy-to-scan app: "at a glance
+first, details when I ask for them." This is a presentation and
+information-hierarchy redesign. **Financial truth is preserved:** no
+change to balances, transfers, recurrence, funds, currency conversion,
+schema or backup/restore. Any calculation issue found along the way is
+flagged separately, not silently fixed.
+
+**Decisions (user questionnaire, 2026-10-05):**
+- **Octet blue** primary `#0D51FB` on Black Metal/Umbra/Jet Black neutrals
+  (user-supplied palette, 2026-10-05, after trying indigo and navy); Dark uses
+  `#5C8DFF` for blue text, `#0D51FB` for fills. Replaces the neon-cyan
+  dark / saturated-purple light pair. `DESIGN.md` §3–§4 rewritten.
+- `react-native-paper` may be added, scoped to specific controls
+  (search bar, menus, chips) and themed from `theme/palette.ts`.
+  NativeWind stays the styling system.
+- Dashboard: always the current month (no month arrows); shortcut tiles
+  removed; customisation (§5.22) **kept** for the remaining sections. Adds
+  **net worth change this month** and **spending vs last month**, both
+  derived from existing calculations.
+- Accounts list keeps its month arrows; grouped by account type.
+- Transactions: grouped by date, filters move into a sheet, **search**,
+  **Income/Expense** type filter values, row icons replaced by tap = edit /
+  long-press = Duplicate / Delete.
+- Base-currency picker moves to Settings; the global header shrinks to
+  contextual actions.
+- Analytics custom date range: ⏸️ deferred.
+- Home-screen widgets rethemed in this release (native change, so 4.0.0
+  goes to Internal testing first).
+
+**Added 2026-10-07 (user request, backlog):** a save confirmation after adding a
+transaction — `components/SaveConfirmation.tsx` banner with Account /
+Transactions shortcuts; a system toast on the widget cold-start path.
+Analytics also shows a month that hasn't started as "Scheduled" rather than
+as spending.
+
+**Flagged, not changed:** Dashboard *Debt* counts only negative
+credit-card balances and *Assets* only positive balances, so an
+overdrawn savings or wallet account appears in neither tile. Also flagged (code review, 2026-10-06): the Dashboard's "↑ X this month" is net worth at month end minus at month start, so an opening balance dated this month, or a recurring row already materialised for later this month (e.g. the 28th's salary on the 5th), counts as this month's change — consistent with the existing net worth and income cutoffs, left as is.
+
+**Phases:**
+1. ✅ Verified on-device (Pixel 10, Light + Dark) 2026-10-05 — semantic colour
+   tokens for Light and Dark (adds `warning`, `on-accent`, `chart1–3`;
+   attention items use `warning` instead of `transfer`). Removes the brand
+   gradient, glows, card and nav shadows, and the `expo-linear-gradient`
+   dependency.
+2. ✅ Verified on-device 2026-10-05 — Shell. The "+" opens an Add transaction
+   sheet (Expense / Income / Transfer) into the unchanged form via `?type=`.
+   The four-control global header is replaced by `ScreenHeader`: a title plus
+   contextual actions (Settings on Dashboard, New account on Accounts, Calendar
+   on Transactions); browse screens get a back arrow and a title. Base
+   currency is changed only in Settings → Default Currency, and the old info
+   sheet's content is Settings → Help & Support → Replay the intro.
+3. ✅ Verified on-device 2026-10-05 — Dashboard. Four sections with dividers,
+   no cards: Net worth (+ change this month) → new `/net-worth` detail screen
+   holding Assets/Debt/Earmarked/Unallocated and the month breakdown;
+   current month Income/Spending with a like-for-like % (first N days vs the
+   same days of last month) → Analytics; up to three
+   funds; Needs attention as one summary row per kind. Month arrows and
+   shortcut tiles removed; Funds/Commitments/Categories/Tags gained a Settings
+   → Manage group. Figures moved verbatim into `hooks/useMonthPosition.ts`
+   and checked against the pre-change Dashboard on-device (income, spending
+   and available-this-month identical).
+4. ✅ Verified on-device 2026-10-05 — Transactions. Search (react-native-paper
+   Searchbar, themed from palette.ts via theme/paper.ts) over notes, categories,
+   accounts and amounts; every filter in a sheet behind Filter (dot + removable
+   chips show what's applied), type filter gains Income/Expense; list grouped by
+   day. Rows everywhere lead with the note, spending amounts are neutral, and
+   the three row icons became tap = edit / long-press = Edit · Duplicate ·
+   Delete. Filtering, totals and future-hiding rules unchanged.
+5. ✅ Verified on-device 2026-10-05 — Accounts. A plain list grouped Cash & bank /
+   Credit cards / Deposits / Investments: icon, name, type, balance (foreign
+   accounts show the ≈ base figure underneath). Month arrows kept; the
+   per-row income/expense/transfer strip moved to Account Detail only.
+6. ✅ Verified on-device 2026-10-05 — Analytics. Three divider-separated answers:
+   spending (total + a one-line like-for-like insight, then the existing
+   cumulative chart, now in the accent colour), where the money went (top 5
+   categories with a share-of-total line, "Show all", income toggle), and net
+   worth (figure + change, masked with the Dashboard eye, then the trend). Asset
+   allocation moved to the Net worth screen; its slices sum to Assets on-device.
+7. ✅ Verified on-device 2026-10-05 — Secondary screens (Account Detail rows,
+   Funds/Commitments/Categories flattened, quieter first-visit tips; Full history
+   now filters by account) and the Accounts widget + its setup screen rethemed,
+   with a new generic (no personal data) widget-picker preview.
+   Performance: one shared settings query, list-level row data, batched
+   lists, memoised synchronous reads — verified live updates on-device.
+8. 🚧 Accessibility: roles/states on controls, no text under 12px. Large
+   system font check still needs the user (system setting).
+9. 🚧 Regression: independent code review (approve with notes; all findings fixed, Full-history repeat bug reproduced and verified fixed) and test review (conditional go; added likeForLikeRanges + net-worth-change tests, 142 tests pass). Remaining: user large-font check, 4.0.0 EAS build → Internal testing (native widget change) → Production.
 
 ## 6. Explicitly out of scope for v1
 

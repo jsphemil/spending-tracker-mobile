@@ -1,7 +1,7 @@
 import "../global.css";
 
 import { useEffect } from "react";
-import { Text, View } from "react-native";
+import { Text, useColorScheme, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -10,25 +10,31 @@ import { Stack } from "expo-router";
 import { vars } from "nativewind";
 import { useMigrations } from "drizzle-orm/expo-sqlite/migrator";
 import { useFonts } from "expo-font";
+import { PaperProvider } from "react-native-paper";
 import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold } from "@expo-google-fonts/inter";
 import { Manrope_600SemiBold, Manrope_700Bold, Manrope_800ExtraBold } from "@expo-google-fonts/manrope";
 
 import { LockScreen } from "../components/LockScreen";
+import { SaveConfirmation } from "../components/SaveConfirmation";
 import { OnboardingFlow } from "../components/OnboardingFlow";
 import { db } from "../db/client";
-import { useSettings } from "../db/queries/settings";
+import { SettingsProvider, useSettingsQuery } from "../db/queries/settings";
 import { ensureSeeded } from "../db/seed";
 import { useAppLock } from "../hooks/useAppLock";
 import { runAutoBackupIfDue } from "../services/dropbox";
 import { rescheduleExpenseReminder } from "../services/notifications";
-import { cssVars, useResolvedTheme, useThemeColors } from "../theme/palette";
+import { cssVars, palette, resolveTheme } from "../theme/palette";
+import { paperTheme } from "../theme/paper";
 import migrations from "../drizzle/migrations";
 
 export default function RootLayout() {
   const { success, error } = useMigrations(db, migrations);
-  const scheme = useResolvedTheme();
-  const colors = useThemeColors();
-  const { settings } = useSettings();
+  // The one settings live query for the whole app, shared below via
+  // SettingsProvider. This component sits above the provider, so it
+  // resolves the theme from the row directly.
+  const settings = useSettingsQuery();
+  const scheme = resolveTheme(settings?.themePreference, useColorScheme());
+  const colors = palette[scheme];
   // Biometric app lock (spec.md §5.23). Passed undefined until settings
   // load so a cold start stays locked rather than opening on a default.
   const { locked, unlock } = useAppLock(settings?.appLockEnabled);
@@ -72,6 +78,7 @@ export default function RootLayout() {
   }, [settings?.id, settings?.expenseReminderEnabled, settings?.expenseReminderTime]);
 
   return (
+    <SettingsProvider value={settings}>
     <GestureHandlerRootView style={{ flex: 1 }}>
       {/* Keyboard handling (spec.md §5.19): the app is edge-to-edge, so
           Android never resizes the window for the keyboard and forms have to
@@ -87,6 +94,7 @@ export default function RootLayout() {
           theme/palette.ts's cssVars comment for why). */}
       <View style={[{ flex: 1 }, vars(cssVars(scheme))]}>
       <SafeAreaProvider>
+      <PaperProvider theme={paperTheme(scheme)}>
         <StatusBar style={scheme === "dark" ? "light" : "dark"} />
         {error ? (
           <View className="flex-1 items-center justify-center bg-bg p-6">
@@ -107,6 +115,7 @@ export default function RootLayout() {
           // Stack mounts with the pending URL intact.
           <LockScreen onUnlock={unlock} />
         ) : (
+          <>
           <Stack
             screenOptions={{
               headerShown: false,
@@ -117,14 +126,15 @@ export default function RootLayout() {
           >
             <Stack.Screen name="(tabs)" />
             {/* V2 shortcut destinations (spec.md §5.19) — moved out of the
-                tab bar, each renders its own GlobalHeader instead of an
+                tab bar, each renders its own ScreenHeader instead of an
                 in-navigator header. They have no "+": that button is docked
                 into the bottom navigation bar, which only the tabs have. */}
             <Stack.Screen name="commitments" />
             <Stack.Screen name="categories" />
             <Stack.Screen name="calendar" />
+            <Stack.Screen name="net-worth" />
             {/* Settings owns its own Stack (app/settings/_layout.tsx) with
-                normal in-navigator headers — no GlobalHeader/FAB there. */}
+                normal in-navigator headers — no ScreenHeader/FAB there. */}
             <Stack.Screen name="settings" />
             <Stack.Screen
               name="account/new"
@@ -150,7 +160,7 @@ export default function RootLayout() {
               name="category/[id]/edit"
               options={{ presentation: "modal", headerShown: true, title: "Edit Category" }}
             />
-            {/* Browse screens render their own GlobalHeader; only the
+            {/* Browse screens render their own ScreenHeader; only the
                 create/edit forms are modals, same split as the entities
                 above. */}
             <Stack.Screen name="fund/index" />
@@ -177,10 +187,14 @@ export default function RootLayout() {
               options={{ presentation: "modal", headerShown: true, title: "Restore Backup" }}
             />
           </Stack>
+          <SaveConfirmation />
+          </>
         )}
+      </PaperProvider>
       </SafeAreaProvider>
       </View>
       </KeyboardProvider>
     </GestureHandlerRootView>
+    </SettingsProvider>
   );
 }

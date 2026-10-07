@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useLiveQuery } from "drizzle-orm/expo-sqlite";
 import { asc, desc, eq, sql } from "drizzle-orm";
 
@@ -38,6 +39,33 @@ export function useTransactionTags(transactionId: number): TagChip[] {
     [transactionId],
   );
   return data ?? [];
+}
+
+// Every transaction's tag chips in one live query, for lists (spec.md §5.24
+// performance): one query per list instead of one per row. The link table
+// is small — a few rows per tagged transaction.
+export function useTransactionTagMap(): Map<number, TagChip[]> {
+  const { data } = useLiveQuery(
+    db
+      .select({
+        transactionId: transactionTags.transactionId,
+        id: tags.id,
+        name: tags.name,
+        icon: tags.icon,
+        color: tags.color,
+      })
+      .from(transactionTags)
+      .innerJoin(tags, eq(transactionTags.tagId, tags.id)),
+  );
+  return useMemo(() => {
+    const map = new Map<number, TagChip[]>();
+    for (const { transactionId, ...chip } of data ?? []) {
+      const list = map.get(transactionId);
+      if (list) list.push(chip);
+      else map.set(transactionId, [chip]);
+    }
+    return map;
+  }, [data]);
 }
 
 export function useTagByName(name: string) {

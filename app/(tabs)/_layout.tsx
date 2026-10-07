@@ -8,7 +8,7 @@ import { Icon } from "../../components/ui/Icon";
 // Calendar/Settings moved out to top-level shortcut routes, reachable from
 // the Dashboard's shortcut row and/or the global header — never duplicated
 // here. Every tab hides its own header now; each screen renders the shared
-// GlobalHeader itself.
+// ScreenHeader itself.
 //
 // The bar itself is a custom component rather than React Navigation's
 // default, because the "+" is docked into it (centred, straddling its top

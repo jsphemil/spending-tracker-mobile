@@ -14,6 +14,8 @@ interface CurrencyAmountProps extends TextProps {
    * Income/Expense/Balance row) running into each other on narrow columns.
    */
   stacked?: boolean;
+  /** Horizontal alignment of the stacked lines (default centre). */
+  align?: "center" | "flex-end";
 }
 
 // Foreign-currency accounts show both figures wherever an amount appears
@@ -26,6 +28,7 @@ export function CurrencyAmount({
   currency,
   prefix = "",
   stacked = false,
+  align = "center",
   className,
   ...textProps
 }: CurrencyAmountProps) {
@@ -33,7 +36,7 @@ export function CurrencyAmount({
 
   if (stacked) {
     return (
-      <View style={{ alignItems: "center" }}>
+      <View style={{ alignItems: align }}>
         <Text className={`font-data tabular-nums ${className ?? ""}`} {...textProps}>
           {prefix}
           {formatMoney(amountMinor, currency)}

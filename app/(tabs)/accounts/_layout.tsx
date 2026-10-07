@@ -2,7 +2,7 @@ import { Stack } from "expo-router";
 
 import { useThemeColors } from "../../../theme/palette";
 
-// "index" (the Accounts list) renders its own GlobalHeader and has no
+// "index" (the Accounts list) renders its own ScreenHeader and has no
 // in-navigator header. "[id]" (Account Detail) is a drill-in from
 // that list and keeps a normal back+title header, same as before —
 // spec.md §5.19 doesn't ask every screen to lose its way back.

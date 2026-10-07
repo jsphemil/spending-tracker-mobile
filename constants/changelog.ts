@@ -16,6 +16,19 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "4.0.0",
+    date: "2026-10-06",
+    title: "A calmer, clearer Erebor",
+    highlights: [
+      "A new look in light and dark: quiet neutrals, one clear blue, and colour only where it means something.",
+      "The Dashboard now answers four questions at a glance — your net worth and how it moved this month, this month's income and spending, your funds, and anything that needs attention. Tap net worth for the full breakdown.",
+      "Transactions has search, a filter sheet, and day-by-day grouping. Tap a transaction to edit it, or press and hold for duplicate and delete.",
+      "Saving a transaction now confirms it was recorded, with a shortcut to the account or your transactions.",
+      "Accounts are grouped by type, Analytics leads with what changed, and the + button asks whether it's an expense, income or transfer.",
+      "Funds, Commitments, Categories and Tags now live under Settings → Manage, and the app runs lighter on older phones.",
+    ],
+  },
+  {
     version: "3.2.1",
     date: "2026-10-05",
     title: "Quick add that closes itself",

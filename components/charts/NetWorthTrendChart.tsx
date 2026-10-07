@@ -87,7 +87,7 @@ export function NetWorthTrendChart({ data, currency, height = 180 }: NetWorthTre
         {Array.from({ length: GRID_LINES + 1 }, (_, i) => {
           const fraction = 1 - i / GRID_LINES;
           return (
-            <Text key={i} className="text-[10px] text-fg-subtle" style={{ height: plotHeight / GRID_LINES }}>
+            <Text key={i} className="text-xs text-fg-subtle" style={{ height: plotHeight / GRID_LINES }}>
               {formatCompactMoney(ceiling * fraction, currency)}
             </Text>
           );
@@ -95,9 +95,9 @@ export function NetWorthTrendChart({ data, currency, height = 180 }: NetWorthTre
       </View>
 
       <View className="mt-1 flex-row justify-between px-1">
-        <Text className="text-[10px] text-fg-subtle">{data[0]?.label ?? ""}</Text>
+        <Text className="text-xs text-fg-subtle">{data[0]?.label ?? ""}</Text>
         {data.length > 1 && (
-          <Text className="text-[10px] text-fg-subtle">{data[data.length - 1].label}</Text>
+          <Text className="text-xs text-fg-subtle">{data[data.length - 1].label}</Text>
         )}
       </View>
     </View>

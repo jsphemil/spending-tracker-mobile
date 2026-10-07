@@ -10,7 +10,7 @@ import { useSettings } from "../db/queries/settings";
 import { useFilteredTransactions } from "../db/queries/transactions";
 import type { CategoryKind } from "../db/schema";
 import { db } from "../db/client";
-import { GlobalHeader } from "../components/GlobalHeader";
+import { ScreenHeader } from "../components/ScreenHeader";
 import { FirstVisitHint } from "../components/FirstVisitHint";
 import { useBaseConverter } from "../hooks/useBaseConverter";
 import { formatMoney } from "../services/format";
@@ -54,7 +54,7 @@ export default function CategoriesScreen() {
 
   return (
     <View className="flex-1 bg-bg">
-      <GlobalHeader />
+      <ScreenHeader title="Categories" back />
       <View className="flex-row items-center gap-2 p-4">
         {(["expense", "income"] as const).map((k) => (
           <Pressable
@@ -83,7 +83,7 @@ export default function CategoriesScreen() {
       <FlatList
         data={categories ?? []}
         keyExtractor={(item) => String(item.id)}
-        contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 96, gap: 8 }}
+        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 96 }}
         ListHeaderComponent={<FirstVisitHint id="categories" className="mb-3" />}
         ListEmptyComponent={<EmptyState message="No categories yet." />}
         renderItem={({ item }) => {
@@ -95,7 +95,7 @@ export default function CategoriesScreen() {
 
           return (
             <Link href={`/category/${item.id}/edit`} asChild>
-              <Pressable className="gap-2 rounded-card border border-glass-border bg-glass p-3">
+              <Pressable accessibilityRole="button" className="gap-2 border-b border-border py-3 active:opacity-70">
                 <View className="flex-row items-center gap-3">
                   <View
                     style={{ backgroundColor: item.color }}
@@ -116,7 +116,7 @@ export default function CategoriesScreen() {
                 {hasBudget && (
                   <View className="h-1.5 overflow-hidden rounded-full bg-surface-2">
                     <View
-                      className={`h-full rounded-full ${overBudget ? "bg-danger" : "bg-accent"}`}
+                      className={`h-full rounded-full ${overBudget ? "bg-danger" : "bg-accent-fill"}`}
                       style={{ width: `${Math.min(fraction, 1) * 100}%` }}
                     />
                   </View>

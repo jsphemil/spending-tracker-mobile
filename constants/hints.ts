@@ -20,11 +20,11 @@ export type HintId = (typeof HINT_IDS)[number];
 export const HINTS: Record<HintId, { title: string; body: string }> = {
   dashboard: {
     title: "Your Dashboard answers three questions",
-    body: "Where do I stand, how is this month going, and what needs my attention. Tap the eye to reveal your net worth for this session, and the ⓘ in the header any time for the basics.",
+    body: "Where do I stand, how is this month going, and what needs my attention. Tap the eye to reveal your net worth for this session. Settings → Help & Support has the basics any time.",
   },
   accounts: {
     title: "Accounts are the foundation",
-    body: "Add every place your money lives — bank, cash, cards, deposits, investments. Each shows its balance as of the end of the month you're viewing, with this month's income and spending beside it.",
+    body: "Add every place your money lives — bank, cash, cards, deposits, investments. Each shows its balance as of the end of the month you're viewing — tap one for that month in detail.",
   },
   transactions: {
     title: "Moving your own money isn't spending",
@@ -32,7 +32,7 @@ export const HINTS: Record<HintId, { title: string; body: string }> = {
   },
   analytics: {
     title: "The longer view",
-    body: "Net worth over time, how your assets are split, and this month's spending by category. Page back through the months with the arrows.",
+    body: "How this month's spending compares, where it went, and how your net worth is moving. Page back through the months with the arrows.",
   },
   funds: {
     title: "Earmark, don't move",

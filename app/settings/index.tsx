@@ -23,6 +23,17 @@ export default function SettingsScreen() {
         />
       </SettingsSection>
 
+      {/* V4 (spec.md §5.24) retired the Dashboard's shortcut tiles; these
+          screens are also reached in context (Dashboard Funds/Needs
+          attention, Analytics categories, transaction tag chips), but this
+          is the one place that always lists them. */}
+      <SettingsSection title="Manage">
+        <SettingsRow icon="piggy-bank" label="Funds" href="/fund" />
+        <SettingsRow icon="calendar-sync-outline" label="Commitments" href="/commitments" />
+        <SettingsRow icon="shape-outline" label="Categories" href="/categories" />
+        <SettingsRow icon="tag-outline" label="Tags" href="/tag" last />
+      </SettingsSection>
+
       <SettingsSection title="Preferences">
         <SettingsRow
           icon="calculator"
@@ -35,7 +46,7 @@ export default function SettingsScreen() {
         <SettingsRow
           icon="view-dashboard-outline"
           label="Customise Dashboard"
-          sublabel="Which cards and shortcuts appear, and in what order"
+          sublabel="Which sections appear, and in what order"
           href="/settings/dashboard"
           last
         />

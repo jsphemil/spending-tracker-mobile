@@ -43,7 +43,7 @@ export function CreditUsageRing({
       size={size}
       strokeWidth={16}
       trackColor={colors.surface3}
-      color={colors.transfer}
+      color={colors.warning}
       percent={percent}
       overflowPercent={overflowPercent}
       overflowColor={colors.danger}

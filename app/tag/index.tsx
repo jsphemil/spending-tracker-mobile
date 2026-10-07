@@ -3,7 +3,7 @@ import { FlatList, Pressable, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { EmptyState } from "../../components/ui/EmptyState";
-import { GlobalHeader } from "../../components/GlobalHeader";
+import { ScreenHeader } from "../../components/ScreenHeader";
 import { Icon } from "../../components/ui/Icon";
 import { updateSettings } from "../../db/actions/settings";
 import { useAccounts } from "../../db/queries/accounts";
@@ -41,9 +41,8 @@ export default function TagsListScreen() {
 
   return (
     <View className="flex-1 bg-bg">
-      <GlobalHeader />
-      <View className="flex-row items-center justify-between px-4 pb-2 pt-4">
-        <Text className="text-lg font-display-xbold text-fg">Tags</Text>
+      <ScreenHeader title="Tags" back />
+      <View className="flex-row items-center justify-end px-4 pb-2">
         <View className="flex-row overflow-hidden rounded-full border border-glass-border bg-glass">
           {(["grid", "list"] as const).map((v) => (
             <Pressable

@@ -22,9 +22,9 @@ export function FirstVisitHint({ id, className = "" }: { id: HintId; className?:
 
   const hint = HINTS[id];
   return (
-    <View className={`flex-row gap-3 rounded-card border border-accent/30 bg-accent-soft p-4 ${className}`}>
+    <View className={`flex-row gap-3 rounded-2xl bg-surface-2 p-3.5 ${className}`}>
       <View className="flex-1 gap-1">
-        <Text className="text-sm font-semibold text-accent">{hint.title}</Text>
+        <Text className="text-sm font-medium text-fg">{hint.title}</Text>
         <Text className="text-sm text-fg-muted">{hint.body}</Text>
       </View>
       <Pressable
@@ -32,7 +32,7 @@ export function FirstVisitHint({ id, className = "" }: { id: HintId; className?:
         accessibilityRole="button"
         accessibilityLabel="Dismiss hint"
         hitSlop={8}
-        className="h-7 w-7 items-center justify-center rounded-full bg-glass"
+        className="h-8 w-8 items-center justify-center rounded-full"
       >
         <Icon name="close" size={14} color={colors.fg} />
       </Pressable>

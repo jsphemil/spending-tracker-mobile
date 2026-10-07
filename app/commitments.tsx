@@ -3,7 +3,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Icon } from "../components/ui/Icon";
 
 import { EmptyState } from "../components/ui/EmptyState";
-import { GlobalHeader } from "../components/GlobalHeader";
+import { ScreenHeader } from "../components/ScreenHeader";
 import { FirstVisitHint } from "../components/FirstVisitHint";
 import { useAccounts } from "../db/queries/accounts";
 import { useCategories } from "../db/queries/categories";
@@ -15,8 +15,8 @@ import { describeSchedule, monthlyEquivalent, nextOccurrence } from "../services
 import { useThemeColors } from "../theme/palette";
 
 const SECTION_DEFS = [
-  { type: "expense" as const, title: "Recurring expenses", color: "text-danger" },
-  { type: "transfer" as const, title: "Recurring transfers & investments", color: "text-accent" },
+  { type: "expense" as const, title: "Recurring expenses", color: "text-fg" },
+  { type: "transfer" as const, title: "Recurring transfers & investments", color: "text-transfer" },
   { type: "income" as const, title: "Recurring income (for reference)", color: "text-success" },
 ];
 
@@ -70,7 +70,7 @@ export default function CommitmentsScreen() {
 
   return (
     <View className="flex-1 bg-bg">
-      <GlobalHeader />
+      <ScreenHeader title="Commitments" back />
       <ScrollView
         className="flex-1 bg-bg"
         contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 96, gap: 16 }}
@@ -81,9 +81,9 @@ export default function CommitmentsScreen() {
         cadence — a yearly charge and a weekly one both roll into one monthly figure here.
       </Text>
 
-      <View className="rounded-card border border-glass-border bg-glass p-4">
-        <Text className="text-xs text-fg-muted">Total committed</Text>
-        <Text className="font-data mt-1 text-2xl font-semibold tabular-nums text-danger">
+      <View>
+        <Text className="text-sm text-fg-muted">Total committed</Text>
+        <Text className="font-data mt-1 text-3xl font-bold tabular-nums text-fg">
           {formatMoney(totalCommitmentMonthly, baseCurrency)}/mo
         </Text>
         {percentOfIncome !== null && (
@@ -98,10 +98,10 @@ export default function CommitmentsScreen() {
         <EmptyState message='No active recurring rules yet — mark a transaction "recurring" when you add it to start tracking commitments here.' />
       ) : (
         sections.map((section) => (
-          <View key={section.title} className="rounded-card border border-glass-border bg-glass p-4">
-            <Text className="mb-3 text-sm font-display text-fg">{section.title}</Text>
+          <View key={section.title}>
+            <Text accessibilityRole="header" className="mb-1 text-base font-display text-fg">{section.title}</Text>
             {section.rows.map(({ rule, monthly, next }, i) => (
-              <View key={rule.id} className={`py-2.5 ${i > 0 ? "border-t border-glass-border" : ""}`}>
+              <View key={rule.id} className={`py-3 ${i > 0 ? "border-t border-border" : ""}`}>
                 <View className="flex-row items-center justify-between gap-2">
                   <View className="flex-1 flex-row items-center gap-1.5">
                     {rule.type !== "transfer" &&

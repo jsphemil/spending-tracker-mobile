@@ -9,7 +9,7 @@ import { useThemeColors } from "../theme/palette";
 
 // The one-time "What's new in X" sheet (spec.md §5.22), shown by the
 // Dashboard on the first launch after an update — same bottom-sheet shape
-// as GlobalHeader's InfoModal. The parent decides *whether* to show it
+// as the old header's info sheet. The parent decides *whether* to show it
 // (constants/changelog.ts's shouldShowWhatsNew) and records the dismissal;
 // this component only renders one version's entry.
 export function WhatsNewSheet({
@@ -29,8 +29,8 @@ export function WhatsNewSheet({
     <Modal visible={visible} animationType="slide" onRequestClose={onClose} transparent>
       <View className="flex-1 justify-end bg-black/50">
         <SafeAreaView edges={["bottom"]} className="max-h-[80%] rounded-t-3xl bg-bg">
-          <View className="flex-row items-center justify-between border-b border-glass-border px-5 py-4">
-            <View>
+          <View className="flex-row items-center justify-between gap-3 border-b border-glass-border px-5 py-4">
+            <View className="flex-1 pr-3">
               <Text className="text-xs font-semibold uppercase tracking-wide text-fg-subtle">
                 What&rsquo;s new in {entry.version}
               </Text>

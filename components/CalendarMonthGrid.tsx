@@ -44,7 +44,7 @@ export function CalendarMonthGrid({ period, currency, expenseByDay }: CalendarMo
                 <Pressable className="aspect-square items-center justify-center rounded-lg border border-glass-border">
                   <Text className="text-sm text-fg">{day}</Text>
                   {expense ? (
-                    <Text className="font-data text-[10px] tabular-nums text-danger" numberOfLines={1}>
+                    <Text className="font-data text-xs tabular-nums text-danger" numberOfLines={1}>
                       {formatMoney(expense, currency)}
                     </Text>
                   ) : null}
