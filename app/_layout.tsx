@@ -15,6 +15,7 @@ import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold } f
 import { Manrope_600SemiBold, Manrope_700Bold, Manrope_800ExtraBold } from "@expo-google-fonts/manrope";
 
 import { LockScreen } from "../components/LockScreen";
+import { SaveConfirmation } from "../components/SaveConfirmation";
 import { OnboardingFlow } from "../components/OnboardingFlow";
 import { db } from "../db/client";
 import { SettingsProvider, useSettingsQuery } from "../db/queries/settings";
@@ -114,6 +115,7 @@ export default function RootLayout() {
           // Stack mounts with the pending URL intact.
           <LockScreen onUnlock={unlock} />
         ) : (
+          <>
           <Stack
             screenOptions={{
               headerShown: false,
@@ -185,6 +187,8 @@ export default function RootLayout() {
               options={{ presentation: "modal", headerShown: true, title: "Restore Backup" }}
             />
           </Stack>
+          <SaveConfirmation />
+          </>
         )}
       </PaperProvider>
       </SafeAreaProvider>

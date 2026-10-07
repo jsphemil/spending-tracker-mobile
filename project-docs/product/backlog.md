@@ -67,6 +67,7 @@
 - **In-app Info/Tips reference page** (Profile) — a fuller explainer than the one-time onboarding intro above. User explicitly said "later" — deferred, no phase assigned. Accepted into current work (deferred) — spec.md §5.15.
 
 ## In Progress
+- **Save confirmation after adding a transaction** (user request via the owner, 2026-10-07) — accepted into 4.0.0 (spec.md §5.24): a bottom banner ("Expense recorded · ₹149.00 · HDFC Salary" with Account / Transactions shortcuts, ~5 s, announced to screen readers); a system toast when saving from the widget returns to the home screen. Built, typechecks; on-device check pending.
 
 
 ## Done
