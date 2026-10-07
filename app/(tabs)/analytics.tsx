@@ -111,6 +111,11 @@ export default function AnalyticsScreen() {
   });
   const now = new Date();
   const viewingCurrentMonth = period.year === now.getFullYear() && period.month === now.getMonth();
+  // A month that hasn't started holds only recurring rows already booked
+  // ahead (ensureMaterialized). Nothing has been spent yet, so it is shown
+  // as "scheduled" and gets no pace chart — drawing those rows as a full
+  // month of spending read as if it had already happened.
+  const viewingFutureMonth = period.year * 12 + period.month > now.getFullYear() * 12 + now.getMonth();
 
   // Up to 24 months × every account of synchronous balance reads — the
   // heaviest thing on this screen, so it re-runs only when transactions
@@ -180,15 +185,18 @@ export default function AnalyticsScreen() {
 
         {/* 1 — How is spending going? */}
         <View className="mt-4">
-          <Text className="text-sm text-fg-muted">Spending</Text>
+          <Text className="text-sm text-fg-muted">{viewingFutureMonth ? "Scheduled" : "Spending"}</Text>
           <Text className="font-data text-3xl font-bold tabular-nums text-fg">
             {formatMoney(expenseMinor, baseCurrency)}
           </Text>
           <Text className="mt-1 text-sm text-fg">
-            {viewingCurrentMonth && changePercent !== null
+            {viewingFutureMonth
+              ? `${monthName(period)} hasn't started yet. This is what's already booked — your recurring payments.`
+              : viewingCurrentMonth && changePercent !== null
               ? `So far, ${spendingInsight.charAt(0).toLowerCase()}${spendingInsight.slice(1)}`
               : spendingInsight}
           </Text>
+          {!viewingFutureMonth && (
           <View className="mt-4">
             <CumulativeSpendChart
               thisMonth={thisMonthSpend}
@@ -197,6 +205,7 @@ export default function AnalyticsScreen() {
               today={viewingCurrentMonth ? now.getDate() : undefined}
             />
           </View>
+          )}
           <UnconvertedCurrenciesNote currencies={unconvertedCurrencies} subject="Spending" />
         </View>
 
@@ -206,7 +215,9 @@ export default function AnalyticsScreen() {
         <View>
           <View className="mb-1 flex-row items-center justify-between">
             <Text accessibilityRole="header" className="font-display text-base text-fg">
-              {kind === "expense" ? "Where your money went" : "Where your money came from"}
+              {viewingFutureMonth
+                ? kind === "expense" ? "Scheduled spending" : "Scheduled income"
+                : kind === "expense" ? "Where your money went" : "Where your money came from"}
             </Text>
             <Pressable
               onPress={() => {
