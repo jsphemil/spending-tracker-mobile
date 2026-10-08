@@ -330,6 +330,29 @@ All 3 required updates for the 14-day window are now shipped
 (versionCode 9, 12, 13 — see step 9 below for the production-access
 application, the next gate).
 
+**4.1.0 built as versionCode 25 (2026-10-08)** — release name
+`Erebor 4.1.0 — Any Stretch of Time`. JS-only (no native change):
+
+- **Analytics custom date range** (deferred from the V4 questionnaire):
+  From/To in place of the month, compared with the equally long stretch
+  just before; same calculations as the month view (spec.md §5.24).
+- **Wallet / Cash icon fix**: the type's default icon name had no map
+  entry and showed "…" (existing accounts fixed too, no data change).
+
+`tsc`, lint and 146 tests clean; verified on the Android Studio emulator
+with sample data. Going to **Internal testing first** at the owner's
+request, then Promote. New framed Play screenshots (Claude Design, checked
+frame by frame) in `assets/screenshots-v4/from CD/`.
+
+Build `67e32759-b7fa-4e8b-b57b-dcc69cf4b6ba`.
+
+Release notes to use (4.1.0):
+```
+<en-GB>
+Analytics now works over any dates you choose, not just a month. Tap the calendar at the top of Analytics, pick From and To, and see your spending, where it went and how your net worth moved, compared with the same number of days just before. Also fixed: wallet and cash accounts show their wallet icon again instead of three dots.
+</en-GB>
+```
+
 **4.0.0 built as versionCode 24 (2026-10-07)** — release name
 `Erebor 4.0.0 — Calm & Clear`. The V4 redesign (spec.md §5.24), built
 from `redesign/v4` with master's 3.2.1 fix merged in:
