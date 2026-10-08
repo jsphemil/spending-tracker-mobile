@@ -340,8 +340,8 @@ application, the next gate).
   entry and showed "…" (existing accounts fixed too, no data change).
 
 `tsc`, lint and 146 tests clean; verified on the Android Studio emulator
-with sample data. Going to **Internal testing first** at the owner's
-request, then Promote. New framed Play screenshots (Claude Design, checked
+with sample data. Went to **Internal testing first** at the owner's
+request, then promoted: **live in Production 2026-10-08.** New framed Play screenshots (Claude Design, checked
 frame by frame) in `assets/screenshots-v4/from CD/`.
 
 Build `67e32759-b7fa-4e8b-b57b-dcc69cf4b6ba`; AAB at
