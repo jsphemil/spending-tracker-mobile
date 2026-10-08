@@ -114,6 +114,12 @@ a screenshot. No transparency in the export.
 
 ## Asset 3 — Screenshots
 
+> **Current set (V4, uploaded 2026-10-08):** the 8 framed shots in
+> `assets/screenshots-v4/from CD/`. They were made with Claude Design from
+> emulator captures with fictional sample data, using the prompt in
+> `assets/screenshots-v4/claude-design-prompt.md`. To refresh them, use the
+> recipe in that prompt file rather than the older steps below.
+
 **Requirements (Google Play):** 2–8 images, JPG or 24-bit PNG (no
 alpha), each side between 320px and 3840px, long-side:short-side ratio
 under 2:1. Portrait phone screenshots (e.g. 1080×2340) are the
