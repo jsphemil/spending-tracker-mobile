@@ -1674,7 +1674,8 @@ flagged separately, not silently fixed.
   long-press = Duplicate / Delete.
 - Base-currency picker moves to Settings; the global header shrinks to
   contextual actions.
-- Analytics custom date range: ⏸️ deferred.
+- Analytics custom date range: ⏸️ deferred at 4.0.0 — **built and verified
+  on the emulator 2026-10-08** (see below); ships in the next release.
 - Home-screen widgets rethemed in this release (native change, so 4.0.0
   goes to Internal testing first).
 
@@ -1683,6 +1684,18 @@ transaction — `components/SaveConfirmation.tsx` banner with Account /
 Transactions shortcuts; a system toast on the widget cold-start path.
 Analytics also shows a month that hasn't started as "Scheduled" rather than
 as spending.
+
+**Added 2026-10-08 — Analytics custom date range.** A calendar action in the
+Analytics header swaps the month arrows for From / To fields (inclusive, no
+later than today; moving one past the other drags it along; × returns to
+months). Every figure is the month calculation over the picked range:
+spending from `getPeriodTotals`, net worth at the range's end and its change
+from the balances at its start (the month's carry-forward rule), categories
+and the cumulative chart over the same rows. The comparison is with the
+equally long stretch just before ("48% more than the 38 days before";
+`customRanges` / `cumulativeRangeSpend`, 4 tests). The net worth trend runs up
+to the month the range ends in. Also fixed: a Wallet / Cash account's default
+icon (`wallet`) had no icon-map entry and showed "…".
 
 **Flagged, not changed:** Dashboard *Debt* counts only negative
 credit-card balances and *Assets* only positive balances, so an

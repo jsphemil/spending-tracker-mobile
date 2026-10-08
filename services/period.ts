@@ -95,3 +95,29 @@ export function likeForLikeRanges(
     previous: { start: previous.start, end: cappedEnd < previous.end ? cappedEnd : previous.end },
   };
 }
+
+// Whole calendar days from a to b (local dates). Via Date.UTC so a DST
+// shift between the two can't turn 30 days into 29.96.
+export function calendarDaysBetween(a: Date, b: Date): number {
+  return Math.round(
+    (Date.UTC(b.getFullYear(), b.getMonth(), b.getDate()) - Date.UTC(a.getFullYear(), a.getMonth(), a.getDate())) /
+      86400000,
+  );
+}
+
+// Analytics custom range (spec.md §5.24): the inclusive From/To the user
+// picked, as a half-open range like monthRange, plus the equally long range
+// just before it — what "vs before" compares with.
+export function customRanges(
+  from: Date,
+  to: Date,
+): { days: number; current: { start: Date; end: Date }; previous: { start: Date; end: Date } } {
+  const start = new Date(from.getFullYear(), from.getMonth(), from.getDate());
+  const end = new Date(to.getFullYear(), to.getMonth(), to.getDate() + 1);
+  const days = calendarDaysBetween(start, end);
+  return {
+    days,
+    current: { start, end },
+    previous: { start: new Date(start.getFullYear(), start.getMonth(), start.getDate() - days), end: start },
+  };
+}

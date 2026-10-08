@@ -12,6 +12,7 @@ import {
   Cake,
   Calculator,
   CalendarDays,
+  CalendarRange,
   CalendarSync,
   Car,
   Check,
@@ -110,6 +111,8 @@ export const ICON_MAP: Record<string, LucideIcon> = {
   // structural/UI icons
   "view-dashboard-outline": LayoutDashboard,
   "wallet-outline": Wallet,
+  // ACCOUNT_TYPE_ICONS.wallet — the Wallet / Cash default had no entry and showed "…".
+  wallet: Wallet,
   "swap-horizontal": ArrowLeftRight,
   "calendar-sync-outline": CalendarSync,
   "shape-outline": Shapes,
@@ -120,6 +123,7 @@ export const ICON_MAP: Record<string, LucideIcon> = {
   "chevron-up": ChevronUp,
   "chevron-down": ChevronDown,
   "calendar-month-outline": CalendarDays,
+  "calendar-range": CalendarRange,
   "content-copy": Copy,
   "trash-can-outline": Trash2,
   // V2 global-shell icons (spec.md §5.19)

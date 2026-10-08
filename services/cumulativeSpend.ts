@@ -1,3 +1,5 @@
+import { calendarDaysBetween } from "./period";
+
 // Cumulative spend, day by day (spec.md §5.22 "Analytics"). Pure — the
 // caller supplies the month's transaction rows, the accounts (for each
 // row's currency) and the base-currency converter, and gets back one
@@ -49,4 +51,29 @@ export function cumulativeDailySpend(
 export function spendGapAtDay(thisMonth: number[], lastMonth: number[], day: number): number {
   const at = (series: number[]) => series[Math.min(Math.max(day, 1), series.length) - 1] ?? 0;
   return at(thisMonth) - at(lastMonth);
+}
+
+// The same running total over an arbitrary range (Analytics custom range,
+// spec.md §5.24): index i is the total through the end of the range's
+// (i+1)th day. `end` is exclusive.
+export function cumulativeRangeSpend(
+  rows: SpendRow[],
+  accounts: AccountCurrency[],
+  toBaseMinor: (amountMinor: number, currency: string) => number,
+  { start, end, fallbackCurrency }: { start: Date; end: Date; fallbackCurrency: string },
+): number[] {
+  const days = Math.max(calendarDaysBetween(start, end), 1);
+  const perDay = new Array<number>(days).fill(0);
+  const currencyOf = new Map(accounts.map((a) => [a.id, a.currency]));
+
+  for (const row of rows) {
+    if (row.type !== "expense" || row.date < start || row.date >= end) continue;
+    perDay[calendarDaysBetween(start, row.date)] += toBaseMinor(
+      row.amountMinor,
+      currencyOf.get(row.accountId) ?? fallbackCurrency,
+    );
+  }
+
+  let running = 0;
+  return perDay.map((v) => (running += v));
 }

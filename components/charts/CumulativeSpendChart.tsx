@@ -14,6 +14,10 @@ interface CumulativeSpendChartProps {
   // current one; undefined otherwise.
   today?: number;
   height?: number;
+  // Legend names — the Analytics custom range compares with the equally
+  // long stretch before it rather than with last month.
+  currentLabel?: string;
+  previousLabel?: string;
 }
 
 const VIEW_WIDTH = 320;
@@ -30,7 +34,15 @@ const BOTTOM_PADDING = 20;
 // NetWorthTrendChart. The this-month line stops at today when the viewed
 // month is the current one; drawing it flat to the month's end would
 // read as "no more spending coming".
-export function CumulativeSpendChart({ thisMonth, lastMonth, currency, today, height = 160 }: CumulativeSpendChartProps) {
+export function CumulativeSpendChart({
+  thisMonth,
+  lastMonth,
+  currency,
+  today,
+  height = 160,
+  currentLabel = "This month",
+  previousLabel = "Last month",
+}: CumulativeSpendChartProps) {
   const colors = useThemeColors();
   const plotWidth = VIEW_WIDTH - LEFT_PADDING - RIGHT_PADDING;
   const plotHeight = height - TOP_PADDING - BOTTOM_PADDING;
@@ -103,13 +115,13 @@ export function CumulativeSpendChart({ thisMonth, lastMonth, currency, today, he
       </View>
 
       <View className="mt-2 flex-row items-center gap-4">
-        <LegendSwatch color={colors.accent} label="This month" />
-        <LegendSwatch color={colors.fgSubtle} label="Last month" dashed />
+        <LegendSwatch color={colors.accent} label={currentLabel} />
+        <LegendSwatch color={colors.fgSubtle} label={previousLabel} dashed />
       </View>
       <Text className="mt-2 text-xs text-fg-muted">
         {gap === 0
-          ? `Level with last month${today != null ? " at this point" : ""}.`
-          : `${formatMoney(Math.abs(gap), currency)} ${gap > 0 ? "more" : "less"} than last month${
+          ? `Level with ${previousLabel.toLowerCase()}${today != null ? " at this point" : ""}.`
+          : `${formatMoney(Math.abs(gap), currency)} ${gap > 0 ? "more" : "less"} than ${previousLabel.toLowerCase()}${
               today != null ? " at this point" : ""
             }.`}
       </Text>

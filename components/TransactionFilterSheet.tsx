@@ -168,7 +168,7 @@ function Chip({ label, selected, onPress }: { label: string; selected: boolean; 
   );
 }
 
-function DateField({ label, value, onPress }: { label: string; value: Date; onPress: () => void }) {
+export function DateField({ label, value, onPress }: { label: string; value: Date; onPress: () => void }) {
   return (
     <Pressable onPress={onPress} accessibilityRole="button" className="flex-1 rounded-xl border border-border px-3 py-2">
       <Text className="text-xs text-fg-muted">{label}</Text>
