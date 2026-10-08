@@ -344,7 +344,8 @@ with sample data. Going to **Internal testing first** at the owner's
 request, then Promote. New framed Play screenshots (Claude Design, checked
 frame by frame) in `assets/screenshots-v4/from CD/`.
 
-Build `67e32759-b7fa-4e8b-b57b-dcc69cf4b6ba`.
+Build `67e32759-b7fa-4e8b-b57b-dcc69cf4b6ba`; AAB at
+`https://expo.dev/artifacts/eas/sqexb99HNmzvAZPtrZaQB7e-KLwmC-GnFKIarGqMbSA.aab`.
 
 Release notes to use (4.1.0):
 ```
