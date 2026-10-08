@@ -16,6 +16,15 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "4.1.0",
+    date: "2026-10-08",
+    title: "Any stretch of time",
+    highlights: [
+      "Analytics can now look at any dates you choose, not just a month. Tap the calendar at the top, pick From and To, and see your spending, where it went and how your net worth moved, compared with the same number of days just before.",
+      "Wallet and cash accounts show their wallet icon again instead of three dots.",
+    ],
+  },
+  {
     version: "4.0.0",
     date: "2026-10-06",
     title: "A calmer, clearer Erebor",
