@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Alert, Pressable, Switch, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { FormScrollView } from "./ui/FormScrollView";
 import { Input } from "./ui/Input";
@@ -214,6 +215,7 @@ export function TransactionForm({
   const { data: usageRows } = useCategoryUsageOrder(categoryKind);
   const { data: funds } = useFunds();
   const colors = useThemeColors();
+  const insets = useSafeAreaInsets();
 
   // Closed funds are excluded — picking one would earmark against a fund
   // the user has already wound up. An expense already linked to a fund that
@@ -648,7 +650,8 @@ export function TransactionForm({
       </FormScrollView>
 
       <View
-        className="border-t border-glass-border bg-bg px-4 py-3"
+        className="border-t border-glass-border bg-bg px-4 pt-3"
+        style={{ paddingBottom: insets.bottom + 12 }}
         accessibilityElementsHidden={keypadOpen}
         importantForAccessibility={keypadOpen ? "no-hide-descendants" : "auto"}
       >

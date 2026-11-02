@@ -1,4 +1,5 @@
 import { Pressable, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Icon } from "./Icon";
 import { useThemeColors } from "../../theme/palette";
@@ -86,6 +87,7 @@ export function CalculatorKeypad({
   onHide,
 }: CalculatorKeypadProps) {
   const colors = useThemeColors();
+  const insets = useSafeAreaInsets();
 
   function press(key: string) {
     const seg = lastSegment(value);
@@ -118,7 +120,10 @@ export function CalculatorKeypad({
   }
 
   return (
-    <View className="gap-1.5 rounded-t-2xl bg-surface-2 p-2" style={{ height: 272 }}>
+    <View
+      className="gap-1.5 rounded-t-2xl bg-surface-2 px-2 pt-2"
+      style={{ height: 272 + insets.bottom, paddingBottom: 8 + insets.bottom }}
+    >
       <View className="h-7 flex-row items-center justify-between px-1">
         <Text className="text-xs text-fg-muted">Type an amount or a sum like 450 + 120</Text>
         <Pressable onPress={onHide} accessibilityRole="button" accessibilityLabel="Hide keypad" hitSlop={8}>
