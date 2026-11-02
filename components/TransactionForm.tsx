@@ -5,19 +5,26 @@ import { FormScrollView } from "./ui/FormScrollView";
 import { Input } from "./ui/Input";
 import DateTimePicker from "@react-native-community/datetimepicker";
 
-import { AmountOperatorRow } from "./AmountOperatorRow";
 import { ALL_ICON_OPTIONS } from "../constants/iconLibrary";
+import { BottomSheet } from "./ui/BottomSheet";
 import { Button } from "./ui/Button";
+import { CalculatorKeypad } from "./ui/CalculatorKeypad";
+import { Chip } from "./ui/Chip";
 import { COLOR_PALETTE } from "../constants/colorPalette";
 import { createCategory } from "../db/actions/categories";
 import { useAccounts } from "../db/queries/accounts";
 import { useCategories } from "../db/queries/categories";
 import { useFunds } from "../db/queries/funds";
+import {
+  useCategoryUsageOrder,
+  useFrequentAmountsForCategory,
+  useLastUsedAccountForCategory,
+} from "../db/queries/transactions";
 import { Icon } from "./ui/Icon";
 import { RECURRENCE_UNITS, TRANSACTION_TYPES, type RecurrenceUnit, type TransactionType } from "../db/schema";
-import type { RecurringSchedule } from "../services/recurrence";
+import { describeSchedule, type RecurringSchedule } from "../services/recurrence";
 import { evaluateExpression } from "../services/calculator";
-import { majorToMinor, minorToMajor } from "../services/format";
+import { currencySymbol, formatMoney, majorToMinor, minorToMajor, minorUnitsFor } from "../services/format";
 import { useThemeColors } from "../theme/palette";
 import { TagPicker } from "./TagPicker";
 
@@ -42,7 +49,9 @@ interface TransactionFormProps {
   initialValues?: Partial<TransactionFormValues>;
   onSubmit: (values: TransactionFormValues) => void;
   submitLabel: string;
-  /** Only meaningful at creation — shows the "Make recurring" toggle. */
+  /** Only meaningful at creation — shows the "Make recurring" toggle, and
+   * doubles as the "this is the create screen" signal that opens the
+   * calculator keypad automatically (the edit screen never passes this). */
   allowRecurring?: boolean;
   /** Called instead of onSubmit when "Make recurring" is checked at creation. */
   onSubmitRecurring?: (values: TransactionFormValues, schedule: RecurringSchedule) => void;
@@ -75,6 +84,120 @@ const UNIT_LABELS: Record<RecurrenceUnit, string> = {
   year: "year(s)",
 };
 
+const GENERIC_QUICK_AMOUNTS: Record<TransactionType, number[]> = {
+  expense: [100, 500, 1000, 5000],
+  transfer: [1000, 5000, 10000, 25000],
+  income: [],
+};
+
+const OP_REGEX = /[+\-*/]/;
+
+type SheetKind = "account" | "toAccount" | "date" | "categoryMore" | "fund" | "tags" | "repeat";
+
+function shortDate(d: Date): string {
+  const startOfDay = (x: Date) => {
+    const c = new Date(x);
+    c.setHours(0, 0, 0, 0);
+    return c.getTime();
+  };
+  const today = new Date();
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  if (startOfDay(d) === startOfDay(today)) return "Today";
+  if (startOfDay(d) === startOfDay(yesterday)) return "Yesterday";
+  return d.toLocaleDateString(undefined, { day: "numeric", month: "short" });
+}
+
+// A compact pick-row opening a bottom sheet — replaces a full-width
+// wrapping chip list for Account/Date/To-account (handoff §2).
+function FieldChip({
+  icon,
+  iconBg,
+  label,
+  value,
+  onPress,
+}: {
+  icon: string;
+  iconBg: string;
+  label: string;
+  value: string;
+  onPress: () => void;
+}) {
+  const colors = useThemeColors();
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`${label}, ${value}`}
+      className="flex-1 flex-row items-center gap-2.5 rounded-xl border border-glass-border bg-glass px-3 py-2.5"
+    >
+      <View style={{ backgroundColor: iconBg }} className="h-8 w-8 items-center justify-center rounded-lg">
+        <Icon name={icon} size={15} color="#fff" />
+      </View>
+      <View className="flex-1">
+        <Text className="text-[11px] text-fg-muted" numberOfLines={1}>
+          {label}
+        </Text>
+        <Text className="text-sm font-medium text-fg" numberOfLines={1}>
+          {value}
+        </Text>
+      </View>
+      <Icon name="chevron-right" size={16} color={colors.fgMuted} />
+    </Pressable>
+  );
+}
+
+function CategoryTile({
+  icon,
+  color,
+  name,
+  selected,
+  onPress,
+}: {
+  icon: string;
+  color: string;
+  name: string;
+  selected: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="radio"
+      accessibilityState={{ selected }}
+      style={{ width: "23%" }}
+      className={`items-center gap-1.5 rounded-xl border py-2.5 ${
+        selected ? "border-accent bg-accent-soft" : "border-glass-border bg-glass"
+      }`}
+    >
+      <View style={{ backgroundColor: color }} className="h-9 w-9 items-center justify-center rounded-lg">
+        <Icon name={icon} size={17} color="#fff" />
+      </View>
+      <Text numberOfLines={1} className={`text-[11px] ${selected ? "font-semibold text-accent" : "text-fg-muted"}`}>
+        {name}
+      </Text>
+    </Pressable>
+  );
+}
+
+function ExtraButton({ icon, label, set, onPress }: { icon: string; label: string; set: boolean; onPress: () => void }) {
+  const colors = useThemeColors();
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      className={`flex-1 flex-row items-center justify-center gap-1.5 rounded-lg border px-2 py-2.5 ${
+        set ? "border-accent bg-accent-soft" : "border-glass-border"
+      }`}
+    >
+      <Icon name={icon} size={14} color={set ? colors.accent : colors.fgMuted} />
+      <Text numberOfLines={1} className={`text-xs font-medium ${set ? "text-accent" : "text-fg-muted"}`}>
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
 export function TransactionForm({
   initialValues,
   onSubmit,
@@ -86,7 +209,9 @@ export function TransactionForm({
 }: TransactionFormProps) {
   const { data: accounts } = useAccounts();
   const [type, setType] = useState<TransactionType>(initialValues?.type ?? "expense");
-  const { data: categories } = useCategories(type === "income" ? "income" : "expense");
+  const categoryKind = type === "income" ? "income" : "expense";
+  const { data: categories } = useCategories(categoryKind);
+  const { data: usageRows } = useCategoryUsageOrder(categoryKind);
   const { data: funds } = useFunds();
   const colors = useThemeColors();
 
@@ -132,7 +257,6 @@ export function TransactionForm({
   const [categoryId, setCategoryId] = useState<number | null>(
     initialValues?.categoryId ?? null,
   );
-  const [addingCategory, setAddingCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [description, setDescription] = useState(initialValues?.description ?? "");
   const [tagIds, setTagIds] = useState<number[]>(initialValues?.tagIds ?? []);
@@ -151,17 +275,89 @@ export function TransactionForm({
   const selectedAccount = accounts?.find((a) => a.id === accountId);
   const currency = selectedAccount?.currency ?? "INR";
 
+  // Opens on new entries (allowRecurring is only ever passed by the create
+  // screen), starts closed on edit — opens on tap of the amount field.
+  const [keypadOpen, setKeypadOpen] = useState(allowRecurring);
+  const [sheet, setSheet] = useState<SheetKind | null>(null);
+
+  function openSheet(kind: SheetKind) {
+    setKeypadOpen(false);
+    setSheet(kind);
+  }
+  function openKeypad() {
+    setSheet(null);
+    setKeypadOpen(true);
+  }
+
+  // "Last used here": picking a category pre-selects the account it was
+  // most recently used with. Never overrides an account the screen was
+  // opened with (a deep-link param, a duplicate, or an edit) — only a
+  // category picked from here can trigger it, and only while the current
+  // slot is empty or itself came from a previous auto-pick.
+  const initialAccountProvidedRef = useRef(initialValues?.accountId != null);
+  const [accountAutoPicked, setAccountAutoPicked] = useState(false);
+  const lastUsedAccountId = useLastUsedAccountForCategory(categoryId ?? -1);
+  useEffect(() => {
+    if (initialAccountProvidedRef.current) return;
+    if (categoryId === null || lastUsedAccountId === undefined) return;
+    if (accountId !== null && !accountAutoPicked) return;
+    // Synchronizing with the query result as it arrives (same pattern, and
+    // same justification, as the initial-amount-sync effect above) rather
+    // than deriving it inline — categoryId/lastUsedAccountId genuinely
+    // change on their own schedule, not every render.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setAccountId(lastUsedAccountId);
+    setAccountAutoPicked(true);
+    // accountAutoPicked is read, not written, by this effect's guard —
+    // including it would refire the moment it flips true for no reason.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [categoryId, lastUsedAccountId, accountId]);
+
+  const { data: frequentAmountRows } = useFrequentAmountsForCategory(categoryId ?? -1);
+  const expressionHasTrailingOperator = OP_REGEX.test(amountText.slice(-1));
+  const quickAmounts = frequentAmountRows?.length
+    ? frequentAmountRows.map((r) => minorToMajor(r.amountMinor, currency))
+    : GENERIC_QUICK_AMOUNTS[type];
+  const selectedCategoryName = categories?.find((c) => c.id === categoryId)?.name;
+  const quickAmountsLabel = expressionHasTrailingOperator
+    ? "Tap to add to the sum"
+    : frequentAmountRows?.length && selectedCategoryName
+      ? `Frequent for ${selectedCategoryName}`
+      : "Quick amounts";
+
+  function tapQuickAmount(major: number) {
+    const str = String(major);
+    setAmountText((prev) => (OP_REGEX.test(prev.slice(-1)) ? prev + str : str));
+  }
+
+  // Top 7 by usage, swapping in the selected category if it didn't make
+  // the cut (ranked lower, brand new, or picked from "More").
+  const usageList = usageRows ?? [];
+  let gridCategories = usageList.slice(0, 7);
+  if (categoryId !== null && !gridCategories.some((c) => c.id === categoryId)) {
+    const selected = categories?.find((c) => c.id === categoryId);
+    if (selected) {
+      gridCategories = [...gridCategories.slice(0, 6), { ...selected, useCount: 0 }];
+    }
+  }
+  const showMoreTile = (categories?.length ?? 0) > gridCategories.length;
+
   function handleCreateCategory() {
     if (!newCategoryName.trim()) return;
     const newId = createCategory({
       name: newCategoryName.trim(),
-      kind: type === "income" ? "income" : "expense",
+      kind: categoryKind,
       icon: ALL_ICON_OPTIONS[0].key,
       color: COLOR_PALETTE[0],
     });
     setCategoryId(newId);
     setNewCategoryName("");
-    setAddingCategory(false);
+    setSheet(null);
+  }
+
+  function pickCategory(id: number) {
+    setCategoryId(id);
+    setSheet(null);
   }
 
   // Saving navigates away, but not instantly — the screen stays mounted and
@@ -262,283 +458,390 @@ export function TransactionForm({
     dispatchOnce(() => onSubmit(values));
   }
 
+  // Mirrors handleSubmit's validation, without setting `error` — used only
+  // to decide what the keypad's ACT key currently means.
+  const amountValue = evaluateExpression(amountText);
+  const expressionOpen =
+    OP_REGEX.test(amountText) && !expressionHasTrailingOperator && amountValue !== null && amountText.length > 0;
+  const canQuickSave =
+    amountValue !== null &&
+    amountValue > 0 &&
+    accountId !== null &&
+    (type === "transfer" ? toAccountId !== null && toAccountId !== accountId : categoryId !== null);
+  const actLabel = expressionOpen
+    ? "="
+    : canQuickSave
+      ? `Save · ${formatMoney(majorToMinor(amountValue ?? 0, currency), currency)}`
+      : "Next";
+
+  function handleAct() {
+    if (expressionOpen) {
+      setAmountText(amountValue !== null ? String(amountValue) : "");
+      return;
+    }
+    if (canQuickSave) {
+      handleSubmit();
+      return;
+    }
+    // "Next": close the keypad and point at what's missing. shortcut: no
+    // shake/scroll-into-view nudge like the mockup — the field is already
+    // visible once the keypad closes, except the To-account sheet, which
+    // this opens directly.
+    setKeypadOpen(false);
+    if (type === "transfer" && !toAccountId) setSheet("toAccount");
+  }
+
+  const fundLabel = fundId !== null ? (funds ?? []).find((f) => f.id === fundId)?.name ?? "Fund" : "Fund";
+  const tagsLabel = tagIds.length ? `${tagIds.length} tag${tagIds.length > 1 ? "s" : ""}` : "Tags";
+  const repeatLabel = isRecurringEdit
+    ? recurringInfo!.endDate
+      ? `${recurringInfo!.scheduleLabel} · till ${recurringInfo!.endDate.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "2-digit" })}`
+      : recurringInfo!.scheduleLabel
+    : recurring
+      ? (() => {
+          const n = Number(intervalCountText) || 1;
+          const base = describeSchedule(n, intervalUnit);
+          return scheduleEndDate
+            ? `${base} · till ${scheduleEndDate.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "2-digit" })}`
+            : base;
+        })()
+      : "Repeat";
+  const showRepeatButton = allowRecurring || isRecurringEdit;
+
+  const saveLabel = `${submitLabel}${
+    amountValue !== null && amountValue > 0 ? ` · ${formatMoney(majorToMinor(amountValue, currency), currency)}` : ""
+  }`;
+
   return (
-    <FormScrollView contentContainerStyle={{ padding: 16, gap: 20 }}>
-      <View className="flex-row gap-2">
-        {TRANSACTION_TYPES.map((t) => (
-          <Pressable
-            key={t}
-            onPress={() => setType(t)}
-            accessibilityRole="radio"
-            accessibilityState={{ selected: type === t }}
-            className={`flex-1 items-center rounded-lg border py-2 ${
-              type === t ? TYPE_STYLES[t].selected : "border-glass-border bg-glass"
-            }`}
-          >
-            <Text className={type === t ? `font-medium ${TYPE_STYLES[t].text}` : "text-fg-muted"}>
-              {TYPE_LABELS[t]}
-            </Text>
-          </Pressable>
-        ))}
-      </View>
-
-      <View className="gap-2">
-        <Text className="text-sm font-medium text-fg-muted">Amount</Text>
-        <Input
-          value={amountText}
-          onChangeText={setAmountText}
-          keyboardType="decimal-pad"
-          placeholder="0"
-          placeholderTextColor={colors.fgSubtle}
-          className="font-data rounded-lg border border-glass-border bg-glass px-3 py-2 text-lg text-fg"
-        />
-        <AmountOperatorRow value={amountText} onChange={setAmountText} />
-      </View>
-
-      <View className="gap-2">
-        <Text className="text-sm font-medium text-fg-muted">
-          {type === "transfer" ? "From Account" : "Account"}
-        </Text>
-        <View className="flex-row flex-wrap gap-2">
-          {(accounts ?? []).map((a) => (
+    <View className="flex-1">
+      <FormScrollView contentContainerStyle={{ padding: 16, gap: 20, paddingBottom: 24 }}>
+        <View className="flex-row gap-2">
+          {TRANSACTION_TYPES.map((t) => (
             <Pressable
-              key={a.id}
-              onPress={() => setAccountId(a.id)}
+              key={t}
+              onPress={() => {
+                setType(t);
+                setCategoryId(null);
+                setAccountAutoPicked(false);
+              }}
               accessibilityRole="radio"
-              accessibilityState={{ selected: accountId === a.id }}
-              className={`rounded-full border px-3 py-2 ${
-                accountId === a.id ? "border-accent bg-accent-soft" : "border-glass-border bg-glass"
+              accessibilityState={{ selected: type === t }}
+              className={`flex-1 items-center rounded-lg border py-2 ${
+                type === t ? TYPE_STYLES[t].selected : "border-glass-border bg-glass"
               }`}
             >
-              <Text className={accountId === a.id ? "text-accent" : "text-fg-muted"}>
-                {a.name}
+              <Text className={type === t ? `font-medium ${TYPE_STYLES[t].text}` : "text-fg-muted"}>
+                {TYPE_LABELS[t]}
               </Text>
             </Pressable>
           ))}
         </View>
-      </View>
 
-      {type === "transfer" && (
-        <View className="gap-2">
-          <Text className="text-sm font-medium text-fg-muted">To Account</Text>
-          <View className="flex-row flex-wrap gap-2">
-            {(accounts ?? [])
-              .filter((a) => a.id !== accountId)
-              .map((a) => (
-                <Pressable
-                  key={a.id}
-                  onPress={() => setToAccountId(a.id)}
-                  accessibilityRole="radio"
-                  accessibilityState={{ selected: toAccountId === a.id }}
-                  className={`rounded-full border px-3 py-2 ${
-                    toAccountId === a.id ? "border-transfer bg-transfer-soft" : "border-glass-border bg-glass"
-                  }`}
-                >
-                  <Text className={toAccountId === a.id ? "text-transfer" : "text-fg-muted"}>
-                    {a.name}
-                  </Text>
-                </Pressable>
-              ))}
-          </View>
-        </View>
-      )}
-
-      {type !== "transfer" && (
-        <View className="gap-2">
-          <View className="flex-row items-center justify-between">
-            <Text className="text-sm font-medium text-fg-muted">Category</Text>
-            <Pressable onPress={() => setAddingCategory((v) => !v)} accessibilityRole="button" hitSlop={12}>
-              <Text className="text-xs font-medium text-accent">
-                {addingCategory ? "Cancel" : "+ New category"}
-              </Text>
-            </Pressable>
-          </View>
-          <View className="flex-row flex-wrap gap-2">
-            {(categories ?? []).map((c) => (
-              <Pressable
-                key={c.id}
-                onPress={() => setCategoryId(c.id)}
-                accessibilityRole="radio"
-                accessibilityState={{ selected: categoryId === c.id }}
-                className={`rounded-full border px-3 py-2 ${
-                  categoryId === c.id ? "border-accent bg-accent-soft" : "border-glass-border bg-glass"
-                }`}
-              >
-                <Text className={categoryId === c.id ? "text-accent" : "text-fg-muted"}>
-                  {c.name}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
-          {addingCategory && (
-            <View className="flex-row gap-2">
-              <Input
-                value={newCategoryName}
-                onChangeText={setNewCategoryName}
-                placeholder="Category name"
-                placeholderTextColor={colors.fgSubtle}
-                className="flex-1 rounded-lg border border-glass-border bg-glass px-3 py-2 text-base text-fg"
-              />
-              <Pressable
-                onPress={handleCreateCategory}
-                className="items-center justify-center rounded-lg border border-glass-border bg-glass px-4"
-              >
-                <Text className="text-fg">Add</Text>
-              </Pressable>
+        <View className="gap-2 rounded-xl border border-glass-border bg-glass p-3">
+          <Pressable
+            onPress={openKeypad}
+            accessibilityRole="button"
+            accessibilityLabel={`Amount, ${amountText || "0"}`}
+            className="flex-row items-center gap-2 rounded-lg border border-glass-border bg-bg px-3 py-3"
+          >
+            <Text className="text-xl font-semibold text-fg-muted">{currencySymbol(currency).trim()}</Text>
+            <Text className={`font-data flex-1 text-2xl font-bold ${amountText ? "text-fg" : "text-fg-subtle"}`} numberOfLines={1}>
+              {amountText || "0"}
+            </Text>
+          </Pressable>
+          {expressionOpen && amountValue !== null && (
+            <Text className="px-1 text-xs text-fg-muted">
+              = {currencySymbol(currency)}{amountValue.toLocaleString()}
+            </Text>
+          )}
+          {quickAmounts.length > 0 && (
+            <View className="gap-1.5">
+              <Text className="px-1 text-xs text-fg-muted">{quickAmountsLabel}</Text>
+              <View className="flex-row flex-wrap gap-2">
+                {quickAmounts.map((major) => (
+                  <Pressable
+                    key={major}
+                    onPress={() => tapQuickAmount(major)}
+                    className="rounded-full border border-glass-border bg-bg px-3 py-1.5"
+                  >
+                    <Text className="text-xs font-medium text-fg">
+                      {expressionHasTrailingOperator ? "+ " : ""}
+                      {formatMoney(majorToMinor(major, currency), currency)}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
             </View>
           )}
         </View>
+
+        <View className="flex-row gap-2">
+          <FieldChip
+            icon={selectedAccount?.icon ?? "wallet"}
+            iconBg={selectedAccount?.color ?? colors.accent}
+            label={type === "transfer" ? "From account" : accountAutoPicked ? "Last used here" : "Account"}
+            value={selectedAccount?.name ?? "Choose account"}
+            onPress={() => openSheet("account")}
+          />
+          <FieldChip icon="calendar" iconBg={colors.accent} label="Date" value={shortDate(date)} onPress={() => openSheet("date")} />
+        </View>
+
+        {type === "transfer" ? (
+          <FieldChip
+            icon={accounts?.find((a) => a.id === toAccountId)?.icon ?? "wallet"}
+            iconBg={accounts?.find((a) => a.id === toAccountId)?.color ?? colors.transfer}
+            label="To account"
+            value={accounts?.find((a) => a.id === toAccountId)?.name ?? "Choose account"}
+            onPress={() => openSheet("toAccount")}
+          />
+        ) : (
+          <View className="gap-2">
+            <Text className="text-sm font-medium text-fg-muted">Category</Text>
+            <View className="flex-row flex-wrap gap-2">
+              {gridCategories.map((c) => (
+                <CategoryTile
+                  key={c.id}
+                  icon={c.icon}
+                  color={c.color}
+                  name={c.name}
+                  selected={categoryId === c.id}
+                  onPress={() => pickCategory(c.id)}
+                />
+              ))}
+              {showMoreTile && (
+                <Pressable
+                  onPress={() => openSheet("categoryMore")}
+                  style={{ width: "23%" }}
+                  className="items-center gap-1.5 rounded-xl border border-glass-border bg-glass py-2.5"
+                >
+                  <View className="h-9 w-9 items-center justify-center rounded-lg bg-surface-2">
+                    <Icon name="dots-horizontal" size={17} color={colors.fgMuted} />
+                  </View>
+                  <Text className="text-[11px] text-fg-muted">More</Text>
+                </Pressable>
+              )}
+            </View>
+          </View>
+        )}
+
+        <View className="gap-2">
+          <Text className="text-sm font-medium text-fg-muted">Description (optional)</Text>
+          <Input
+            value={description}
+            onChangeText={setDescription}
+            onFocus={() => setKeypadOpen(false)}
+            placeholder="Add a note"
+            placeholderTextColor={colors.fgSubtle}
+            className="rounded-lg border border-glass-border bg-glass px-3 py-2 text-base text-fg"
+          />
+        </View>
+
+        <View className="flex-row gap-2">
+          {type === "expense" && activeFunds.length > 0 && (
+            <ExtraButton icon="piggy-bank" label={fundLabel} set={fundId !== null} onPress={() => openSheet("fund")} />
+          )}
+          <ExtraButton icon="tag-outline" label={tagsLabel} set={tagIds.length > 0} onPress={() => openSheet("tags")} />
+          {showRepeatButton && (
+            <ExtraButton icon="repeat" label={repeatLabel} set={recurring || isRecurringEdit} onPress={() => openSheet("repeat")} />
+          )}
+        </View>
+      </FormScrollView>
+
+      <View
+        className="border-t border-glass-border bg-bg px-4 py-3"
+        accessibilityElementsHidden={keypadOpen}
+        importantForAccessibility={keypadOpen ? "no-hide-descendants" : "auto"}
+      >
+        {error && <Text className="mb-2 text-sm text-danger">{error}</Text>}
+        <Button onPress={handleSubmit} disabled={submitting}>
+          {saveLabel}
+        </Button>
+      </View>
+
+      {keypadOpen && (
+        <View style={{ position: "absolute", left: 0, right: 0, bottom: 0 }}>
+          <CalculatorKeypad
+            value={amountText}
+            onChange={setAmountText}
+            minorUnits={minorUnitsFor(currency)}
+            onAct={handleAct}
+            actLabel={actLabel}
+            actIsEquals={expressionOpen}
+            onHide={() => setKeypadOpen(false)}
+          />
+        </View>
       )}
 
-      {/* Funds only apply to money going out. Recurring expenses can link
-          too (spec.md §5.21): the fund lives on the rule, so a pre-funded
-          commitment keeps drawing down as instalments land. */}
-      {type === "expense" && activeFunds.length > 0 && (
-        <View className="gap-2">
-          <Text className="text-sm font-medium text-fg-muted">Spend from a fund (optional)</Text>
-          <View className="flex-row flex-wrap gap-2">
-            {activeFunds.map((f) => (
-              <Pressable
-                key={f.id}
-                onPress={() => setFundId(fundId === f.id ? null : f.id)}
-                accessibilityRole="checkbox"
-                accessibilityState={{ checked: fundId === f.id }}
-                className={`flex-row items-center gap-1.5 rounded-full border px-3 py-2 ${
-                  fundId === f.id ? "border-accent bg-accent-soft" : "border-glass-border bg-glass"
-                }`}
-              >
-                <Icon
-                  name={f.icon}
-                  size={14}
-                  color={fundId === f.id ? colors.accent : colors.fgMuted}
-                />
-                <Text className={fundId === f.id ? "text-accent" : "text-fg-muted"}>{f.name}</Text>
-              </Pressable>
+      {sheet === "account" && (
+        <BottomSheet title={type === "transfer" ? "From account" : "Account"} onClose={() => setSheet(null)}>
+          <View className="gap-2 px-5 pb-4">
+            {(accounts ?? []).map((a) => (
+              <Chip
+                key={a.id}
+                label={a.name}
+                selected={accountId === a.id}
+                onPress={() => {
+                  setAccountId(a.id);
+                  setAccountAutoPicked(false);
+                  setSheet(null);
+                }}
+              />
             ))}
           </View>
-          {fundId !== null && (
-            <Text className="text-xs text-fg-subtle">
-              {isRecurringEdit || recurring
-                ? "Each occurrence draws down that fund as its date arrives — future ones don't take the money early."
-                : "This expense will draw down that fund. Editing or deleting it later puts the money back automatically."}
-            </Text>
-          )}
-        </View>
+        </BottomSheet>
       )}
 
-      <View className="gap-2">
-        <Text className="text-sm font-medium text-fg-muted">Date</Text>
-        <Pressable
-          onPress={() => setShowDatePicker(true)}
-          accessibilityRole="button"
-          accessibilityLabel={`Date, ${date.toDateString()}`}
-          className="rounded-lg border border-glass-border bg-glass px-3 py-2"
-        >
-          <Text className="text-fg">{date.toDateString()}</Text>
-        </Pressable>
-        {showDatePicker && (
-          <DateTimePicker
-            value={date}
-            mode="date"
-            onChange={(_, selected) => {
-              setShowDatePicker(false);
-              if (selected) setDate(selected);
-            }}
-          />
-        )}
-      </View>
-
-      <View className="gap-2">
-        <Text className="text-sm font-medium text-fg-muted">Description (optional)</Text>
-        <Input
-          value={description}
-          onChangeText={setDescription}
-          placeholder="Add a note"
-          placeholderTextColor={colors.fgSubtle}
-          className="rounded-lg border border-glass-border bg-glass px-3 py-2 text-base text-fg"
-        />
-      </View>
-
-      <TagPicker selectedTagIds={tagIds} onChange={setTagIds} />
-
-      {isRecurringEdit && (
-        <View className="gap-2 rounded-lg bg-surface-2 p-3">
-          <Text className="text-sm text-fg-muted">
-            🔁 Part of a recurring series · {recurringInfo!.scheduleLabel}
-          </Text>
-          <Text className="text-xs text-fg-muted">
-            End date (optional — leave blank to repeat indefinitely)
-          </Text>
-          <Pressable
-            onPress={() => setShowEndDatePicker(true)}
-            className="rounded-lg border border-glass-border bg-glass px-3 py-2"
-          >
-            <Text className="text-fg">
-              {scheduleEndDate ? scheduleEndDate.toDateString() : "No end date"}
-            </Text>
-          </Pressable>
-          {showEndDatePicker && (
-            <DateTimePicker
-              value={scheduleEndDate ?? new Date()}
-              mode="date"
-              onChange={(_, selected) => {
-                setShowEndDatePicker(false);
-                if (selected) setScheduleEndDate(selected);
-              }}
-            />
-          )}
-          <Text className="text-xs text-fg-subtle">
-            Only applied if you choose &ldquo;this and all future occurrences&rdquo; below.
-          </Text>
-        </View>
-      )}
-
-      {allowRecurring && !isRecurringEdit && (
-        <View className="gap-3 rounded-lg border border-glass-border p-3">
-          <View className="flex-row items-center justify-between">
-            <Text className="text-base text-fg">Make recurring</Text>
-            <Switch
-              value={recurring}
-              onValueChange={setRecurring}
-              trackColor={{ false: colors.glassFill, true: colors.accent }}
-              thumbColor="#ffffff"
-              ios_backgroundColor={colors.glassFill}
-            />
+      {sheet === "toAccount" && (
+        <BottomSheet title="To account" onClose={() => setSheet(null)}>
+          <View className="gap-2 px-5 pb-4">
+            {(accounts ?? [])
+              .filter((a) => a.id !== accountId)
+              .map((a) => (
+                <Chip
+                  key={a.id}
+                  label={a.name}
+                  tone="transfer"
+                  selected={toAccountId === a.id}
+                  onPress={() => {
+                    setToAccountId(a.id);
+                    setSheet(null);
+                  }}
+                />
+              ))}
           </View>
+        </BottomSheet>
+      )}
 
-          {recurring && (
-            <>
-              <View className="gap-2">
-                <View className="flex-row items-center gap-2">
-                  <Text className="text-sm text-fg-muted">Repeat every</Text>
-                  <Input
-                    value={intervalCountText}
-                    onChangeText={setIntervalCountText}
-                    keyboardType="number-pad"
-                    className="w-16 rounded-lg border border-glass-border bg-glass px-2 py-1.5 text-center text-fg"
-                  />
-                </View>
-                <View className="flex-row flex-wrap gap-1.5">
-                  {RECURRENCE_UNITS.map((unit) => (
-                    <Pressable
-                      key={unit}
-                      onPress={() => setIntervalUnit(unit)}
-                      accessibilityRole="radio"
-                      accessibilityState={{ selected: intervalUnit === unit }}
-                      className={`rounded-full border px-2.5 py-1.5 ${
-                        intervalUnit === unit ? "border-accent bg-accent-soft" : "border-glass-border bg-glass"
-                      }`}
-                    >
-                      <Text className={intervalUnit === unit ? "text-accent" : "text-fg-muted"}>
-                        {UNIT_LABELS[unit]}
-                      </Text>
-                    </Pressable>
-                  ))}
-                </View>
-              </View>
+      {sheet === "date" && (
+        <BottomSheet title="Date" onClose={() => setSheet(null)}>
+          <View className="gap-2 px-5 pb-4">
+            <Pressable
+              onPress={() => {
+                setDate(new Date());
+                setSheet(null);
+              }}
+              className="rounded-lg border border-glass-border bg-glass px-3 py-3"
+            >
+              <Text className="text-fg">Today</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => {
+                const d = new Date();
+                d.setDate(d.getDate() - 1);
+                setDate(d);
+                setSheet(null);
+              }}
+              className="rounded-lg border border-glass-border bg-glass px-3 py-3"
+            >
+              <Text className="text-fg">Yesterday</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => setShowDatePicker(true)}
+              className="rounded-lg border border-glass-border bg-glass px-3 py-3"
+            >
+              <Text className="text-fg">Pick a date…</Text>
+            </Pressable>
+          </View>
+        </BottomSheet>
+      )}
+      {showDatePicker && (
+        <DateTimePicker
+          value={date}
+          mode="date"
+          onChange={(_, selected) => {
+            setShowDatePicker(false);
+            setSheet(null);
+            if (selected) setDate(selected);
+          }}
+        />
+      )}
 
-              <View className="gap-2">
+      {sheet === "categoryMore" && (
+        <BottomSheet title="All categories" onClose={() => setSheet(null)}>
+          <View className="flex-row flex-wrap gap-2 px-5 pb-2">
+            {(categories ?? []).map((c) => (
+              <CategoryTile
+                key={c.id}
+                icon={c.icon}
+                color={c.color}
+                name={c.name}
+                selected={categoryId === c.id}
+                onPress={() => pickCategory(c.id)}
+              />
+            ))}
+          </View>
+          <View className="flex-row gap-2 px-5 pb-4 pt-2">
+            <Input
+              value={newCategoryName}
+              onChangeText={setNewCategoryName}
+              placeholder="New category name"
+              placeholderTextColor={colors.fgSubtle}
+              className="flex-1 rounded-lg border border-glass-border bg-glass px-3 py-2 text-base text-fg"
+            />
+            <Pressable
+              onPress={handleCreateCategory}
+              className="items-center justify-center rounded-lg border border-glass-border bg-glass px-4"
+            >
+              <Text className="text-fg">Add</Text>
+            </Pressable>
+          </View>
+        </BottomSheet>
+      )}
+
+      {sheet === "fund" && (
+        <BottomSheet title="Spend from a fund (optional)" onClose={() => setSheet(null)}>
+          <View className="gap-3 px-5 pb-4">
+            <View className="flex-row flex-wrap gap-2">
+              <Chip
+                label="None"
+                selected={fundId === null}
+                onPress={() => {
+                  setFundId(null);
+                  setSheet(null);
+                }}
+              />
+              {activeFunds.map((f) => (
+                <Chip
+                  key={f.id}
+                  label={f.name}
+                  role="checkbox"
+                  selected={fundId === f.id}
+                  icon={<Icon name={f.icon} size={14} color={fundId === f.id ? colors.accent : colors.fgMuted} />}
+                  onPress={() => {
+                    setFundId(f.id);
+                    setSheet(null);
+                  }}
+                />
+              ))}
+            </View>
+            {fundId !== null && (
+              <Text className="text-xs text-fg-subtle">
+                {isRecurringEdit || recurring
+                  ? "Each occurrence draws down that fund as its date arrives — future ones don't take the money early."
+                  : "This expense will draw down that fund. Editing or deleting it later puts the money back automatically."}
+              </Text>
+            )}
+          </View>
+        </BottomSheet>
+      )}
+
+      {sheet === "tags" && (
+        <BottomSheet title="Tags" onClose={() => setSheet(null)}>
+          <View className="px-5 pb-4">
+            <TagPicker selectedTagIds={tagIds} onChange={setTagIds} />
+          </View>
+        </BottomSheet>
+      )}
+
+      {sheet === "repeat" && (
+        <BottomSheet title="Repeat" onClose={() => setSheet(null)} maxHeightClassName="max-h-[85%]">
+          <View className="gap-3 px-5 pb-4">
+            {isRecurringEdit && (
+              <View className="gap-2 rounded-lg bg-surface-2 p-3">
                 <Text className="text-sm text-fg-muted">
+                  🔁 Part of a recurring series · {recurringInfo!.scheduleLabel}
+                </Text>
+                <Text className="text-xs text-fg-muted">
                   End date (optional — leave blank to repeat indefinitely)
                 </Text>
                 <Pressable
@@ -549,25 +852,86 @@ export function TransactionForm({
                     {scheduleEndDate ? scheduleEndDate.toDateString() : "No end date"}
                   </Text>
                 </Pressable>
-                {showEndDatePicker && (
-                  <DateTimePicker
-                    value={scheduleEndDate ?? new Date()}
-                    mode="date"
-                    onChange={(_, selected) => {
-                      setShowEndDatePicker(false);
-                      if (selected) setScheduleEndDate(selected);
-                    }}
+                <Text className="text-xs text-fg-subtle">
+                  Only applied if you choose &ldquo;this and all future occurrences&rdquo; below.
+                </Text>
+              </View>
+            )}
+
+            {allowRecurring && !isRecurringEdit && (
+              <View className="gap-3">
+                <View className="flex-row items-center justify-between">
+                  <Text className="text-base text-fg">Make recurring</Text>
+                  <Switch
+                    value={recurring}
+                    onValueChange={setRecurring}
+                    trackColor={{ false: colors.glassFill, true: colors.accent }}
+                    thumbColor="#ffffff"
+                    ios_backgroundColor={colors.glassFill}
                   />
+                </View>
+
+                {recurring && (
+                  <>
+                    <View className="gap-2">
+                      <View className="flex-row items-center gap-2">
+                        <Text className="text-sm text-fg-muted">Repeat every</Text>
+                        <Input
+                          value={intervalCountText}
+                          onChangeText={setIntervalCountText}
+                          keyboardType="number-pad"
+                          className="w-16 rounded-lg border border-glass-border bg-glass px-2 py-1.5 text-center text-fg"
+                        />
+                      </View>
+                      <View className="flex-row flex-wrap gap-1.5">
+                        {RECURRENCE_UNITS.map((unit) => (
+                          <Pressable
+                            key={unit}
+                            onPress={() => setIntervalUnit(unit)}
+                            accessibilityRole="radio"
+                            accessibilityState={{ selected: intervalUnit === unit }}
+                            className={`rounded-full border px-2.5 py-1.5 ${
+                              intervalUnit === unit ? "border-accent bg-accent-soft" : "border-glass-border bg-glass"
+                            }`}
+                          >
+                            <Text className={intervalUnit === unit ? "text-accent" : "text-fg-muted"}>
+                              {UNIT_LABELS[unit]}
+                            </Text>
+                          </Pressable>
+                        ))}
+                      </View>
+                    </View>
+
+                    <View className="gap-2">
+                      <Text className="text-sm text-fg-muted">
+                        End date (optional — leave blank to repeat indefinitely)
+                      </Text>
+                      <Pressable
+                        onPress={() => setShowEndDatePicker(true)}
+                        className="rounded-lg border border-glass-border bg-glass px-3 py-2"
+                      >
+                        <Text className="text-fg">
+                          {scheduleEndDate ? scheduleEndDate.toDateString() : "No end date"}
+                        </Text>
+                      </Pressable>
+                    </View>
+                  </>
                 )}
               </View>
-            </>
-          )}
-        </View>
+            )}
+          </View>
+        </BottomSheet>
       )}
-
-      {error && <Text className="text-sm text-danger">{error}</Text>}
-
-      <Button onPress={handleSubmit} disabled={submitting}>{submitLabel}</Button>
-    </FormScrollView>
+      {showEndDatePicker && (
+        <DateTimePicker
+          value={scheduleEndDate ?? new Date()}
+          mode="date"
+          onChange={(_, selected) => {
+            setShowEndDatePicker(false);
+            if (selected) setScheduleEndDate(selected);
+          }}
+        />
+      )}
+    </View>
   );
 }

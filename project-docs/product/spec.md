@@ -46,6 +46,7 @@ pushed to a later phase) · ❌ Dropped (cut from scope).
 | §5.22 | Version 3 — Testers Community round | ✅ Built & Verified | **Built and verified on-device 2026-09-11**, shipped as **3.0.0** (closed-testing update 7). Six enhancement suggestions from a paid tester pass that found no bugs: FAQ + Send feedback (closes §5.15), What's new, first-visit hints + replayable intro, Dashboard customisation, three Analytics chart changes. Two suggestions (Google/email sign-in) declined as contrary to §3/§4. One migration (`0017`), shared with §5.23. |
 | §5.23 | Biometric App Lock | ✅ Built & Verified | **Built and verified on-device 2026-09-11**, shipped in 3.0.0. `expo-local-authentication` (the release's only native change), device PIN/pattern fallback allowed, 30 s background grace, lock screen rendered instead of the navigator so nothing underneath can be captured. Nothing stored by the app. |
 | §5.24 | Erebor V4 — Calm UI/UX Redesign | ✅ Built & Verified | **Live in Production 2026-10-07 as 4.0.0, versionCode 24** (Internal testing first, then promoted; merged to master). Started 2026-10-05. Presentation-only: Octet blue palette for Light and Dark, progressive-disclosure Dashboard/Analytics, Transactions filter sheet + search, grouped Accounts, rethemed widgets. Financial logic and schema untouched. Phases 1–7 verified on-device 2026-10-05; performance pass done; version 4.0.0. **4.1.0 (vc25), live 2026-10-08:** Analytics custom date range + Wallet icon fix. |
+| §5.2a | New Transaction Quick-Entry Redesign | 🚧 In Progress | **Resumed 2026-11-02** from a handoff delivered 2026-10-28. Implemented 2026-11-02: `components/ui/BottomSheet.tsx`/`Chip.tsx`/`CalculatorKeypad.tsx` (new shared primitives) + `TransactionForm.tsx` rewritten (compact type segment, calculator keypad, account/date/to-account chip+sheet pickers, 4×2 category grid + More sheet, Fund/Tags/Repeat as extras+sheets, sticky Save with running total) + 3 new smart-default queries (`services/transactionDefaults.ts`, `db/queries/transactions.ts`) with 9 tests. `tsc`/`lint`/`jest` (155/155) clean. **Not yet verified on-device** — stays In Progress until confirmed on the Pixel 10/Nothing Phone. No schema change. See §5.2a body below for the full spec. |
 
 **Remaining known gaps** (everything else above is fully verified,
 carried forward unchanged from the last audit — none of these have
@@ -327,6 +328,76 @@ optional description.
   month). Updates instantly as the filter changes
 - **Calendar view:** a calendar where you can add a transaction on a
   specific day, and each day shows that day's total expenses at a glance
+
+### 5.2a New Transaction Quick-Entry Redesign 🚧 In Progress
+
+**Resumed 2026-11-02**, from a design handoff delivered 2026-10-28
+(`erebor-new-transaction-handoff.md` + `new-transaction.html`, a
+clickable mockup — visual/behavioural reference, not code to port).
+
+**Problem:** `TransactionForm.tsx` renders every account, category,
+fund and tag as wrapping chip lists — on a real phone the Save button
+sits two screens down. **Success criterion:** on a ~6.1–6.7" Android
+phone, a common expense (amount → category → save) needs no
+scrolling and at most 3 taps after typing the amount.
+
+**Scope — presentation/behaviour only, no schema change:**
+- Compact segmented Expense/Income/Transfer control, keeping existing
+  `TYPE_STYLES` colours.
+- **Amount card** with a custom calculator keypad replacing the system
+  keyboard — expression entry (`evaluateExpression()` from
+  `services/calculator.ts`, no new parser), live `= ₹X` preview,
+  quick-amount chips. Decimal cap from `minorUnitsFor(currency)`, not
+  hardcoded.
+- **Account + Date chips** side by side, each opening a bottom sheet
+  (same bare-`Modal` pattern as `AccountSwitcherSheet`). Transfer mode
+  swaps in a To-account chip.
+- **Category grid:** 4×2 icon tiles, top 7 by usage + a "More" sheet
+  (new category creation moves there). Hidden in Transfer mode.
+- **Fund / Tags / Repeat** collapsed into small outline buttons that
+  open sheets and fill in once set.
+- **Sticky Save button** outside the scroll view, showing the running
+  total, disabled until valid.
+- **New read-only queries** (90-day window, excluding opening
+  balances): category usage order, last-used account per category,
+  frequent amounts per category — drive the grid order, auto-selected
+  account, and quick-amount chips.
+- `AmountOperatorRow` stays as-is for `FundForm`/`AccountForm`/
+  `FundAllocationSheet` — only `TransactionForm` moves off it.
+
+**Must not regress:** `dispatchOnce` double-tap guard, amount
+validation (`amount <= 0`), closed-fund hiding (with existing links to
+a closed fund preserved), the `key=` remount + deep-link params in
+`app/transaction/new.tsx` (widget/shortcuts `type`/`accountId`/`date`/
+`duplicateId`), the cold-start `BackHandler.exitApp()` path, the edit
+screen (`app/transaction/[id]/edit.tsx`) rendering/saving via the same
+form including recurring occurrences, account-currency-driven
+prefix/chips/conversion, light/dark tokens (no new hex values), and
+accessibility (keypad `accessibilityLabel`s, chip/tile roles+state,
+44dp hit targets).
+
+**Open questions for Emil** (ask, don't assume — carried from the
+handoff): Health vs Healthcare category merge; whether "Adjusting"
+belongs in the category grid or should be excluded from usage
+ranking; whether the edit screen gets the same redesign (default
+assumption: yes, same component).
+
+**Status:** implemented 2026-11-02 (`tsc`/`lint`/`jest` 155/155 clean),
+not yet verified on-device. Plan-mode scope decisions (2026-11-02, all
+"Recommended"): built for `TransactionForm` only — `AccountForm`'s
+wrapping Type/Color/Currency chip rows + inline date picker are a real
+but lower-priority future candidate, flagged in backlog.md, not built
+now; `CategoryForm`/`FundForm`/`TagForm` are already compact and not
+candidates. A shared `BottomSheet` wrapper (`components/ui/BottomSheet.tsx`)
+was factored for the 5 new sheets rather than hand-rolling a 6th-10th
+copy of the existing bare-Modal recipe — the 5 existing hand-rolled
+sheets (`AccountSwitcherSheet`, `AddTransactionSheet`,
+`FundAllocationSheet`, `TransactionFilterSheet`, `WhatsNewSheet`) are
+untouched. "Adjusting" is excluded from the category usage-ranking
+query (still reachable via "More"). The edit screen automatically gets
+the same layout since it shares the same `TransactionForm` component.
+**Next:** on-device verification per the must-not-regress checklist
+above, then update this status to ✅ Built & Verified.
 
 ### 5.3 Categories ✅ Built & Verified
 - Separate lists for Expense categories and Income categories

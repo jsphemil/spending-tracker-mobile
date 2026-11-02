@@ -1,8 +1,15 @@
+import { useMemo } from "react";
 import { useLiveQuery } from "drizzle-orm/expo-sqlite";
 import { and, desc, eq, gte, lt, or } from "drizzle-orm";
 
 import { db } from "../client";
-import { transactions } from "../schema";
+import { transactions, type CategoryKind } from "../schema";
+import {
+  categoryUsageQuery,
+  frequentAmountsQuery,
+  lastUsedAccountQuery,
+  USAGE_WINDOW_DAYS,
+} from "../../services/transactionDefaults";
 
 // A transaction touches an account via either accountId (income/expense, or
 // a transfer's outgoing leg) or toAccountId (a transfer's incoming leg) —
@@ -68,4 +75,39 @@ export function useFilteredTransactions({
       .orderBy(desc(transactions.date), desc(transactions.id)),
     [accountId, categoryId, range?.start.getTime(), range?.end.getTime()],
   );
+}
+
+// --- New Transaction quick-entry smart defaults (spec.md §5.2a) ---
+// The actual aggregation queries live in services/transactionDefaults.ts
+// (plain `(db, ...)` functions, unit-tested there); these hooks just make
+// them reactive.
+
+// Stable for the component's lifetime rather than recomputed every render
+// (Date.now() changes constantly, which would otherwise feed a new value
+// into useLiveQuery's deps array on every render and defeat memoization).
+// A 90-day window doesn't need finer-grained freshness than "per mount".
+function useUsageCutoff(): Date {
+  return useMemo(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - USAGE_WINDOW_DAYS);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }, []);
+}
+
+export function useCategoryUsageOrder(kind: CategoryKind) {
+  const cutoff = useUsageCutoff();
+  return useLiveQuery(categoryUsageQuery(db, kind, cutoff), [kind, cutoff.getTime()]);
+}
+
+// `categoryId` is `-1` (never a real id) when no category is selected yet,
+// same sentinel idiom as useTransactionTagIds's "-1 means nothing yet".
+export function useLastUsedAccountForCategory(categoryId: number) {
+  const { data } = useLiveQuery(lastUsedAccountQuery(db, categoryId), [categoryId]);
+  return data?.[0]?.accountId;
+}
+
+export function useFrequentAmountsForCategory(categoryId: number) {
+  const cutoff = useUsageCutoff();
+  return useLiveQuery(frequentAmountsQuery(db, categoryId, cutoff), [categoryId, cutoff.getTime()]);
 }
