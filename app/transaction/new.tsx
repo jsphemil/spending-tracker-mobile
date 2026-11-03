@@ -78,7 +78,18 @@ export default function NewTransactionScreen() {
         // the form showing the first link's type. Keying on the params
         // that actually distinguish "what am I creating" forces React
         // to tear down and recreate the form whenever they change.
-        key={`${duplicateId ?? ""}-${params.type ?? ""}-${params.accountId ?? ""}-${params.date ?? ""}`}
+        //
+        // The trailing `!!duplicateSource` segment covers a narrower
+        // case: useLiveQuery's very first emission for `duplicateRows`
+        // is `[]`, one tick before the real row arrives, so this screen
+        // briefly renders with `duplicateSource` still falsy even
+        // though `duplicateRows !== undefined` already let it past the
+        // loading guard below. Without this, TransactionForm mounted
+        // once on that empty-array render — with no account/category —
+        // and never updated, since its own state only reads
+        // `initialValues` on first mount. Including it here forces the
+        // one extra remount once the real row lands.
+        key={`${duplicateId ?? ""}-${!!duplicateSource}-${params.type ?? ""}-${params.accountId ?? ""}-${params.date ?? ""}`}
         submitLabel="Add Transaction"
         allowRecurring
         initialValues={
