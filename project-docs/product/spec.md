@@ -436,12 +436,30 @@ used for the deep-link case, just extended to cover this one too.
 Re-verified on-device after the fix: Duplicate now prefills amount,
 type, date, account, and category correctly.
 
-**Remaining known gaps** (not yet exercised on-device): the widget/
-launcher-shortcut cold-start close path, the closed-fund
-hidden-but-preserved case, and light theme (verified in dark only).
-None of these had their underlying logic touched by this redesign
-beyond being relocated into sheets, so risk is believed low, but they
-haven't been tapped through.
+**Closed-fund hidden-but-preserved, and light theme — both confirmed
+on-device 2026-11-03.** An expense was linked to a fund, the fund was
+then closed (via the Funds screen's own "Close fund" action, which
+explicitly keeps past spending linked), and the transaction was
+reopened for edit: the Fund extras button still showed the closed
+fund's name (link preserved), while its sheet's picker correctly
+listed only the still-active funds — the closed one never appears as
+a selectable option, matching the handoff's "hidden but preserved"
+spec exactly. Light theme (Settings → Appearance → Light) was checked
+across the full form, the calculator keypad, and the Account sheet —
+all legible with correct contrast, no hardcoded-dark-color leaks.
+Theme was switched back to Dark afterward.
+
+**Remaining known gap**: the widget/launcher-shortcut cold-start close
+path (`BackHandler.exitApp()` when there's no back stack). Not
+practically testable through the Expo dev client — its own
+dev-launcher intercepts a direct `spendingtracker://` deep link before
+expo-router ever sees it, and wrapping it through the dev-client's own
+`url=` bundler link breaks that link's manifest parsing (`DevLauncherManifestParser`
+failure) since it only accepts a bare bundler origin, not an app path.
+Production-build-only to verify properly. Risk is still believed low:
+the `close()` callback this depends on lives entirely in
+`app/transaction/new.tsx`, is unchanged by this redesign, and
+`TransactionForm` has no awareness of navigation-stack depth at all.
 
 ### 5.3 Categories ✅ Built & Verified
 - Separate lists for Expense categories and Income categories
