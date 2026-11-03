@@ -330,7 +330,7 @@ All 3 required updates for the 14-day window are now shipped
 (versionCode 9, 12, 13 — see step 9 below for the production-access
 application, the next gate).
 
-**4.2.0 built as versionCode 26 (2026-11-03)** — release name
+**4.2.0 built as versionCode 26 (2026-11-03) — live in Production 2026-11-03.** Release name
 `Erebor 4.2.0 — Add a Transaction in Three Taps`. JS-only (no native
 change): the New Transaction quick-entry redesign (spec.md §5.2a) —
 calculator keypad, 4x2 category grid with usage-based ordering, account/

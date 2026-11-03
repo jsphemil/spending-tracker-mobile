@@ -46,7 +46,7 @@ pushed to a later phase) · ❌ Dropped (cut from scope).
 | §5.22 | Version 3 — Testers Community round | ✅ Built & Verified | **Built and verified on-device 2026-09-11**, shipped as **3.0.0** (closed-testing update 7). Six enhancement suggestions from a paid tester pass that found no bugs: FAQ + Send feedback (closes §5.15), What's new, first-visit hints + replayable intro, Dashboard customisation, three Analytics chart changes. Two suggestions (Google/email sign-in) declined as contrary to §3/§4. One migration (`0017`), shared with §5.23. |
 | §5.23 | Biometric App Lock | ✅ Built & Verified | **Built and verified on-device 2026-09-11**, shipped in 3.0.0. `expo-local-authentication` (the release's only native change), device PIN/pattern fallback allowed, 30 s background grace, lock screen rendered instead of the navigator so nothing underneath can be captured. Nothing stored by the app. |
 | §5.24 | Erebor V4 — Calm UI/UX Redesign | ✅ Built & Verified | **Live in Production 2026-10-07 as 4.0.0, versionCode 24** (Internal testing first, then promoted; merged to master). Started 2026-10-05. Presentation-only: Octet blue palette for Light and Dark, progressive-disclosure Dashboard/Analytics, Transactions filter sheet + search, grouped Accounts, rethemed widgets. Financial logic and schema untouched. Phases 1–7 verified on-device 2026-10-05; performance pass done; version 4.0.0. **4.1.0 (vc25), live 2026-10-08:** Analytics custom date range + Wallet icon fix. |
-| §5.2a | New Transaction Quick-Entry Redesign | ✅ Built & Verified | **Resumed 2026-11-02** from a handoff delivered 2026-10-28. Implemented and verified on-device the same day (Nothing Phone 1, over Metro/USB). `tsc`/`lint`/`jest` (155/155) clean. See §5.2a body below for what was confirmed on-device and the remaining known gaps. No schema change. |
+| §5.2a | New Transaction Quick-Entry Redesign | ✅ Built & Verified | **Live in Production 2026-11-03 as 4.2.0, versionCode 26.** Resumed 2026-11-02 from a handoff delivered 2026-10-28. Implemented and verified on-device the same day (Nothing Phone 1, over Metro/USB). `tsc`/`lint`/`jest` (155/155) clean. See §5.2a body below for what was confirmed on-device and the remaining known gaps. No schema change. |
 
 **Remaining known gaps** (everything else above is fully verified,
 carried forward unchanged from the last audit — none of these have
@@ -469,7 +469,7 @@ the 3-button nav bar it sat mostly behind it, same class of bug as the
 keypad/footer one above. Fixed with `useSafeAreaInsets()`, adding
 `insets.bottom` to its bottom margin. Confirmed on-device: the button
 is now fully visible and tappable above the nav bar. Shipped in
-**4.2.0** alongside this feature.
+**4.2.0** alongside this feature — live in Production 2026-11-03.
 
 ### 5.3 Categories ✅ Built & Verified
 - Separate lists for Expense categories and Income categories
