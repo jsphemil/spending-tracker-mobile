@@ -330,6 +330,30 @@ All 3 required updates for the 14-day window are now shipped
 (versionCode 9, 12, 13 — see step 9 below for the production-access
 application, the next gate).
 
+**4.2.0 built as versionCode 26 (2026-11-03)** — release name
+`Erebor 4.2.0 — Add a Transaction in Three Taps`. JS-only (no native
+change): the New Transaction quick-entry redesign (spec.md §5.2a) —
+calculator keypad, 4x2 category grid with usage-based ordering, account/
+date/fund/tags/repeat moved into bottom sheets, smart defaults (frequent
+amounts, last-used account per category), sticky Save. Also fixed on
+device during verification: the keypad and Save button hiding behind
+the 3-button nav bar, Duplicate losing its account/category, and the
+Edit screen's Delete Transaction button hiding behind the nav bar too.
+
+`tsc`, lint and 155 tests clean; verified on the Nothing Phone 1 debug
+device over Metro/USB. Went straight to Production, no track (no
+native module change).
+
+Build `d08c040f-63ad-45a9-96ab-bde15a0ccf92`; AAB at
+`https://expo.dev/artifacts/eas/F-PAXL4i9AkgvLkURB-zPiF2YQq2bpxUbR2Js81AH08.aab`.
+
+Release notes to use (4.2.0):
+```
+<en-GB>
+Adding a transaction is faster: a calculator keypad for the amount, a category grid that leads with what you use most, and account, date, fund, tags and repeat tucked into quick sheets. It suggests your frequent amounts and last-used account per category. Also fixed a few spots where buttons sat behind the three-button navigation bar, and duplicating a transaction losing its account and category.
+</en-GB>
+```
+
 **4.1.0 built as versionCode 25 (2026-10-08)** — release name
 `Erebor 4.1.0 — Any Stretch of Time`. JS-only (no native change):
 
