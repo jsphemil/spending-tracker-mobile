@@ -2,6 +2,7 @@ import { useLiveQuery } from "drizzle-orm/expo-sqlite";
 import { eq } from "drizzle-orm";
 import { router, useLocalSearchParams } from "expo-router";
 import { Pressable, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { confirmDeleteTransaction } from "../../../components/confirmDeleteTransaction";
 import { TransactionForm } from "../../../components/TransactionForm";
@@ -12,6 +13,7 @@ import { recurringRules, transactions } from "../../../db/schema";
 import { describeSchedule, editFutureOccurrences, editSingleOccurrence } from "../../../services/recurrence";
 
 export default function EditTransactionScreen() {
+  const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
   const transactionId = Number(id);
   const { data } = useLiveQuery(
@@ -100,7 +102,8 @@ export default function EditTransactionScreen() {
       />
       <Pressable
         onPress={() => confirmDeleteTransaction(db, transaction, () => router.back())}
-        className="mx-4 mb-6 items-center rounded-lg border border-danger/30 py-3"
+        className="mx-4 items-center rounded-lg border border-danger/30 py-3"
+        style={{ marginBottom: insets.bottom + 24 }}
       >
         <Text className="font-semibold text-danger">Delete Transaction</Text>
       </Pressable>

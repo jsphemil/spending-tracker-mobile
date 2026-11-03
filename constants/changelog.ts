@@ -16,6 +16,16 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "4.2.0",
+    date: "2026-11-03",
+    title: "Add a transaction in three taps",
+    highlights: [
+      "A redesigned Add Transaction screen: a calculator keypad for the amount, a category grid that leads with what you use most, and account, date, fund, tags and repeat tucked into quick sheets — a common expense now takes no scrolling.",
+      "The amount screen suggests your most frequent amounts for the category you picked, and the account you last used for it.",
+      "Fixed the keypad and Save button hiding behind the three-button navigation bar, duplicating a transaction leaving its account and category blank, and the Delete button on the edit screen sitting behind the navigation bar too.",
+    ],
+  },
+  {
     version: "4.1.0",
     date: "2026-10-08",
     title: "Any stretch of time",

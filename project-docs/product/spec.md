@@ -461,6 +461,16 @@ the `close()` callback this depends on lives entirely in
 `app/transaction/new.tsx`, is unchanged by this redesign, and
 `TransactionForm` has no awareness of navigation-stack depth at all.
 
+**Third bug found and fixed (2026-11-03) — Delete Transaction button
+hidden behind the nav bar on the edit screen.** `app/transaction/[id]/edit.tsx`
+renders its "Delete Transaction" `Pressable` as a sibling below
+`TransactionForm`, with a plain `mb-6` and no safe-area awareness — on
+the 3-button nav bar it sat mostly behind it, same class of bug as the
+keypad/footer one above. Fixed with `useSafeAreaInsets()`, adding
+`insets.bottom` to its bottom margin. Confirmed on-device: the button
+is now fully visible and tappable above the nav bar. Shipped in
+**4.2.0** alongside this feature.
+
 ### 5.3 Categories ✅ Built & Verified
 - Separate lists for Expense categories and Income categories
 - Create, edit, delete categories
