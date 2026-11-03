@@ -414,11 +414,29 @@ with every field correctly prefilled, the keypad starting closed and
 opening on tap, "Save Changes · ₹X" showing the right running total,
 and no Repeat button on a non-recurring edit; Transfer mode's segmented
 control, transfer-specific quick amounts, and the To-account chip +
-sheet (correctly excluding the From account once one is picked).
+sheet (correctly excluding the From account once one is picked);
+recurring create via the Repeat sheet (toggle, interval, unit) and the
+materialized rule appearing correctly in the transaction list; the
+"just this one / this and all future occurrences" edit-scope alert
+firing and `editSingleOccurrence` applying correctly; the Repeat
+sheet's "Part of a recurring series" info block on a recurring edit.
 
-**Remaining known gaps** (not yet exercised on-device): recurring
-create and the Repeat sheet, the "just this one / this and all future
-occurrences" edit-scope alert, duplicate-via-deep-link, the widget/
+**Second bug found and fixed via on-device testing — Duplicate lost
+account/category.** Duplicating a transaction (long-press → Duplicate)
+correctly prefilled amount/type/date but silently left Account and
+Category blank. Root cause: `useLiveQuery`'s first emission for the
+duplicated row is `[]`, one tick before the real row arrives, so
+`app/transaction/new.tsx` rendered `TransactionForm` once with no
+`duplicateSource` before data loaded; since `TransactionForm`'s state
+only reads `initialValues` on first mount, it never picked up the
+correct values once the real row landed on the next render. Fixed by
+including whether `duplicateSource` has resolved in the screen's
+existing `key=` remount mechanism — the same trick that file already
+used for the deep-link case, just extended to cover this one too.
+Re-verified on-device after the fix: Duplicate now prefills amount,
+type, date, account, and category correctly.
+
+**Remaining known gaps** (not yet exercised on-device): the widget/
 launcher-shortcut cold-start close path, the closed-fund
 hidden-but-preserved case, and light theme (verified in dark only).
 None of these had their underlying logic touched by this redesign
