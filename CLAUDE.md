@@ -35,3 +35,14 @@ At the start of every new task or session, before continuing planned work:
   update `spec.md`'s dashboard for the section(s) it touches at that
   same moment, so `backlog.md` and `spec.md`'s dashboard never drift
   out of sync with each other.
+
+## Usage Observations (Obsidian)
+
+The user logs notes from using the app in the Obsidian note
+`C:/Users/jsphe/Dropbox/EMIL (personal)/Obsidian/Reflections/Notes/Erebor Wealth Management App/Usage Observations — Erebor.md`.
+
+- At the start of a session, read its **New observations** section and
+  triage each entry like a backlog Inbox item (fix, ask, or add to `backlog.md`).
+- After a build addresses an entry, move it under **Done** in a
+  `### <version> (<versionCode>) — built <date>` heading, struck through
+  with a one-line `→ Fixed. Cause: …` note, so New observations starts empty.
