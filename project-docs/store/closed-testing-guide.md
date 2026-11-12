@@ -330,7 +330,28 @@ All 3 required updates for the 14-day window are now shipped
 (versionCode 9, 12, 13 — see step 9 below for the production-access
 application, the next gate).
 
-**4.3.0 built as versionCode 27 (2026-11-12).** Release name
+**5.0.0 built as versionCode 28 (2026-11-12)** — release name
+`Erebor 5.0.0 — Refunds, Statements and Safe to Spend`. Replaces 4.3.0
+(vc27), which never left Internal testing, so its changes ship here too.
+**Adds a native module (`expo-print`) and migration `0020`**, so it goes to
+**Internal testing first**: check the Safe to Spend widget (picker preview,
+logo, "+", long-press Customise), the PDF statement, the Accounts and
+Quick Add widgets, Dropbox backup/restore and notifications on the Pixel,
+then Promote. Contents: refunds, PDF statement, financial year setting +
+Analytics FY shortcuts + yearly category budgets, Black (AMOLED) theme,
+widget polish, plus everything from 4.3.0. `tsc`, lint and 172 tests clean;
+verified on the Pixel_10 emulator except the widget. Build
+`ab104621-f69a-4720-8753-9daad69eeadb`; AAB at
+`https://expo.dev/artifacts/eas/pJ-TJ5hqdRzCC8YrClAvPxjsoCwAlxL82bzxzt4Qv68.aab`.
+
+Release notes to use (5.0.0):
+```
+<en-GB>
+New: Safe to spend today on the Dashboard and as a home-screen widget, per account and combined. Record refunds on any expense. Share a PDF statement for any dates. Set your financial year for This FY / Last FY in Analytics and yearly category budgets. New Black (AMOLED) theme. Budget Mode shows how much of your cap is left, and Commitments no longer hides an occurrence changed with "just this one".
+</en-GB>
+```
+
+**4.3.0 built as versionCode 27 (2026-11-12) — superseded by 5.0.0, never promoted.** Release name
 `Erebor 4.3.0 — Safe to Spend, at a Glance`. **Adds a native widget**
 (`SafeToSpendGlanceWidget`) and migration `0019`, so per the release
 routine it goes to **Internal testing first**: smoke-test the new widget,
