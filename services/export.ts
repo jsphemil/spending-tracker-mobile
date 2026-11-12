@@ -38,7 +38,24 @@ export interface ExportFilters {
 // Fund is blank for anything not spent from one. This is the only export
 // path that enumerates columns by hand — the Dropbox backup is a whole-file
 // VACUUM INTO snapshot, so it picked up the new tables with no change.
-export function buildTransactionsCsv(db: Db, filters: ExportFilters): string {
+export interface ExportRow {
+  date: Date;
+  type: "income" | "expense" | "transfer";
+  account: string;
+  category: string;
+  description: string;
+  /** Signed minor units in the row's own currency; a refund is negative. */
+  amountMinor: number;
+  currency: string;
+  tags: string[];
+  recurring: boolean;
+  fund: string;
+  isOpeningBalance: boolean;
+}
+
+// The filtered, enriched rows behind both exports (CSV and the PDF
+// statement), oldest first.
+export function loadExportRows(db: Db, filters: ExportFilters): ExportRow[] {
   const conditions = [];
   if (filters.from) conditions.push(gte(transactions.date, filters.from));
   if (filters.to) {
@@ -86,23 +103,35 @@ export function buildTransactionsCsv(db: Db, filters: ExportFilters): string {
     tagNamesByTransaction.set(transactionId, list);
   }
 
-  const csvRows = rows.map((t) => {
-    const currency = accountCurrency(t.accountId);
-    return [
-      toLocalDateString(t.date),
-      t.type,
-      t.type === "transfer" ? `${accountName(t.accountId)} → ${accountName(t.toAccountId)}` : accountName(t.accountId),
-      t.isOpeningBalance
-        ? "Opening Balance"
-        : (categoryName(t.categoryId) ?? (t.type === "transfer" ? "" : "Uncategorized")),
-      t.description ?? "",
-      minorToMajor(t.amountMinor, currency),
-      currency,
-      (tagNamesByTransaction.get(t.id) ?? []).join("; "),
-      t.recurringRuleId ? "Yes" : "No",
-      fundName(t.fundId),
-    ];
-  });
+  return rows.map((t) => ({
+    date: t.date,
+    type: t.type,
+    account: t.type === "transfer" ? `${accountName(t.accountId)} → ${accountName(t.toAccountId)}` : accountName(t.accountId),
+    category: t.isOpeningBalance
+      ? "Opening Balance"
+      : (categoryName(t.categoryId) ?? (t.type === "transfer" ? "" : "Uncategorized")),
+    description: t.description ?? "",
+    amountMinor: t.amountMinor,
+    currency: accountCurrency(t.accountId),
+    tags: tagNamesByTransaction.get(t.id) ?? [],
+    recurring: t.recurringRuleId != null,
+    fund: fundName(t.fundId),
+    isOpeningBalance: t.isOpeningBalance,
+  }));
+}
 
+export function buildTransactionsCsv(db: Db, filters: ExportFilters): string {
+  const csvRows = loadExportRows(db, filters).map((r) => [
+    toLocalDateString(r.date),
+    r.type,
+    r.account,
+    r.category,
+    r.description,
+    minorToMajor(r.amountMinor, r.currency),
+    r.currency,
+    r.tags.join("; "),
+    r.recurring ? "Yes" : "No",
+    r.fund,
+  ]);
   return toCsv(CSV_HEADERS, csvRows);
 }

@@ -39,6 +39,7 @@ export function CategoryForm({ initialValues, onSubmit, submitLabel }: CategoryF
       ? String(minorToMajor(initialValues.monthlyBudgetMinor, budgetCurrency))
       : "",
   );
+  const [budgetPeriod, setBudgetPeriod] = useState<"month" | "year">(initialValues?.budgetPeriod ?? "month");
   const [error, setError] = useState<string | null>(null);
   const colors = useThemeColors();
 
@@ -49,7 +50,7 @@ export function CategoryForm({ initialValues, onSubmit, submitLabel }: CategoryF
     }
     const budgetNum = budgetText ? Number(budgetText) : null;
     if (budgetNum !== null && !(budgetNum > 0)) {
-      setError("Monthly budget must be greater than 0");
+      setError("Budget must be greater than 0");
       return;
     }
     setError(null);
@@ -59,6 +60,7 @@ export function CategoryForm({ initialValues, onSubmit, submitLabel }: CategoryF
       icon,
       color,
       monthlyBudgetMinor: budgetNum !== null ? majorToMinor(budgetNum, budgetCurrency) : null,
+      budgetPeriod,
     });
   }
 
@@ -113,8 +115,28 @@ export function CategoryForm({ initialValues, onSubmit, submitLabel }: CategoryF
       {kind === "expense" && (
         <View className="gap-2">
           <Text className="text-sm font-medium text-fg-muted">
-            Monthly Budget ({currencySymbol(budgetCurrency).trim()}, optional)
+            Budget ({currencySymbol(budgetCurrency).trim()}, optional)
           </Text>
+          <View className="flex-row gap-2">
+            {(
+              [
+                ["month", "Per month"],
+                ["year", "Per financial year"],
+              ] as const
+            ).map(([value, label]) => (
+              <Pressable
+                key={value}
+                onPress={() => setBudgetPeriod(value)}
+                accessibilityRole="radio"
+                accessibilityState={{ selected: budgetPeriod === value }}
+                className={`flex-1 items-center rounded-lg border py-2 ${
+                  budgetPeriod === value ? "border-accent bg-accent-soft" : "border-glass-border bg-glass"
+                }`}
+              >
+                <Text className={budgetPeriod === value ? "text-accent" : "text-fg-muted"}>{label}</Text>
+              </Pressable>
+            ))}
+          </View>
           <Input
             value={budgetText}
             onChangeText={setBudgetText}

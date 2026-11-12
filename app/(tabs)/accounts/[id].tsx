@@ -184,7 +184,8 @@ export default function AccountDetailScreen() {
   // Forward + Total In, Used eats into it, Available is what's left —
   // exactly leftToSpend/endingBalance.
   const availableFundsMinor = carryForwardMinor + totalInMinor;
-  const usedFraction = availableFundsMinor > 0 ? totalOutMinor / availableFundsMinor : null;
+  // Refunds can push Total out below zero; the ring starts empty then.
+  const usedFraction = availableFundsMinor > 0 ? Math.max(0, totalOutMinor / availableFundsMinor) : null;
   const percentSpent = usedFraction !== null ? usedFraction * 100 : null;
 
   const breakdownSections = [
@@ -367,7 +368,7 @@ export default function AccountDetailScreen() {
                 <View className="h-1.5 overflow-hidden rounded-full bg-surface-3">
                   <View
                     className={`h-full ${overBudget ? "bg-danger" : "bg-accent-fill"}`}
-                    style={{ width: `${Math.min(100, (totalOutMinor / account.budgetMonthlyMinor!) * 100)}%` }}
+                    style={{ width: `${Math.max(0, Math.min(100, (totalOutMinor / account.budgetMonthlyMinor!) * 100))}%` }}
                   />
                 </View>
                 <Text className={`text-xs ${overBudget ? "font-medium text-danger" : "text-fg-subtle"}`}>
@@ -388,7 +389,12 @@ export default function AccountDetailScreen() {
                 <CurrencyAmount amountMinor={totalInMinor} currency={account.currency} prefix="+" className="text-base text-success" />
               </FigureRow>
               <FigureRow label="Total out">
-                <CurrencyAmount amountMinor={totalOutMinor} currency={account.currency} prefix="−" className="text-base text-fg" />
+                <CurrencyAmount
+                  amountMinor={Math.abs(totalOutMinor)}
+                  currency={account.currency}
+                  prefix={totalOutMinor < 0 ? "+" : "−"}
+                  className="text-base text-fg"
+                />
               </FigureRow>
               <FigureRow label="Left to spend">
                 <CurrencyAmount

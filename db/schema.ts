@@ -28,7 +28,9 @@ export type CategoryKind = (typeof CATEGORY_KINDS)[number];
 export const RECURRENCE_UNITS = ["day", "week", "month", "year"] as const;
 export type RecurrenceUnit = (typeof RECURRENCE_UNITS)[number];
 
-export const THEME_PREFERENCES = ["light", "dark", "system"] as const;
+// "black" is AMOLED: the dark palette on true black (5.0.0). The column is
+// plain text, so adding a value needs no migration.
+export const THEME_PREFERENCES = ["light", "dark", "black", "system"] as const;
 export type ThemePreference = (typeof THEME_PREFERENCES)[number];
 
 // How the Tags overview is laid out (spec.md §5.3a, 2026-09-15).
@@ -75,6 +77,10 @@ export const categories = sqliteTable("categories", {
   // "only meaningful for one type" pattern — always this-month, no month-nav
   // (matches the real app's categories/page.tsx design note).
   monthlyBudgetMinor: integer("monthly_budget_minor"),
+  // What monthlyBudgetMinor covers (5.0.0): "month" (the calendar month) or
+  // "year" (the financial year, starting at settings.fyStartMonth). The
+  // column keeps its historical name; it is simply "the budget amount".
+  budgetPeriod: text("budget_period", { enum: ["month", "year"] }).notNull().default("month"),
 });
 
 export const tags = sqliteTable("tags", {
@@ -313,6 +319,9 @@ export const settings = sqliteTable("settings", {
   themePreference: text("theme_preference", { enum: THEME_PREFERENCES })
     .notNull()
     .default("system"),
+  // First month of the user's financial year, 1–12 (5.0.0). April by
+  // default (India). Drives Analytics' FY shortcut and yearly budgets.
+  fyStartMonth: integer("fy_start_month").notNull().default(4),
   // Gates the first-run onboarding flow (spec.md §5.13). Migration 0005
   // backfills this to true for any row that already has accounts, so
   // existing installs with real data never get sent through onboarding.

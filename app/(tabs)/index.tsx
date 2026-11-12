@@ -12,6 +12,7 @@ import { shouldShowWhatsNew } from "../../constants/changelog";
 import { parseDashboardLayout, type CardId } from "../../constants/dashboardCards";
 import { updateSettings } from "../../db/actions/settings";
 import { db } from "../../db/client";
+import { accounts as accountsTable } from "../../db/schema";
 import { useCategories } from "../../db/queries/categories";
 import { useFunds } from "../../db/queries/funds";
 import { useSettings } from "../../db/queries/settings";
@@ -21,6 +22,7 @@ import { appVersionLabel } from "../../services/feedbackLink";
 import { formatMoney } from "../../services/format";
 import { computeFundProgress, emptyFundBalance } from "../../services/funds";
 import { currentMonthPeriod, daysRemainingInMonth, monthRange, shiftMonth, type MonthPeriod } from "../../services/period";
+import { budgetRange, spendByCategory } from "../../services/categoryBudget";
 import { countsTowardSafeToSpend, leftToSpendMinor, safeToSpendPerDayMinor } from "../../services/safeToSpend";
 import { ensureMaterialized } from "../../services/recurrence";
 import { useThemeColors, type ThemeColors } from "../../theme/palette";
@@ -65,7 +67,13 @@ export default function DashboardScreen() {
   // memory across midnight (or a month end) kept showing yesterday's month,
   // and V4 has no month arrows to move on with.
   const [dayKey, setDayKey] = useState(() => new Date().toDateString());
-  const refreshDay = useCallback(() => setDayKey(new Date().toDateString()), []);
+  // The Safe to Spend widget's Customise screen writes the per-account flag
+  // natively, which live queries can't see, so re-read it on focus too.
+  const [focusTick, setFocusTick] = useState(0);
+  const refreshDay = useCallback(() => {
+    setDayKey(new Date().toDateString());
+    setFocusTick((t) => t + 1);
+  }, []);
   useFocusEffect(refreshDay);
   useEffect(() => {
     const sub = AppState.addEventListener("change", (s) => s === "active" && refreshDay());
@@ -95,8 +103,13 @@ export default function DashboardScreen() {
   // in its own currency, then totalled in base. A foreign account with no
   // cached rate converts to 0 and is flagged below rather than guessed.
   const safeDays = daysRemainingInMonth(period) ?? 1;
+  const safeFlags = useMemo(
+    () => new Map(db.select({ id: accountsTable.id, flag: accountsTable.safeToSpendEnabled }).from(accountsTable).all().map((r) => [r.id, r.flag])),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- focusTick is the refresh signal
+    [accounts, focusTick],
+  );
   const safeAccounts = (accounts ?? [])
-    .filter(countsTowardSafeToSpend)
+    .filter((a) => countsTowardSafeToSpend({ ...a, safeToSpendEnabled: safeFlags.get(a.id) ?? a.safeToSpendEnabled }))
     .map((a) => ({
       account: a,
       perDayMinor: safeToSpendPerDayMinor(leftToSpendMinor(a, accountBalanceAsOf?.get(a.id) ?? 0), safeDays),
@@ -111,15 +124,17 @@ export default function DashboardScreen() {
   const currentRange = useMemo(() => monthRange(period), [period]);
   const { data: currentMonthTx } = useFilteredTransactions({ range: currentRange });
 
-  const spendByCategory = new Map<number, number>();
-  for (const t of currentMonthTx ?? []) {
-    if (t.type !== "expense" || t.categoryId === null) continue;
-    const acctCurrency = accounts?.find((a) => a.id === t.accountId)?.currency ?? baseCurrency;
-    spendByCategory.set(t.categoryId, (spendByCategory.get(t.categoryId) ?? 0) + toBaseMinor(t.amountMinor, acctCurrency));
-  }
+  // Yearly category budgets (5.0.0) are checked against the financial year.
+  const fyStartMonth = settings?.fyStartMonth ?? 4;
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- dayKey is the refresh signal
+  const fyRange = useMemo(() => budgetRange("year", fyStartMonth), [fyStartMonth, dayKey]);
+  const { data: fyTx } = useFilteredTransactions({ range: fyRange });
+  const currencyOf = (id: number) => accounts?.find((a) => a.id === id)?.currency ?? baseCurrency;
+  const monthSpend = spendByCategory(currentMonthTx ?? [], currencyOf, toBaseMinor);
+  const fySpend = spendByCategory(fyTx ?? [], currencyOf, toBaseMinor);
   const overBudgetCategories = (categories ?? [])
     .filter((c) => c.kind === "expense" && c.monthlyBudgetMinor != null)
-    .map((c) => ({ ...c, spentMinor: spendByCategory.get(c.id) ?? 0 }))
+    .map((c) => ({ ...c, spentMinor: (c.budgetPeriod === "year" ? fySpend : monthSpend).get(c.id) ?? 0 }))
     .filter((c) => c.spentMinor > c.monthlyBudgetMinor!);
 
   const today = useMemo(() => {

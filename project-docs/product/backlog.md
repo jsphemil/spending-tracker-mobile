@@ -67,6 +67,7 @@
 - **In-app Info/Tips reference page** (Profile) — a fuller explainer than the one-time onboarding intro above. User explicitly said "later" — deferred, no phase assigned. Accepted into current work (deferred) — spec.md §5.15.
 
 ## In Progress
+- **5.0.0** (spec.md §5.26) — refunds, PDF statement, FY setting + Analytics FY shortcuts + yearly category budgets, Black theme, Safe to Spend widget polish (logo, +, preview, Customise). Built 2026-11-12; emulator-verified except the widget; next: EAS build → Internal testing → widget check on the Pixel → Production (4.3.0 is superseded, never promoted).
 
 ## Done
 - **4.3.0 usage-observation batch** (spec.md §5.25) — Safe to Spend (Dashboard card, per-account toggle, new widget), Budget Mode remaining cap, Commitments split-rule bug, net worth eye removed. Built 2026-11-12, EAS vc27 (`4aa9cf69-6cf3-4e0f-b336-048a819d830b`); app changes verified on the emulator, widget verified on the Pixel via Internal testing 2026-11-12. Production promotion pending. Widget follow-ups logged in the Obsidian usage note.

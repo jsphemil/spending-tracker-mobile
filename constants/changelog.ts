@@ -16,14 +16,17 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
-    version: "4.3.0",
+    // 4.3.0 only reached Internal testing, so its changes are listed here too.
+    version: "5.0.0",
     date: "2026-11-12",
-    title: "Safe to spend, at a glance",
+    title: "Safe to spend, refunds and statements",
     highlights: [
-      "New: Safe to spend today on the Dashboard and as a home-screen widget — what you can spend per day for the rest of the month, for each counted account and combined. Choose which accounts count with \"Count toward Safe to Spend\" when editing an account; savings and wallets count by default.",
-      "Budget Mode now shows how much of your monthly spending cap is left, and says plainly that it's a limit you set, not your balance.",
-      "Fixed Commitments hiding an upcoming occurrence you'd changed with \"just this one\" after a later \"this and all future\" edit.",
-      "The net worth hide/show eye is gone — amounts are always shown.",
+      "New: Safe to spend today, on the Dashboard and as a home-screen widget, per account and combined. Choose which accounts count when editing an account or from the widget's Customise screen. The widget has a + to add an expense.",
+      "Refunds: on an expense, tap Refund. The money goes back to the account and that category's spending goes down — it isn't counted as income.",
+      "Share a PDF statement for any dates and accounts, from Settings → Export & Statements.",
+      "Set when your financial year starts (Settings → Financial Year). Analytics has This FY and Last FY shortcuts, and category budgets can now be per financial year.",
+      "A Black (AMOLED) theme, for true black on OLED screens.",
+      "Budget Mode now shows how much of your monthly cap is left. Fixed Commitments hiding an upcoming occurrence changed with \"just this one\". The net worth hide/show eye has been removed.",
     ],
   },
   {

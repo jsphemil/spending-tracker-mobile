@@ -131,7 +131,9 @@ export function getFundBalances(
   for (const { id, status, closedAt } of fundRows) {
     const allocatedMinor = allocated.get(id) ?? 0;
     const spentMinor = spent.get(id) ?? 0;
-    const consumedMinor = Math.min(allocatedMinor, spentMinor);
+    // Refunds are negative expenses; net refunded spending consumes nothing
+    // rather than inflating what the fund holds.
+    const consumedMinor = Math.min(allocatedMinor, Math.max(0, spentMinor));
     const heldMinor = allocatedMinor - consumedMinor;
     // Exclusive, matching asOfDate's own semantics: a cutoff exactly at
     // closedAt means "up to but not including the close".

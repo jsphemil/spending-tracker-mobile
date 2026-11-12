@@ -41,7 +41,7 @@ function defaultFilters(): TransactionFilters {
 }
 
 function amountForms(amountMinor: number, currency: string): string[] {
-  const major = minorToMajor(amountMinor, currency);
+  const major = minorToMajor(Math.abs(amountMinor), currency);
   return [String(major), major.toFixed(minorUnitsFor(currency))];
 }
 

@@ -140,6 +140,19 @@ describe("frequentAmountsQuery", () => {
     expect(rows[1]).toEqual({ amountMinor: 1000, count: 1 });
   });
 
+  it("never suggests a refund (negative) amount", () => {
+    const accountId = insertAccount(db);
+    const groceries = insertCategory({ name: "Groceries" });
+    db.insert(transactions)
+      .values([
+        { type: "expense", amountMinor: -500, date: new Date("2026-02-01"), accountId, categoryId: groceries },
+        { type: "expense", amountMinor: -500, date: new Date("2026-02-02"), accountId, categoryId: groceries },
+        { type: "expense", amountMinor: 900, date: new Date("2026-02-03"), accountId, categoryId: groceries },
+      ])
+      .run();
+    expect(frequentAmountsQuery(db, groceries, cutoff).all().map((r) => r.amountMinor)).toEqual([900]);
+  });
+
   it("returns nothing for a category with no history, letting the caller fall back", () => {
     const groceries = insertCategory({ name: "Groceries" });
     expect(frequentAmountsQuery(db, groceries, cutoff).all()).toEqual([]);

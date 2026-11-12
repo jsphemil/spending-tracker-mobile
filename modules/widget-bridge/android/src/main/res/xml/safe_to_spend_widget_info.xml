@@ -10,4 +10,7 @@
     android:widgetCategory="home_screen"
     android:initialLayout="@layout/glance_default_loading_layout"
     android:description="@string/safe_to_spend_widget_description"
+    android:previewLayout="@layout/safe_to_spend_widget_preview"
+    android:widgetFeatures="reconfigurable|configuration_optional"
+    android:configure="expo.modules.widgetbridge.SafeToSpendWidgetConfigActivity"
     android:updatePeriodMillis="1800000" />

@@ -187,6 +187,7 @@ function ExtraButton({ icon, label, set, onPress }: { icon: string; label: strin
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
+      accessibilityState={{ selected: set }}
       className={`flex-1 flex-row items-center justify-center gap-1.5 rounded-lg border px-2 py-2.5 ${
         set ? "border-accent bg-accent-soft" : "border-glass-border"
       }`}
@@ -226,8 +227,15 @@ export function TransactionForm({
     if (initialValues?.amountMinor == null) return "";
     const initialCurrency =
       accounts?.find((a) => a.id === initialValues.accountId)?.currency ?? "INR";
-    return String(minorToMajor(initialValues.amountMinor, initialCurrency));
+    return String(minorToMajor(Math.abs(initialValues.amountMinor), initialCurrency));
   });
+  // A refund is stored as an expense with a negative amount, so every
+  // expense total, category breakdown, budget and balance (the widgets'
+  // Kotlin SQL included) nets it with no special case. The form edits the
+  // absolute amount and this flag.
+  const [isRefund, setIsRefund] = useState(
+    initialValues?.type === "expense" && (initialValues.amountMinor ?? 0) < 0,
+  );
   // accounts may not be loaded yet on first render, so re-derive the
   // initial amount text once they arrive — guarded to run only once so it
   // never clobbers what the user has since typed.
@@ -243,7 +251,7 @@ export function TransactionForm({
     // above means this runs at most once and never overwrites typed input,
     // so the extra render is a one-off on open, not a cascade.
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setAmountText(String(minorToMajor(initialValues.amountMinor, initialCurrency)));
+    setAmountText(String(minorToMajor(Math.abs(initialValues.amountMinor), initialCurrency)));
     // Runs once, guarded by the ref above; initialValues is captured on
     // purpose so later prop churn can't clobber what the user has typed.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -428,7 +436,7 @@ export function TransactionForm({
 
     const values: TransactionFormValues = {
       type,
-      amountMinor: majorToMinor(amount, currency),
+      amountMinor: majorToMinor(amount, currency) * (type === "expense" && isRefund ? -1 : 1),
       date,
       accountId,
       toAccountId: type === "transfer" ? toAccountId : null,
@@ -638,12 +646,22 @@ export function TransactionForm({
           />
         </View>
 
+        {type === "expense" && isRefund && (
+          <Text className="-mb-2 text-xs text-fg-muted">
+            Refund: puts the money back in the account and lowers this category&rsquo;s spending. It isn&rsquo;t counted as income.
+          </Text>
+        )}
         <View className="flex-row gap-2">
           {type === "expense" && activeFunds.length > 0 && (
             <ExtraButton icon="piggy-bank" label={fundLabel} set={fundId !== null} onPress={() => openSheet("fund")} />
           )}
+          {/* A refund is one-off: never on a recurring series (it would make
+              a negative commitment), so Refund and Repeat exclude each other. */}
+          {type === "expense" && !isRecurringEdit && !recurring && (
+            <ExtraButton icon="refund" label="Refund" set={isRefund} onPress={() => setIsRefund((v) => !v)} />
+          )}
           <ExtraButton icon="tag-outline" label={tagsLabel} set={tagIds.length > 0} onPress={() => openSheet("tags")} />
-          {showRepeatButton && (
+          {showRepeatButton && !(type === "expense" && isRefund) && (
             <ExtraButton icon="repeat" label={repeatLabel} set={recurring || isRecurringEdit} onPress={() => openSheet("repeat")} />
           )}
         </View>

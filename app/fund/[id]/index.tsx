@@ -290,7 +290,8 @@ export default function FundDetailScreen() {
                     }`}
                   >
                     {entry.kind === "spend"
-                      ? `−${formatMoney(entry.amountMinor, entry.currency)}`
+                      ? // A refund is a negative expense — money back into the fund.
+                        `${entry.amountMinor < 0 ? "+" : "−"}${formatMoney(Math.abs(entry.amountMinor), entry.currency)}`
                       : `${entry.amountMinor >= 0 ? "+" : "−"}${formatMoney(Math.abs(entry.amountMinor), baseCurrency)}`}
                   </Text>
                   {entry.kind === "allocation" && (

@@ -95,7 +95,7 @@ export default function RootLayout() {
       <View style={[{ flex: 1 }, vars(cssVars(scheme))]}>
       <SafeAreaProvider>
       <PaperProvider theme={paperTheme(scheme)}>
-        <StatusBar style={scheme === "dark" ? "light" : "dark"} />
+        <StatusBar style={scheme === "light" ? "dark" : "light"} />
         {error ? (
           <View className="flex-1 items-center justify-center bg-bg p-6">
             <Text className="text-center text-danger">

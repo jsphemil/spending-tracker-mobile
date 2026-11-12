@@ -2,7 +2,7 @@ package expo.modules.widgetbridge
 
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
+import android.graphics.Bitmap
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
@@ -12,6 +12,8 @@ import androidx.compose.ui.unit.sp
 import androidx.datastore.preferences.core.Preferences
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
+import androidx.glance.Image
+import androidx.glance.ImageProvider
 import androidx.glance.LocalSize
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
@@ -29,6 +31,8 @@ import androidx.glance.layout.Box
 import androidx.glance.layout.Column
 import androidx.glance.layout.Row
 import androidx.glance.layout.Spacer
+import androidx.glance.semantics.contentDescription
+import androidx.glance.semantics.semantics
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.height
@@ -46,36 +50,69 @@ import kotlinx.coroutines.withContext
 // per-account toggle in the app, shared with the Dashboard card), each
 // one's per-day figure, and the combined total in base currency. No
 // per-widget configuration: which accounts count is the app's setting.
-// Same dark palette as AccountsGlanceWidget. Tapping opens the app.
+// Same dark palette as AccountsGlanceWidget. Tapping the card opens the app;
+// the "+" opens a new expense (the widget is about spending — the type
+// switch on that screen covers the rare income/transfer). Background
+// opacity is per widget, set from SafeToSpendWidgetConfigActivity.
+// Opaque by default: widgets placed on 4.3.0 had a solid card, and
+// configuration_optional means they never see the Customise screen.
+internal const val SAFE_TO_SPEND_DEFAULT_OPACITY_PCT = 100
+
 class SafeToSpendGlanceWidget : GlanceAppWidget() {
   override val sizeMode = SizeMode.Exact
 
   override suspend fun provideGlance(context: Context, id: GlanceId) {
-    val openApp = context.packageManager.getLaunchIntentForPackage(context.packageName)
-      ?: Intent(Intent.ACTION_VIEW, Uri.parse("spendingtracker://"))
+    val openApp = launchAppIntent(context)
+    val icon = currentAppIconBitmap(context)
 
     provideContent {
-      // Bumped by WidgetBridgeModule.refreshAccountsWidget after any write.
-      val dataVersion = currentState<Preferences>()[KEY_DATA_VERSION] ?: 0
+      val prefs = currentState<Preferences>()
+      // Bumped by WidgetBridgeModule.refreshAccountsWidget after any write,
+      // and by the Customise screen.
+      val dataVersion = prefs[KEY_DATA_VERSION] ?: 0
+      val opacityPct = prefs[KEY_OPACITY_PCT] ?: SAFE_TO_SPEND_DEFAULT_OPACITY_PCT
       val data by produceState<SafeToSpendData?>(null, dataVersion) {
         value = withContext(Dispatchers.IO) { getSafeToSpendForWidget(context) }
       }
-      Content(data, openApp)
+      Content(data, openApp, icon, opacityPct)
     }
   }
 
   @Composable
-  private fun Content(data: SafeToSpendData?, openApp: Intent) {
+  private fun Content(data: SafeToSpendData?, openApp: Intent, icon: Bitmap, opacityPct: Int) {
     val compact = LocalSize.current.height < 150.dp
     Column(
       modifier = GlanceModifier
         .fillMaxSize()
         .cornerRadius(24.dp)
-        .background(CARD_BG)
+        .background(CARD_BG.copy(alpha = opacityPct.coerceIn(0, 100) / 100f))
         .padding(16.dp)
         .clickable(actionStartActivity(openApp)),
     ) {
-      Text("Safe to spend today", style = TextStyle(fontSize = 12.sp, color = ColorProvider(TEXT_SECONDARY)))
+      Row(modifier = GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Image(
+          provider = ImageProvider(icon),
+          contentDescription = null,
+          modifier = GlanceModifier.size(18.dp).cornerRadius(9.dp),
+        )
+        Spacer(GlanceModifier.width(8.dp))
+        Text(
+          "Safe to spend today",
+          style = TextStyle(fontSize = 12.sp, color = ColorProvider(TEXT_SECONDARY)),
+          modifier = GlanceModifier.defaultWeight(),
+        )
+        Box(
+          modifier = GlanceModifier
+            .size(40.dp)
+            .cornerRadius(20.dp)
+            .background(ACCENT_FILL)
+            .clickable(actionStartActivity(newTransactionIntent("expense")))
+            .semantics { contentDescription = "Add expense" },
+          contentAlignment = Alignment.Center,
+        ) {
+          Text("+", style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.Bold, color = ColorProvider(Color.White)))
+        }
+      }
       when {
         data == null -> Text(
           "Open Erebor to load",
@@ -135,6 +172,7 @@ class SafeToSpendGlanceWidget : GlanceAppWidget() {
     val TEXT_PRIMARY = Color(0xFFF2F2F3)
     val TEXT_SECONDARY = Color(0xFFA9A9AC)
     val TEXT_SUBTLE = Color(0xFF8E8E91)
+    val ACCENT_FILL = Color(0xFF0D51FB)
   }
 }
 

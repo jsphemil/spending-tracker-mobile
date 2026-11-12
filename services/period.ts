@@ -121,3 +121,20 @@ export function customRanges(
     previous: { start: new Date(start.getFullYear(), start.getMonth(), start.getDate() - days), end: start },
   };
 }
+
+// The financial year containing `date`, for a year starting on the 1st of
+// `startMonth` (1–12). `offset` moves whole years (-1 = the previous FY).
+// `start`/`end` are a half-open range like monthRange; `label` is
+// "FY 2026–27", or "FY 2026" when the year starts in January.
+export function financialYear(
+  date: Date,
+  startMonth: number,
+  offset = 0,
+): { start: Date; end: Date; label: string } {
+  const m = startMonth - 1;
+  const startYear = (date.getMonth() >= m ? date.getFullYear() : date.getFullYear() - 1) + offset;
+  const start = new Date(startYear, m, 1);
+  const end = new Date(startYear + 1, m, 1);
+  const label = m === 0 ? `FY ${startYear}` : `FY ${startYear}–${String((startYear + 1) % 100).padStart(2, "0")}`;
+  return { start, end, label };
+}

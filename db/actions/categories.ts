@@ -9,6 +9,7 @@ export interface CategoryInput {
   icon: string;
   color: string;
   monthlyBudgetMinor?: number | null;
+  budgetPeriod?: "month" | "year";
 }
 
 export function createCategory(input: CategoryInput): number {

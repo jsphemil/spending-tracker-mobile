@@ -11,6 +11,7 @@ const OPTION_LABELS: Record<ThemePreference, { label: string; sublabel: string; 
   system: { label: "System", sublabel: "Match your device setting", icon: "settings-outline" },
   light: { label: "Light", sublabel: "Always use the light palette", icon: "star" },
   dark: { label: "Dark", sublabel: "Always use the dark palette", icon: "shield" },
+  black: { label: "Black (AMOLED)", sublabel: "Dark on true black — saves power on OLED screens", icon: "shield" },
 };
 
 // Reinstates the Light/Dark/System choice removed in the §5.18 dark-only

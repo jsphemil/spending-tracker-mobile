@@ -43,7 +43,8 @@ export function CalendarMonthGrid({ period, currency, expenseByDay }: CalendarMo
               <Link href={`/transaction/new?date=${dateStr}`} asChild>
                 <Pressable className="aspect-square items-center justify-center rounded-lg border border-glass-border">
                   <Text className="text-sm text-fg">{day}</Text>
-                  {expense ? (
+                  {/* Days netted to zero or below by refunds show no spend. */}
+                  {expense > 0 ? (
                     <Text className="font-data text-xs tabular-nums text-danger" numberOfLines={1}>
                       {formatMoney(expense, currency)}
                     </Text>

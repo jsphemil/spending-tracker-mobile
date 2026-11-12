@@ -462,3 +462,55 @@ fun getSafeToSpendForWidget(context: Context): SafeToSpendData? {
     db.close()
   }
 }
+
+data class SafeToSpendOption(val id: Long, val name: String, val type: String, val counts: Boolean)
+
+// Every account with its resolved "counts toward Safe to Spend" state, for
+// the widget's Customise screen. Same rule as getSafeToSpendForWidget.
+fun getSafeToSpendOptions(context: Context): List<SafeToSpendOption> {
+  val db = openReadOnlyDb(context) ?: return emptyList()
+  try {
+    val result = mutableListOf<SafeToSpendOption>()
+    db.rawQuery(
+      "SELECT id, name, type, safe_to_spend_enabled FROM accounts ORDER BY sort_order ASC, id ASC",
+      null,
+    ).use { c ->
+      while (c.moveToNext()) {
+        val type = c.getString(2)
+        val counts = if (c.isNull(3)) type == "savings" || type == "wallet" else c.getInt(3) != 0
+        result += SafeToSpendOption(c.getLong(0), c.getString(1), type, counts)
+      }
+    }
+    return result
+  } catch (error: Exception) {
+    Log.w("WidgetBridge", "Could not load safe-to-spend options", error)
+    return emptyList()
+  } finally {
+    db.close()
+  }
+}
+
+// Writes the app's own per-account setting (accounts.safe_to_spend_enabled),
+// so the widget's Customise screen and the app's account switch are one
+// setting, not two. Only accounts whose state actually changed are written,
+// as explicit booleans — the same thing flipping the switch in the app does.
+fun setSafeToSpendFlags(context: Context, changes: Map<Long, Boolean>) {
+  if (changes.isEmpty()) return
+  val db = openReadWriteDb(context)
+  try {
+    db.beginTransaction()
+    try {
+      changes.forEach { (id, counts) ->
+        db.execSQL(
+          "UPDATE accounts SET safe_to_spend_enabled = ? WHERE id = ?",
+          arrayOf<Any>(if (counts) 1 else 0, id),
+        )
+      }
+      db.setTransactionSuccessful()
+    } finally {
+      db.endTransaction()
+    }
+  } finally {
+    db.close()
+  }
+}

@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Shown in the launcher's widget picker (android:previewLayout, Android 12+).
+     A static mock of SafeToSpendGlanceWidget with sample figures, so the
+     picker shows what the widget looks like instead of a blank tile. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/safe_to_spend_preview_bg"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+  <LinearLayout
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:gravity="center_vertical"
+      android:orientation="horizontal">
+    <ImageView
+        android:layout_width="18dp"
+        android:layout_height="18dp"
+        android:src="@drawable/ic_erebor_mark"
+        android:importantForAccessibility="no" />
+    <TextView
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_weight="1"
+        android:text="Safe to spend today"
+        android:textColor="#A9A9AC"
+        android:textSize="12sp" />
+    <TextView
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:background="@drawable/safe_to_spend_preview_plus"
+        android:gravity="center"
+        android:text="+"
+        android:textColor="#FFFFFF"
+        android:textSize="20sp"
+        android:textStyle="bold" />
+  </LinearLayout>
+
+  <TextView
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="₹1,198.53"
+      android:textColor="#F2F2F3"
+      android:textSize="28sp"
+      android:textStyle="bold" />
+  <TextView
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="per day · 19 days left"
+      android:textColor="#8E8E91"
+      android:textSize="11sp" />
+  <TextView
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="10dp"
+      android:text="Wallet  ₹70.00    Salary  ₹787.74    Expense  ₹340.79"
+      android:textColor="#F2F2F3"
+      android:textSize="12sp" />
+</LinearLayout>

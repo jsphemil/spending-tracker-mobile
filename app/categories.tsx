@@ -14,7 +14,8 @@ import { ScreenHeader } from "../components/ScreenHeader";
 import { FirstVisitHint } from "../components/FirstVisitHint";
 import { useBaseConverter } from "../hooks/useBaseConverter";
 import { formatMoney } from "../services/format";
-import { currentMonthPeriod, monthRange } from "../services/period";
+import { budgetRange, spendByCategory } from "../services/categoryBudget";
+import { currentMonthPeriod, financialYear, monthRange } from "../services/period";
 import { ensureMaterialized } from "../services/recurrence";
 import { EmptyState } from "../components/ui/EmptyState";
 import { useThemeColors } from "../theme/palette";
@@ -35,6 +36,11 @@ export default function CategoriesScreen() {
     ensureMaterialized(db, { through: range.end });
   }, [range.end]);
   const { data: monthTransactions } = useFilteredTransactions({ range });
+  // Yearly budgets (5.0.0) measure the financial year containing today.
+  const fyStartMonth = settings?.fyStartMonth ?? 4;
+  const fyRange = useMemo(() => budgetRange("year", fyStartMonth), [fyStartMonth]);
+  const fyLabel = financialYear(new Date(), fyStartMonth).label;
+  const { data: fyTransactions } = useFilteredTransactions({ range: fyRange });
 
   const { toBaseMinor } = useBaseConverter((accounts ?? []).map((a) => a.currency));
 
@@ -51,6 +57,15 @@ export default function CategoriesScreen() {
     }
     return totals;
   }, [monthTransactions, accounts, toBaseMinor, kind]);
+  const fySpentByCategoryMinor = useMemo(
+    () =>
+      spendByCategory(
+        fyTransactions ?? [],
+        (id) => accounts?.find((a) => a.id === id)?.currency ?? "INR",
+        toBaseMinor,
+      ),
+    [fyTransactions, accounts, toBaseMinor],
+  );
 
   return (
     <View className="flex-1 bg-bg">
@@ -87,10 +102,12 @@ export default function CategoriesScreen() {
         ListHeaderComponent={<FirstVisitHint id="categories" className="mb-3" />}
         ListEmptyComponent={<EmptyState message="No categories yet." />}
         renderItem={({ item }) => {
-          const spentMinor = spentByCategoryMinor.get(item.id) ?? 0;
           const hasBudget = item.kind === "expense" && item.monthlyBudgetMinor != null;
+          const yearly = hasBudget && item.budgetPeriod === "year";
+          const spentMinor = (yearly ? fySpentByCategoryMinor : spentByCategoryMinor).get(item.id) ?? 0;
           const budgetMinor = item.monthlyBudgetMinor ?? 0;
-          const fraction = hasBudget && budgetMinor > 0 ? spentMinor / budgetMinor : 0;
+          // A refund can take net spending below zero; the bar starts empty.
+          const fraction = hasBudget && budgetMinor > 0 ? Math.max(0, spentMinor / budgetMinor) : 0;
           const overBudget = hasBudget && spentMinor > budgetMinor;
 
           return (
@@ -109,7 +126,7 @@ export default function CategoriesScreen() {
                   <Text className="flex-1 text-base text-fg">{item.name}</Text>
                   <Text className={`font-data text-xs tabular-nums ${overBudget ? "text-danger" : "text-fg-muted"}`}>
                     {hasBudget
-                      ? `${formatMoney(spentMinor, baseCurrency)} / ${formatMoney(budgetMinor, baseCurrency)}`
+                      ? `${formatMoney(spentMinor, baseCurrency)} / ${formatMoney(budgetMinor, baseCurrency)}${yearly ? ` · ${fyLabel}` : ""}`
                       : formatMoney(spentMinor, baseCurrency)}
                   </Text>
                 </View>

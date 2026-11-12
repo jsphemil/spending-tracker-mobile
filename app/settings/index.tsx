@@ -41,6 +41,12 @@ export default function SettingsScreen() {
           sublabel={settings.baseCurrency}
           href="/settings/currency"
         />
+        <SettingsRow
+          icon="calendar-range"
+          label="Financial Year"
+          sublabel={`Starts in ${new Date(2000, (settings.fyStartMonth ?? 4) - 1, 1).toLocaleDateString(undefined, { month: "long" })}`}
+          href="/settings/financial-year"
+        />
         <SettingsRow icon="information-outline" label="Notifications" href="/settings/notifications" />
         <SettingsRow icon="settings-outline" label="Appearance" href="/settings/appearance" />
         <SettingsRow
@@ -71,7 +77,8 @@ export default function SettingsScreen() {
       </View>
 
       <SettingsSection title="Your Data">
-        <SettingsRow icon="receipt" label="Export Transactions (CSV)" href="/settings/export" last />
+        <SettingsRow icon="receipt" label="Export & Statements"
+          sublabel="PDF statement or CSV" href="/settings/export" last />
       </SettingsSection>
     </ScreenScrollView>
   );

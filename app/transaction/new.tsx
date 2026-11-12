@@ -48,9 +48,16 @@ export default function NewTransactionScreen() {
   const confirm = (values: { type: TransactionType; amountMinor: number; accountId: number; toAccountId?: number | null }, recurring: boolean) => {
     const account = accounts?.find((a) => a.id === values.accountId);
     const to = accounts?.find((a) => a.id === values.toAccountId);
-    const kind = values.type === "income" ? "Income" : values.type === "expense" ? "Expense" : "Transfer";
+    const kind =
+      values.type === "income"
+        ? "Income"
+        : values.type === "expense"
+          ? values.amountMinor < 0
+            ? "Refund"
+            : "Expense"
+          : "Transfer";
     const title = recurring ? `Recurring ${kind.toLowerCase()} set up` : `${kind} recorded`;
-    const amount = formatMoney(values.amountMinor, account?.currency ?? "INR");
+    const amount = formatMoney(Math.abs(values.amountMinor), account?.currency ?? "INR");
     const where = values.type === "transfer" ? `${account?.name ?? "?"} → ${to?.name ?? "?"}` : (account?.name ?? "");
     if (router.canGoBack()) showSaved({ title, detail: `${amount} · ${where}`, accountId: values.accountId });
     else ToastAndroid.show(`${title}: ${amount}`, ToastAndroid.SHORT);

@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, gte, ne, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gt, gte, ne, sql } from "drizzle-orm";
 
 import type { Db } from "../db/client";
 import { categories, transactions, type CategoryKind } from "../db/schema";
@@ -76,6 +76,8 @@ export function frequentAmountsQuery(db: Db, categoryId: number, cutoff: Date) {
         eq(transactions.categoryId, categoryId),
         eq(transactions.isOpeningBalance, false),
         gte(transactions.date, cutoff),
+        // Refunds are stored as negative expenses; never suggest one as a quick amount.
+        gt(transactions.amountMinor, 0),
       ),
     )
     .groupBy(transactions.amountMinor)

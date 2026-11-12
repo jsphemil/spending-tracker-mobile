@@ -2,11 +2,13 @@ import { useState } from "react";
 import { Alert, Pressable, Text, View } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Directory, File, Paths } from "expo-file-system";
+import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
 
 import { db } from "../db/client";
 import { useAccounts } from "../db/queries/accounts";
-import { buildTransactionsCsv } from "../services/export";
+import { buildTransactionsCsv, loadExportRows } from "../services/export";
+import { buildStatementHtml } from "../services/pdfReport";
 import { toLocalDateString } from "../services/period";
 import { Button } from "./ui/Button";
 
@@ -30,6 +32,33 @@ export function ExportTransactionsForm() {
       else next.add(id);
       return next;
     });
+  }
+
+  // PDF statement (5.0.0): same filters as the CSV, rendered by expo-print.
+  async function handlePdf() {
+    setExporting(true);
+    try {
+      const ids = Array.from(selectedAccountIds);
+      const html = buildStatementHtml(loadExportRows(db, { accountIds: ids, from, to }), {
+        from,
+        to,
+        accountNames: (accounts ?? []).filter((a) => ids.includes(a.id)).map((a) => a.name),
+      });
+      const { uri } = await Print.printToFileAsync({ html });
+      // printToFileAsync names the file at random; give it a readable name.
+      const named = new File(new Directory(Paths.cache), `erebor_statement_${toLocalDateString(from)}_to_${toLocalDateString(to)}.pdf`);
+      if (named.exists) named.delete();
+      await new File(uri).move(named);
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(named.uri, { mimeType: "application/pdf", dialogTitle: "Share statement", UTI: "com.adobe.pdf" });
+      } else {
+        Alert.alert("Sharing not available", `Saved to ${named.uri}`);
+      }
+    } catch (error) {
+      Alert.alert("Couldn't create the PDF", error instanceof Error ? error.message : String(error));
+    } finally {
+      setExporting(false);
+    }
   }
 
   async function handleExport() {
@@ -128,11 +157,14 @@ export function ExportTransactionsForm() {
         )}
       </View>
 
-      <Button onPress={handleExport} disabled={exporting}>
-        {exporting ? "Preparing…" : "Export as CSV"}
+      <Button onPress={handlePdf} disabled={exporting}>
+        {exporting ? "Preparing…" : "Share PDF statement"}
+      </Button>
+      <Button variant="ghost" onPress={handleExport} disabled={exporting}>
+        Export as CSV
       </Button>
       <Text className="text-xs text-fg-subtle">
-        Opens directly in Excel, Sheets, or Numbers — no separate .xlsx format needed.
+        The PDF is a printable statement with totals. The CSV opens directly in Excel, Sheets, or Numbers.
       </Text>
     </View>
   );

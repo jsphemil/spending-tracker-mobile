@@ -9,6 +9,7 @@ import { FirstVisitHint } from "../../components/FirstVisitHint";
 import { HeaderAction, ScreenHeader } from "../../components/ScreenHeader";
 import { DateField } from "../../components/TransactionFilterSheet";
 import { UnconvertedCurrenciesNote } from "../../components/UnconvertedCurrenciesNote";
+import { Chip } from "../../components/ui/Chip";
 import { Icon } from "../../components/ui/Icon";
 import { db } from "../../db/client";
 import { useCategories } from "../../db/queries/categories";
@@ -22,6 +23,7 @@ import { formatMoney } from "../../services/format";
 import {
   currentMonthPeriod,
   customRanges,
+  financialYear,
   monthLabel,
   monthRange,
   monthShortLabel,
@@ -190,6 +192,17 @@ export default function AnalyticsScreen() {
   const shownNetWorthChangeMinor = customFigures?.netWorthChange ?? netWorthChangeMinor;
 
   const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  // Financial year shortcuts (5.0.0), from the user's FY start month.
+  // "This FY" runs to today; "Last FY" is the whole previous year.
+  const fyStartMonth = settings?.fyStartMonth ?? 4;
+  const thisFy = financialYear(startOfToday, fyStartMonth);
+  const lastFy = financialYear(startOfToday, fyStartMonth, -1);
+  const dayBefore = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate() - 1);
+  const fyPresets = [
+    { key: "this", label: `This FY · ${thisFy.label.replace("FY ", "")}`, from: thisFy.start, to: startOfToday },
+    { key: "last", label: `Last FY · ${lastFy.label.replace("FY ", "")}`, from: lastFy.start, to: dayBefore(lastFy.end) },
+  ];
+  const sameDay = (a: Date, b: Date) => a.toDateString() === b.toDateString();
   const openCustomRange = () => {
     // Start from the month being viewed, never past today.
     const { start } = monthRange(period);
@@ -230,6 +243,18 @@ export default function AnalyticsScreen() {
             >
               <Icon name="close" size={20} color={colors.fgMuted} />
             </Pressable>
+          </View>
+        ) : null}
+        {custom ? (
+          <View className="mt-3 flex-row flex-wrap gap-2">
+            {fyPresets.map((p) => (
+              <Chip
+                key={p.key}
+                label={p.label}
+                selected={sameDay(custom.from, p.from) && sameDay(custom.to, p.to)}
+                onPress={() => setCustom({ from: p.from, to: p.to })}
+              />
+            ))}
           </View>
         ) : (
         <View className="flex-row items-center justify-between">
@@ -334,7 +359,8 @@ export default function AnalyticsScreen() {
           ) : (
             <View className="mt-2 gap-3">
               {shownCategories.map((bucket) => {
-                const fraction = categoryTotal > 0 ? bucket.totalMinor / categoryTotal : 0;
+                // A category netted below zero by refunds gets an empty bar.
+                const fraction = categoryTotal > 0 ? Math.max(0, bucket.totalMinor / categoryTotal) : 0;
                 return (
                   <View key={bucket.key}>
                     <View className="flex-row items-center justify-between">

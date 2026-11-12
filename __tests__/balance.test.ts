@@ -256,3 +256,35 @@ describe("getNetWorthSeries", () => {
     expect(series).toEqual([10000 + 1000 * 20]);
   });
 });
+
+// 5.0.0: a refund is stored as an expense with a negative amount, so the
+// existing sums net it with no special case. These pin that down.
+describe("refunds (negative expenses)", () => {
+  it("adds the money back to the balance and nets spending, without counting as income", () => {
+    const accountId = insertAccount(db);
+    const d = new Date(2026, 10, 10);
+    db.insert(transactions)
+      .values([
+        { type: "income", amountMinor: 100000, date: d, accountId },
+        { type: "expense", amountMinor: 30000, date: d, accountId, categoryId: null },
+        { type: "expense", amountMinor: -5000, date: d, accountId, categoryId: null },
+      ])
+      .run();
+
+    expect(getAccountBalanceMinor(db, accountId)).toBe(75000);
+    const totals = getPeriodTotals(db, { accountId, start: new Date(2026, 10, 1), end: new Date(2026, 11, 1) });
+    expect(totals).toEqual({ incomeMinor: 100000, expenseMinor: 25000 });
+  });
+
+  it("restores a credit card's available credit", () => {
+    const card = insertAccount(db, { name: "Card", type: "credit_card", creditLimitMinor: 100000 });
+    const d = new Date(2026, 10, 10);
+    db.insert(transactions)
+      .values([
+        { type: "expense", amountMinor: 40000, date: d, accountId: card },
+        { type: "expense", amountMinor: -10000, date: d, accountId: card },
+      ])
+      .run();
+    expect(getCreditCardOwedMinor(db, card)).toBe(30000);
+  });
+});

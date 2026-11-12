@@ -23,6 +23,7 @@ export function updateSettings(
     dashboardLayout: string | null;
     hintsSeen: string | null;
     tagsView: TagsView;
+    fyStartMonth: number;
   }>,
 ): void {
   db.update(settings).set(patch).where(eq(settings.id, id)).run();

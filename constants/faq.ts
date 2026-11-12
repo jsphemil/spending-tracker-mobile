@@ -77,6 +77,11 @@ export const FAQ_SECTIONS: FaqSection[] = [
           "No. Record it as a Transfer. Both accounts update, and it never counts as spending or income — your wealth hasn't changed, it has just moved. Paying a credit card, topping up a wallet, or moving savings into an investment are all transfers.",
       },
       {
+        question: "How do I record a refund?",
+        answer:
+          "Add an expense in the category you were refunded for and tap Refund. The money goes back into the account and that category's spending goes down by the same amount. It isn't counted as income.",
+      },
+      {
         question: "What's the difference between 'Actual spending' and my category totals?",
         answer:
           "Actual spending is every expense this month across all accounts, converted to your default currency. Category totals split that same spending by category; anything without a category shows as Uncategorized.",
@@ -155,7 +160,7 @@ export const FAQ_SECTIONS: FaqSection[] = [
       {
         question: "How do budgets work?",
         answer:
-          "Give a category a monthly budget and its bar shows spend against it. Go over and the Dashboard's attention card says so. Budgets are in your default currency.",
+          "Give a category a budget per month or per financial year and its bar shows spend against it. Go over and the Dashboard's attention card says so. Budgets are in your default currency. Set when your financial year starts under Settings → Financial Year.",
       },
       {
         question: "What is Budget Mode on an account?",
@@ -216,7 +221,7 @@ export const FAQ_SECTIONS: FaqSection[] = [
       {
         question: "What widgets are there?",
         answer:
-          "Accounts shows one account at a time — tap the name to switch, resize to zoom — with Income, Expense and Transfer buttons that open the add screen with that account selected. Quick Add is the three buttons on their own. Long-press the app icon for the same shortcuts.",
+          "Accounts shows one account at a time — tap the name to switch, resize to zoom — with Income, Expense and Transfer buttons that open the add screen with that account selected. Quick Add is the three buttons on their own. Safe to Spend shows what you can spend per day, per account and combined, with a + to add an expense; long-press it and choose Customise to pick accounts and opacity. Long-press the app icon for the same shortcuts.",
       },
       {
         question: "The widget's balance doesn't match the app.",

@@ -117,15 +117,19 @@ export function TransactionListItem({
       ? `${fromAccountName ?? "?"} → ${toAccountName ?? "?"}`
       : (note ?? category);
 
+  // Refunds are expenses stored with a negative amount (TransactionForm).
+  const isRefund = transaction.type === "expense" && transaction.amountMinor < 0;
   const meta = [
+    isRefund ? "Refund" : null,
     transaction.type === "transfer" ? (note ? `Transfer · ${note}` : "Transfer") : note ? category : null,
     accountName && transaction.accountId !== viewingAccountId ? accountName : null,
     showDate ? transaction.date.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" }) : null,
     transaction.recurringRuleId != null ? "Recurring" : null,
   ].filter(Boolean);
 
-  const sign =
-    transaction.type === "expense"
+  const sign = isRefund
+    ? "+"
+    : transaction.type === "expense"
       ? "−"
       : transaction.type === "income"
         ? "+"
@@ -162,10 +166,10 @@ export function TransactionListItem({
             )}
           </View>
           <CurrencyAmount
-            amountMinor={transaction.amountMinor}
+            amountMinor={Math.abs(transaction.amountMinor)}
             currency={currency}
             prefix={sign}
-            className={`text-base font-semibold ${AMOUNT_STYLE[transaction.type]}`}
+            className={`text-base font-semibold ${isRefund ? "text-success" : AMOUNT_STYLE[transaction.type]}`}
           />
         </Pressable>
       </Link>

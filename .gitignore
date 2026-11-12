@@ -46,3 +46,6 @@ yarn-error.*
 # local module native build output
 modules/*/android/build/
 modules/*/android/.cxx/
+
+# Gradle cache inside local Expo modules
+modules/*/android/.gradle/

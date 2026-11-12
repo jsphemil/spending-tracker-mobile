@@ -50,7 +50,9 @@ export interface ThemeColors {
   glassBorderStrong: string;
 }
 
-export const palette: Record<"light" | "dark", ThemeColors> = {
+export type Scheme = "light" | "dark" | "black";
+
+export const palette: Record<"light" | "dark", ThemeColors> & { black: ThemeColors } = {
   // Octet blue (chosen 2026-10-05): soft grey page, white surfaces, vivid
   // #0D51FB as both the text accent and the fill.
   light: {
@@ -110,13 +112,28 @@ export const palette: Record<"light" | "dark", ThemeColors> = {
     glassBorder: "rgba(255, 255, 255, 0.08)",
     glassBorderStrong: "rgba(255, 255, 255, 0.14)",
   },
+  // Filled in below from `dark`.
+  black: undefined as unknown as ThemeColors,
+};
+
+// AMOLED (5.0.0): the dark palette with a true-black page and surfaces
+// stepped down to match, so OLED pixels switch off. Text roles are
+// unchanged and only gain contrast on the darker grounds.
+palette.black = {
+  ...palette.dark,
+  bg: "#000000",
+  surface: "#0e0e0e",
+  surface2: "#18181a",
+  surface3: "#222224",
+  border: "#1c1c1e",
+  borderStrong: "#2a2a2c",
 };
 
 // Soft (pre-alpha'd) container tints — the "Positive/Negative/Warning
 // Container" roles. Separate from `palette` since they're rgba() strings,
 // only needed by the CSS-variable path.
 type SoftKey = "accentSoft" | "successSoft" | "dangerSoft" | "warningSoft" | "transferSoft";
-const SOFT: Record<"light" | "dark", Record<SoftKey, string>> = {
+const SOFT: Record<Scheme, Record<SoftKey, string>> = {
   light: {
     accentSoft: "rgba(13, 81, 251, 0.08)",
     successSoft: "rgba(43, 122, 87, 0.10)",
@@ -130,6 +147,9 @@ const SOFT: Record<"light" | "dark", Record<SoftKey, string>> = {
     dangerSoft: "rgba(232, 144, 154, 0.13)",
     warningSoft: "rgba(219, 180, 108, 0.13)",
     transferSoft: "rgba(182, 171, 212, 0.13)",
+  },
+  get black() {
+    return SOFT.dark;
   },
 };
 
@@ -147,7 +167,7 @@ function hexToRgbTriplet(hex: string): string {
 // it — confirmed by reading the generated native project directly),
 // setColorScheme() never actually propagates. vars() sidesteps all of that:
 // it's a plain inline style computed synchronously from `settings` here.
-export function cssVars(scheme: "light" | "dark"): Record<string, string> {
+export function cssVars(scheme: Scheme): Record<string, string> {
   const p = palette[scheme];
   const s = SOFT[scheme];
   return {
@@ -187,15 +207,15 @@ export function cssVars(scheme: "light" | "dark"): Record<string, string> {
 // settings hasn't loaded yet (first paint, mid-migration) falls back to
 // "dark" so there's no flash of an unstyled/wrong-token screen.
 export function resolveTheme(
-  preference: "light" | "dark" | "system" | undefined,
+  preference: "light" | "dark" | "black" | "system" | undefined,
   systemScheme: string | null | undefined,
-): "light" | "dark" {
+): Scheme {
   const p = preference ?? "dark";
   if (p === "system") return systemScheme === "light" ? "light" : "dark";
   return p;
 }
 
-export function useResolvedTheme(): "light" | "dark" {
+export function useResolvedTheme(): Scheme {
   const { settings } = useSettings();
   return resolveTheme(settings?.themePreference, useColorScheme());
 }
