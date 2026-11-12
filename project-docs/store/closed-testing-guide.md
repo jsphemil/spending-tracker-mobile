@@ -330,7 +330,7 @@ All 3 required updates for the 14-day window are now shipped
 (versionCode 9, 12, 13 — see step 9 below for the production-access
 application, the next gate).
 
-**4.3.0 building as versionCode 27 (2026-11-12).** Release name
+**4.3.0 built as versionCode 27 (2026-11-12).** Release name
 `Erebor 4.3.0 — Safe to Spend, at a Glance`. **Adds a native widget**
 (`SafeToSpendGlanceWidget`) and migration `0019`, so per the release
 routine it goes to **Internal testing first**: smoke-test the new widget,
@@ -340,7 +340,8 @@ notifications on the Pixel, then Promote. Contents: Safe to Spend
 Commitments fix for an occurrence hidden after a split edit, net worth
 eye removed. `tsc`, lint and 160 tests clean; verified on the Pixel_10
 emulator (widget not placed there). Build
-`4aa9cf69-6cf3-4e0f-b336-048a819d830b`.
+`4aa9cf69-6cf3-4e0f-b336-048a819d830b`; AAB at
+`https://expo.dev/artifacts/eas/7925fJMHO7eJMTb1q9kX388QnI5TsLy8iT4kF_EZr4Y.aab`.
 
 Release notes to use (4.3.0):
 ```
