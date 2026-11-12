@@ -330,7 +330,7 @@ All 3 required updates for the 14-day window are now shipped
 (versionCode 9, 12, 13 — see step 9 below for the production-access
 application, the next gate).
 
-**5.0.0 built as versionCode 28 (2026-11-12)** — release name
+**5.0.0 built as versionCode 28 (2026-11-12) — Internal testing passed (widget checked on the Pixel), promoted to Production 2026-11-12.** — release name
 `Erebor 5.0.0 — Refunds, Statements and Safe to Spend`. Replaces 4.3.0
 (vc27), which never left Internal testing, so its changes ship here too.
 **Adds a native module (`expo-print`) and migration `0020`**, so it goes to
