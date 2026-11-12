@@ -8,10 +8,10 @@ import { FirstVisitHint } from "../components/FirstVisitHint";
 import { useAccounts } from "../db/queries/accounts";
 import { useCategories } from "../db/queries/categories";
 import { useFunds } from "../db/queries/funds";
-import { useActiveRecurringRules } from "../db/queries/recurringRules";
+import { useRecurringRules, useUpcomingRecurringTransactions } from "../db/queries/recurringRules";
 import { useSettings } from "../db/queries/settings";
 import { formatMoney } from "../services/format";
-import { describeSchedule, monthlyEquivalent, nextOccurrence } from "../services/recurrence";
+import { commitmentEntries, describeSchedule, monthlyEquivalent } from "../services/recurrence";
 import { useThemeColors } from "../theme/palette";
 
 const SECTION_DEFS = [
@@ -25,7 +25,7 @@ export default function CommitmentsScreen() {
   const insets = useSafeAreaInsets();
   const { settings } = useSettings();
   const baseCurrency = settings?.baseCurrency ?? "INR";
-  const { data: rules } = useActiveRecurringRules();
+  const { data: rules } = useRecurringRules();
   const { data: accounts } = useAccounts();
   const { data: categories } = useCategories();
   const { data: funds } = useFunds();
@@ -38,11 +38,12 @@ export default function CommitmentsScreen() {
   // Today at midnight, so an occurrence falling today still counts as next up.
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const { data: upcoming } = useUpcomingRecurringTransactions(today);
 
-  const rows = (rules ?? []).map((rule) => ({
-    rule,
-    monthly: monthlyEquivalent(rule.amountMinor, rule.intervalCount, rule.intervalUnit),
-    next: nextOccurrence(rule, today),
+  const rows = commitmentEntries(rules ?? [], upcoming ?? [], today).map((entry) => ({
+    ...entry,
+    // A closed rule's last pending occurrence is shown but not totalled.
+    monthly: entry.counts ? monthlyEquivalent(entry.rule.amountMinor, entry.rule.intervalCount, entry.rule.intervalUnit) : 0,
   }));
 
   // Soonest first, so the list reads as the order things will actually happen —
@@ -100,7 +101,7 @@ export default function CommitmentsScreen() {
         sections.map((section) => (
           <View key={section.title}>
             <Text accessibilityRole="header" className="mb-1 text-base font-display text-fg">{section.title}</Text>
-            {section.rows.map(({ rule, monthly, next }, i) => (
+            {section.rows.map(({ rule, monthly, next, nextAmountMinor, counts }, i) => (
               <View key={rule.id} className={`py-3 ${i > 0 ? "border-t border-border" : ""}`}>
                 <View className="flex-row items-center justify-between gap-2">
                   <View className="flex-1 flex-row items-center gap-1.5">
@@ -121,7 +122,7 @@ export default function CommitmentsScreen() {
                     </Text>
                   </View>
                   <Text className={`font-data text-sm font-medium tabular-nums ${section.color}`}>
-                    {formatMoney(monthly, baseCurrency)}/mo
+                    {counts ? `${formatMoney(monthly, baseCurrency)}/mo` : formatMoney(nextAmountMinor, baseCurrency)}
                   </Text>
                 </View>
                 <Text className="mt-0.5 text-xs text-fg-subtle">
@@ -131,9 +132,13 @@ export default function CommitmentsScreen() {
                 </Text>
                 <Text className="mt-0.5 text-xs text-fg-muted">
                   {next
-                    ? `Next ${next.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })}`
+                    ? `Next ${next.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })}` +
+                      (nextAmountMinor !== rule.amountMinor ? ` · ${formatMoney(nextAmountMinor, baseCurrency)} this time` : "")
                     : "Ended"}
                 </Text>
+                {!counts && (
+                  <Text className="mt-0.5 text-xs text-fg-subtle">Final occurrence of the earlier schedule — your later change takes over after it</Text>
+                )}
                 {/* Commitments is where you look to see what a rule does, so
                     it's where "and it draws from this fund" belongs. */}
                 {fundName(rule.fundId) && (

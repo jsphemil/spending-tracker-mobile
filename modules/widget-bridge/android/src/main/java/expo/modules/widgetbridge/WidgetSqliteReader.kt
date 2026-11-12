@@ -386,3 +386,79 @@ fun formatMoney(amountMinor: Long, currency: String): String {
   val sign = if (major < 0) "-" else ""
   return "$sign${currencySymbol(currency)}$formatted"
 }
+
+// ---- Safe to Spend widget ----
+
+data class SafeToSpendRow(
+  val id: Long,
+  val name: String,
+  val colorHex: String,
+  val currency: String,
+  val perDayMinor: Long,
+)
+
+data class SafeToSpendData(
+  val rows: List<SafeToSpendRow>,
+  val baseCurrency: String,
+  val totalBaseMinor: Long,
+  val daysRemaining: Int,
+  // At least one foreign account had no cached rate, so it's left out of the
+  // total (never guessed) — the widget says so.
+  val hasUnconverted: Boolean,
+)
+
+private fun daysRemainingInMonth(): Int {
+  val cal = java.util.Calendar.getInstance()
+  return cal.getActualMaximum(java.util.Calendar.DAY_OF_MONTH) - cal.get(java.util.Calendar.DAY_OF_MONTH) + 1
+}
+
+// Mirrors services/safeToSpend.ts and the Dashboard's Safe to Spend card:
+// counted accounts (own toggle, else savings/wallet by default), each one's
+// Left to spend — balance, or available credit for a card — over the days
+// left in the month including today, floored at zero.
+//
+// Null when the DB can't be read, including the window right after an app
+// update where the widget refreshes before the app has run the migration
+// that adds safe_to_spend_enabled.
+fun getSafeToSpendForWidget(context: Context): SafeToSpendData? {
+  val db = openReadOnlyDb(context) ?: return null
+  try {
+    val cutoff = startOfNextMonthEpochSeconds()
+    val days = daysRemainingInMonth()
+    val baseCurrency = getBaseCurrency(db)
+    val rows = mutableListOf<SafeToSpendRow>()
+    var total = 0L
+    var unconverted = false
+    db.rawQuery(
+      """
+      SELECT id, name, type, color, currency, credit_limit_minor, safe_to_spend_enabled
+      FROM accounts ORDER BY sort_order ASC, id ASC
+      """.trimIndent(),
+      null,
+    ).use { c ->
+      while (c.moveToNext()) {
+        val type = c.getString(2)
+        val counts = if (c.isNull(6)) type == "savings" || type == "wallet" else c.getInt(6) != 0
+        if (!counts) continue
+        val id = c.getLong(0)
+        val currency = c.getString(4)
+        val balance = getAccountBalanceMinor(db, id, cutoff)
+        val left = if (type == "credit_card" && !c.isNull(5)) c.getLong(5) - maxOf(0L, -balance) else balance
+        val perDay = if (left > 0) Math.round(left.toDouble() / days) else 0L
+        rows += SafeToSpendRow(id, c.getString(1), c.getString(3), currency, perDay)
+        if (currency.equals(baseCurrency, ignoreCase = true)) {
+          total += perDay
+        } else {
+          val converted = getBaseEquivalentMinor(db, perDay, currency, baseCurrency)
+          if (converted == null) unconverted = true else total += converted
+        }
+      }
+    }
+    return SafeToSpendData(rows, baseCurrency, total, days, unconverted)
+  } catch (error: Exception) {
+    Log.w("WidgetBridge", "Could not load safe to spend", error)
+    return null
+  } finally {
+    db.close()
+  }
+}

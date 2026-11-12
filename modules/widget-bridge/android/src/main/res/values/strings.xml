@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="safe_to_spend_widget_description">What you can spend today, per account and combined</string>
+</resources>

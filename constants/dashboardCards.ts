@@ -3,8 +3,7 @@
 // settings.dashboard_layout and always read through parseDashboardLayout,
 // which is where every invariant lives:
 //   • netWorth is pinned first and can never be hidden — it is the
-//     Dashboard's answer to "where do I stand", and it hosts the privacy
-//     toggle.
+//     Dashboard's answer to "where do I stand".
 //   • unknown ids are dropped, and any section missing from a saved order
 //     is appended, so a section added in a later version shows up for users
 //     with an older saved layout instead of silently vanishing.
@@ -13,13 +12,14 @@
 // may still carry a "shortcuts" id or a `shortcuts` key; both are ignored
 // by the rules above, so no migration is needed.
 
-export const CARD_IDS = ["netWorth", "month", "funds", "attention"] as const;
+export const CARD_IDS = ["netWorth", "safeToSpend", "month", "funds", "attention"] as const;
 export type CardId = (typeof CARD_IDS)[number];
 
 export const PINNED_CARD: CardId = "netWorth";
 
 export const CARD_LABELS: Record<CardId, { label: string; description: string }> = {
   netWorth: { label: "Net worth", description: "Where you stand, and how it changed this month" },
+  safeToSpend: { label: "Safe to spend today", description: "What you can spend per day for the rest of the month" },
   month: { label: "This month", description: "Income and spending, compared with last month" },
   funds: { label: "Funds", description: "Your top funds and their progress" },
   attention: { label: "Needs attention", description: "Commitments due, budgets exceeded, funds coming up" },

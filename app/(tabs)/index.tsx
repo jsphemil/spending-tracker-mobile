@@ -17,11 +17,11 @@ import { useFunds } from "../../db/queries/funds";
 import { useSettings } from "../../db/queries/settings";
 import { useFilteredTransactions } from "../../db/queries/transactions";
 import { useMonthPosition } from "../../hooks/useMonthPosition";
-import { toggleNetWorthHidden, useNetWorthHidden } from "../../hooks/useNetWorthHidden";
 import { appVersionLabel } from "../../services/feedbackLink";
 import { formatMoney } from "../../services/format";
 import { computeFundProgress, emptyFundBalance } from "../../services/funds";
-import { currentMonthPeriod, monthRange, shiftMonth, type MonthPeriod } from "../../services/period";
+import { currentMonthPeriod, daysRemainingInMonth, monthRange, shiftMonth, type MonthPeriod } from "../../services/period";
+import { countsTowardSafeToSpend, leftToSpendMinor, safeToSpendPerDayMinor } from "../../services/safeToSpend";
 import { ensureMaterialized } from "../../services/recurrence";
 import { useThemeColors, type ThemeColors } from "../../theme/palette";
 import { TAB_BAR_CLEARANCE } from "../../theme/tabBar";
@@ -76,6 +76,7 @@ export default function DashboardScreen() {
   const period = useMemo(() => currentMonthPeriod(), [dayKey]);
   const {
     accounts,
+    accountBalanceAsOf,
     toBaseMinor,
     unconvertedCurrencies,
     netWorthMinor,
@@ -88,6 +89,20 @@ export default function DashboardScreen() {
     expenseToDateMinor,
     lastMonthSameDaysExpenseMinor,
   } = useMonthPosition(period);
+
+  // ---- SAFE TO SPEND TODAY ----
+  // Each counted account's Left to spend spread over the rest of the month,
+  // in its own currency, then totalled in base. A foreign account with no
+  // cached rate converts to 0 and is flagged below rather than guessed.
+  const safeDays = daysRemainingInMonth(period) ?? 1;
+  const safeAccounts = (accounts ?? [])
+    .filter(countsTowardSafeToSpend)
+    .map((a) => ({
+      account: a,
+      perDayMinor: safeToSpendPerDayMinor(leftToSpendMinor(a, accountBalanceAsOf?.get(a.id) ?? 0), safeDays),
+    }));
+  const safeTotalMinor = safeAccounts.reduce((sum, s) => sum + toBaseMinor(s.perDayMinor, s.account.currency), 0);
+  const safeUnconverted = unconvertedCurrencies.filter((c) => safeAccounts.some((s) => s.account.currency === c));
 
   const activeFunds = (funds ?? []).filter((f) => f.status === "active");
   const dashboardFunds = activeFunds.slice(0, DASHBOARD_FUND_LIMIT);
@@ -215,12 +230,6 @@ export default function DashboardScreen() {
 
   const displayName = settings?.displayName?.trim();
 
-  // Dashboard privacy toggle (spec.md §5.19) — Dashboard is the first
-  // screen shown on app open, so net worth starts masked and a reveal
-  // lasts only for this session. See hooks/useNetWorthHidden.ts for why
-  // this isn't a persisted setting.
-  const netWorthHidden = useNetWorthHidden();
-
   const { appVersion } = appVersionLabel();
   const layout = parseDashboardLayout(settings?.dashboardLayout);
   const whatsNewVisible = settings ? shouldShowWhatsNew(settings, appVersion) : false;
@@ -242,33 +251,57 @@ export default function DashboardScreen() {
     netWorth: (
       <Link href="/net-worth" asChild>
         <Pressable accessibilityRole="button" accessibilityHint="Opens net worth details">
-          <View className="flex-row items-center justify-between">
-            <View className="flex-row items-center gap-1">
-              <Text className="text-sm text-fg-muted">Net worth</Text>
-              <Icon name="chevron-right" size={14} color={colors.fgSubtle} />
-            </View>
-            <Pressable
-              onPress={toggleNetWorthHidden}
-              hitSlop={12}
-              accessibilityRole="button"
-              accessibilityLabel={netWorthHidden ? "Show net worth" : "Hide net worth"}
-              className="h-11 w-11 items-center justify-center"
-            >
-              <Icon name={netWorthHidden ? "eye-off" : "eye"} size={18} color={colors.fgMuted} />
-            </Pressable>
+          <View className="flex-row items-center gap-1 py-1">
+            <Text className="text-sm text-fg-muted">Net worth</Text>
+            <Icon name="chevron-right" size={14} color={colors.fgSubtle} />
           </View>
           <Text className="font-data text-4xl font-bold tabular-nums text-fg">
-            {netWorthHidden ? "••••••" : formatMoney(netWorthMinor, baseCurrency)}
+            {formatMoney(netWorthMinor, baseCurrency)}
           </Text>
-          {!netWorthHidden && <NetWorthChange changeMinor={netWorthChangeMinor} currency={baseCurrency} />}
-          {!netWorthHidden && netWorthMinor < 0 && (
+          <NetWorthChange changeMinor={netWorthChangeMinor} currency={baseCurrency} />
+          {netWorthMinor < 0 && (
             <Text className="mt-1 text-xs font-medium text-danger">
               Overdrawn by {formatMoney(Math.abs(netWorthMinor), baseCurrency)}
             </Text>
           )}
-          {!netWorthHidden && <UnconvertedCurrenciesNote currencies={unconvertedCurrencies} subject="Net worth" />}
+          <UnconvertedCurrenciesNote currencies={unconvertedCurrencies} subject="Net worth" />
         </Pressable>
       </Link>
+    ),
+    safeToSpend: (
+      <View>
+        <SectionTitle title="Safe to spend today" />
+        {safeAccounts.length === 0 ? (
+          <Text className="text-sm text-fg-muted">
+            No accounts are counted. Turn on &ldquo;Count toward Safe to Spend&rdquo; when editing an account.
+          </Text>
+        ) : (
+          <>
+            <Text className="font-data text-3xl font-bold tabular-nums text-fg">
+              {formatMoney(safeTotalMinor, baseCurrency)}
+            </Text>
+            <Text className="mt-0.5 text-xs text-fg-muted">
+              Per day for the next {plural(safeDays, "day", "days")}, across {plural(safeAccounts.length, "account", "accounts")}
+            </Text>
+            <UnconvertedCurrenciesNote currencies={safeUnconverted} subject="Safe to spend" />
+            {safeAccounts.length > 1 && (
+              <View className="mt-3">
+                {safeAccounts.map(({ account, perDayMinor }) => (
+                  <Link key={account.id} href={`/accounts/${account.id}`} asChild>
+                    <Pressable accessibilityRole="button" className="min-h-11 flex-row items-center gap-3 border-t border-border py-2.5">
+                      <View className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: account.color }} />
+                      <Text className="flex-1 text-sm text-fg" numberOfLines={1}>{account.name}</Text>
+                      <Text className="font-data text-sm tabular-nums text-fg">
+                        {perDayMinor > 0 ? formatMoney(perDayMinor, account.currency) : "—"}
+                      </Text>
+                    </Pressable>
+                  </Link>
+                ))}
+              </View>
+            )}
+          </>
+        )}
+      </View>
     ),
     month: (
       <Link href="/analytics" asChild>
@@ -325,7 +358,6 @@ export default function DashboardScreen() {
                   fundBalances.get(fund.id) ?? emptyFundBalance(fund.id),
                 )}
                 baseCurrency={baseCurrency}
-                hidden={netWorthHidden}
               />
             ))}
           </View>

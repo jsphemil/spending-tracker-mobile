@@ -353,24 +353,28 @@ export default function AccountDetailScreen() {
             {budgetActive && (
               <View className="gap-1.5 rounded-2xl bg-surface-2 p-3.5">
                 <View className="flex-row items-center justify-between">
-                  <Text className="text-sm font-medium text-fg">Budget Mode</Text>
-                  <Text className={`text-sm ${overBudget ? "font-medium text-danger" : "text-fg-muted"}`}>
-                    {formatMoney(totalOutMinor, account.currency)} of{" "}
-                    {formatMoney(account.budgetMonthlyMinor!, account.currency)}
-                  </Text>
+                  <Text className="text-sm font-medium text-fg">Monthly spending cap</Text>
+                  {!overBudget && (
+                    <Text className="text-sm font-semibold text-fg">
+                      {formatMoney(account.budgetMonthlyMinor! - totalOutMinor, account.currency)} left
+                    </Text>
+                  )}
                 </View>
+                <Text className={`text-xs ${overBudget ? "font-medium text-danger" : "text-fg-muted"}`}>
+                  {formatMoney(totalOutMinor, account.currency)} spent of{" "}
+                  {formatMoney(account.budgetMonthlyMinor!, account.currency)} cap this month
+                </Text>
                 <View className="h-1.5 overflow-hidden rounded-full bg-surface-3">
                   <View
                     className={`h-full ${overBudget ? "bg-danger" : "bg-accent-fill"}`}
                     style={{ width: `${Math.min(100, (totalOutMinor / account.budgetMonthlyMinor!) * 100)}%` }}
                   />
                 </View>
-                {overBudget && (
-                  <Text className="text-xs font-medium text-danger">
-                    {formatMoney(totalOutMinor - account.budgetMonthlyMinor!, account.currency)} over this
-                    account's monthly budget
-                  </Text>
-                )}
+                <Text className={`text-xs ${overBudget ? "font-medium text-danger" : "text-fg-subtle"}`}>
+                  {overBudget
+                    ? `${formatMoney(totalOutMinor - account.budgetMonthlyMinor!, account.currency)} over the cap.`
+                    : "A limit you set on spending — separate from the balance below."}
+                </Text>
               </View>
             )}
 

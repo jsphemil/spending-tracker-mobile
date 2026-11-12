@@ -15,7 +15,6 @@ import { useCategories } from "../../db/queries/categories";
 import { useSettings } from "../../db/queries/settings";
 import { useFilteredTransactions } from "../../db/queries/transactions";
 import { useMonthPosition } from "../../hooks/useMonthPosition";
-import { useNetWorthHidden } from "../../hooks/useNetWorthHidden";
 import { getEarliestTransactionDate, getNetWorthSeries, getPeriodTotals } from "../../services/balance";
 import { addToBucket, sortedBuckets, type Bucket } from "../../services/breakdown";
 import { cumulativeDailySpend, cumulativeRangeSpend } from "../../services/cumulativeSpend";
@@ -82,9 +81,6 @@ export default function AnalyticsScreen() {
     expenseToDateMinor,
     lastMonthSameDaysExpenseMinor,
   } = useMonthPosition(period);
-
-  // Same session privacy mask as the Dashboard's net worth.
-  const netWorthHidden = useNetWorthHidden();
 
   const categoryInfo = (id: number | null) => categories?.find((c) => c.id === id);
 
@@ -397,9 +393,9 @@ export default function AnalyticsScreen() {
               </Text>
             </View>
             <Text className="font-data mt-1 text-2xl font-bold tabular-nums text-fg">
-              {netWorthHidden ? "••••••" : formatMoney(shownNetWorthMinor, baseCurrency)}
+              {formatMoney(shownNetWorthMinor, baseCurrency)}
             </Text>
-            {!netWorthHidden && shownNetWorthChangeMinor !== 0 && (
+            {shownNetWorthChangeMinor !== 0 && (
               <Text className={`text-sm font-medium ${shownNetWorthChangeMinor > 0 ? "text-success" : "text-danger"}`}>
                 {shownNetWorthChangeMinor > 0 ? "↑" : "↓"} {formatMoney(Math.abs(shownNetWorthChangeMinor), baseCurrency)}{" "}
                 {ranges ? "over this period" : `in ${monthName(period)}`}
@@ -407,16 +403,10 @@ export default function AnalyticsScreen() {
             )}
           </Pressable>
         </Link>
-        {/* The trend's axis labels are amounts too, so it follows the same
-            session privacy mask as the figure above. */}
-        {!netWorthHidden && <UnconvertedCurrenciesNote currencies={unconvertedCurrencies} subject="Net worth" />}
-        {netWorthHidden ? (
-          <Text className="mt-3 text-sm text-fg-muted">Hidden — tap the eye on the Dashboard to show amounts.</Text>
-        ) : (
-          <View className="mt-4">
-            <NetWorthTrendChart data={trendData} currency={baseCurrency} height={180} />
-          </View>
-        )}
+        <UnconvertedCurrenciesNote currencies={unconvertedCurrencies} subject="Net worth" />
+        <View className="mt-4">
+          <NetWorthTrendChart data={trendData} currency={baseCurrency} height={180} />
+        </View>
       </ScrollView>
     </View>
   );

@@ -1,18 +1,30 @@
 import { useLiveQuery } from "drizzle-orm/expo-sqlite";
-import { desc, eq } from "drizzle-orm";
+import { and, asc, desc, gte, isNotNull } from "drizzle-orm";
 
 import { db } from "../client";
-import { recurringRules } from "../schema";
+import { recurringRules, transactions } from "../schema";
 
-// Powers the Commitments screen — only active rules count as a current
-// commitment; a closed-off rule (superseded by an "edit this and future"
-// split, or explicitly deleted-going-forward) shouldn't still show up here.
-export function useActiveRecurringRules() {
+// All rules, active or closed. Commitments decides which to show: active
+// rules, plus a closed rule (ended by an "edit this and future" split) while
+// it still has an already-generated occurrence that hasn't happened yet.
+export function useRecurringRules() {
+  return useLiveQuery(db.select().from(recurringRules).orderBy(desc(recurringRules.amountMinor)));
+}
+
+// Generated occurrences dated today or later, soonest first — the real rows
+// that will post, including "just this one" edits.
+export function useUpcomingRecurringTransactions(today: Date) {
   return useLiveQuery(
     db
-      .select()
-      .from(recurringRules)
-      .where(eq(recurringRules.isActive, true))
-      .orderBy(desc(recurringRules.amountMinor)),
+      .select({
+        id: transactions.id,
+        recurringRuleId: transactions.recurringRuleId,
+        amountMinor: transactions.amountMinor,
+        date: transactions.date,
+      })
+      .from(transactions)
+      .where(and(isNotNull(transactions.recurringRuleId), gte(transactions.date, today)))
+      .orderBy(asc(transactions.date), asc(transactions.id)),
+    [today.getTime()],
   );
 }

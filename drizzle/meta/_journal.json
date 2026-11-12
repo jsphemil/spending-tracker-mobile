@@ -134,6 +134,13 @@
       "when": 1789463157580,
       "tag": "0018_tag_appearance",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "6",
+      "when": 1794465715769,
+      "tag": "0019_safe_to_spend",
+      "breakpoints": true
     }
   ]
 }

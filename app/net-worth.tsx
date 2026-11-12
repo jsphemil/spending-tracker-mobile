@@ -1,14 +1,11 @@
 import { useMemo } from "react";
-import { Link } from "expo-router";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { ScrollView, Text, View } from "react-native";
 
 import { AssetAllocationChart } from "../components/charts/AssetAllocationChart";
 import { ScreenHeader } from "../components/ScreenHeader";
 import { UnconvertedCurrenciesNote } from "../components/UnconvertedCurrenciesNote";
-import { Icon } from "../components/ui/Icon";
 import { useSettings } from "../db/queries/settings";
 import { useMonthPosition } from "../hooks/useMonthPosition";
-import { toggleNetWorthHidden, useNetWorthHidden } from "../hooks/useNetWorthHidden";
 import { formatMoney } from "../services/format";
 import { currentMonthPeriod } from "../services/period";
 import { useThemeColors, type ThemeColors } from "../theme/palette";
@@ -22,16 +19,14 @@ const ASSET_ALLOCATION_BUCKETS: { name: string; types: readonly string[]; chart:
 // Net worth detail (spec.md §5.24): the Dashboard shows one number; this
 // is where its parts live — the Assets/Debt/Earmarked/Unallocated tiles
 // and the "available this month" line that used to sit on the V2
-// Dashboard, and the asset allocation donut that used to sit on Analytics. Same useMonthPosition figures, current month, same privacy
-// mask as the Dashboard.
+// Dashboard, and the asset allocation donut that used to sit on Analytics. Same useMonthPosition figures, current month.
 export default function NetWorthScreen() {
   const colors = useThemeColors();
   const { settings } = useSettings();
   const baseCurrency = settings?.baseCurrency ?? "INR";
   const period = useMemo(() => currentMonthPeriod(), []);
   const p = useMonthPosition(period);
-  const hidden = useNetWorthHidden();
-  const money = (minor: number) => (hidden ? "••••" : formatMoney(minor, baseCurrency));
+  const money = (minor: number) => formatMoney(minor, baseCurrency);
 
   // Moved verbatim from V2 Analytics: positive balances only, converted to
   // base, as of the same cutoff as every other figure here.
@@ -45,28 +40,19 @@ export default function NetWorthScreen() {
 
   return (
     <View className="flex-1 bg-bg">
-      <ScreenHeader title="Net worth" back>
-        <Pressable
-          onPress={toggleNetWorthHidden}
-          accessibilityRole="button"
-          accessibilityLabel={hidden ? "Show amounts" : "Hide amounts"}
-          className="h-11 w-11 items-center justify-center"
-        >
-          <Icon name={hidden ? "eye-off" : "eye"} size={20} color={colors.fgMuted} />
-        </Pressable>
-      </ScreenHeader>
+      <ScreenHeader title="Net worth" back />
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
         <Text className="font-data text-4xl font-bold tabular-nums text-fg">
-          {hidden ? "••••••" : formatMoney(p.netWorthMinor, baseCurrency)}
+          {formatMoney(p.netWorthMinor, baseCurrency)}
         </Text>
-        {!hidden && <UnconvertedCurrenciesNote currencies={p.unconvertedCurrencies} subject="Net worth" />}
+        <UnconvertedCurrenciesNote currencies={p.unconvertedCurrencies} subject="Net worth" />
 
         <Section title="What it's made of">
           <Row label="Assets" hint="Savings, cash, deposits and investments with a positive balance" value={money(p.assetsMinor)} />
           <Row
             label="Debt"
             hint="Owed on credit cards"
-            value={hidden ? "••••" : p.debtMinor > 0 ? formatMoney(p.debtMinor, baseCurrency) : "—"}
+            value={p.debtMinor > 0 ? formatMoney(p.debtMinor, baseCurrency) : "—"}
           />
           {p.earmarkedMinor !== 0 && (
             <>
@@ -76,7 +62,7 @@ export default function NetWorthScreen() {
           )}
         </Section>
 
-        {!hidden && assetAllocation.length > 0 && (
+        {assetAllocation.length > 0 && (
           <Section title="How your assets are split">
             <View className="mt-3">
               <AssetAllocationChart data={assetAllocation} currency={baseCurrency} earmarkedMinor={p.earmarkedMinor} />
@@ -95,12 +81,6 @@ export default function NetWorthScreen() {
           />
         </Section>
 
-        <Link href="/analytics" asChild>
-          <Pressable accessibilityRole="link" className="mt-8 flex-row items-center gap-1 py-2">
-            <Text className="text-sm font-medium text-accent">See the trend in Analytics</Text>
-            <Icon name="chevron-right" size={16} color={colors.accent} />
-          </Pressable>
-        </Link>
       </ScrollView>
     </View>
   );

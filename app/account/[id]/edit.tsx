@@ -44,6 +44,7 @@ export default function EditAccountScreen() {
           openingDate,
           budgetModeEnabled: account.budgetModeEnabled,
           showFutureTxEnabled: account.showFutureTxEnabled,
+          safeToSpendEnabled: account.safeToSpendEnabled,
           budgetMonthlyMinor: account.budgetMonthlyMinor,
         }}
         onSubmit={(values) => {

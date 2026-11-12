@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Pressable, Switch, Text, View } from "react-native";
 
 import { FormScrollView } from "./ui/FormScrollView";
 import { Input } from "./ui/Input";
@@ -12,6 +12,7 @@ import { CURRENCY_OPTIONS } from "../constants/currencies";
 import { ACCOUNT_TYPES, type AccountType } from "../db/schema";
 import { evaluateExpression } from "../services/calculator";
 import { majorToMinor, minorToMajor } from "../services/format";
+import { countsTowardSafeToSpend } from "../services/safeToSpend";
 import { useThemeColors } from "../theme/palette";
 import { Button } from "./ui/Button";
 import { IconPicker } from "./ui/IconPicker";
@@ -27,6 +28,7 @@ export interface AccountFormValues {
   openingDate: Date;
   budgetModeEnabled: boolean | null;
   showFutureTxEnabled: boolean | null;
+  safeToSpendEnabled: boolean | null;
   budgetMonthlyMinor: number | null;
 }
 
@@ -114,6 +116,11 @@ export function AccountForm({
   const [showFutureTxEnabled, setShowFutureTxEnabled] = useState<boolean | null>(
     initialValues?.showFutureTxEnabled ?? null,
   );
+  // null until the user flips it, so an untouched account keeps following
+  // its type's default (services/safeToSpend.ts) if the type changes.
+  const [safeToSpendEnabled, setSafeToSpendEnabled] = useState<boolean | null>(
+    initialValues?.safeToSpendEnabled ?? null,
+  );
   const [budgetMonthlyText, setBudgetMonthlyText] = useState(
     initialValues?.budgetMonthlyMinor != null
       ? String(minorToMajor(initialValues.budgetMonthlyMinor, currency))
@@ -163,6 +170,7 @@ export function AccountForm({
       openingDate,
       budgetModeEnabled,
       showFutureTxEnabled,
+      safeToSpendEnabled,
       budgetMonthlyMinor:
         budgetNum !== null ? majorToMinor(budgetNum, normalizedCurrency) : null,
     });
@@ -328,6 +336,22 @@ export function AccountForm({
             value={showFutureTxEnabled}
             onChange={setShowFutureTxEnabled}
           />
+          <View className="flex-row items-center gap-3">
+            <View className="flex-1">
+              <Text className="text-sm font-medium text-fg">Count toward Safe to Spend</Text>
+              <Text className="mt-0.5 text-xs text-fg-muted">
+                Include this account in the Dashboard&rsquo;s and widget&rsquo;s combined daily figure
+              </Text>
+            </View>
+            <Switch
+              value={countsTowardSafeToSpend({ type, safeToSpendEnabled })}
+              onValueChange={setSafeToSpendEnabled}
+              accessibilityLabel="Count toward Safe to Spend"
+              trackColor={{ false: colors.glassFill, true: colors.accent }}
+              thumbColor="#ffffff"
+              ios_backgroundColor={colors.glassFill}
+            />
+          </View>
         </>
       )}
 

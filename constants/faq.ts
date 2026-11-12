@@ -240,11 +240,6 @@ export const FAQ_SECTIONS: FaqSection[] = [
         answer:
           "Turn on 'Unlock with biometrics' under Settings → Privacy & Security. Erebor then asks for your fingerprint, face, or your phone's PIN or pattern when it opens, and again if it has been in the background for more than 30 seconds. Nothing is stored — your phone does the checking. The home screen widget keeps showing balances, since the home screen is already behind your phone's own lock.",
       },
-      {
-        question: "Why does the net worth card open hidden?",
-        answer:
-          "The Dashboard is the first thing on screen when the app opens, so its figures start masked. Tap the eye to reveal them for this session; they're masked again next time the app starts.",
-      },
     ],
   },
 ];

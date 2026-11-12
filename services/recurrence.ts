@@ -375,6 +375,34 @@ export function nextOccurrence(
   return cursor;
 }
 
+// What Commitments lists for each rule: the next *real* generated row when
+// there is one (so a "just this one" edit shows its own amount and date),
+// falling back to the rule's cadence. A closed rule is only listed while it
+// still has such a pending row — the last occurrence(s) before an "edit this
+// and future" split took over — and it doesn't count toward monthly totals,
+// since the rule that replaced it does.
+export function commitmentEntries<R extends Pick<RecurringRule, "id" | "isActive" | "amountMinor" | "startDate" | "endDate" | "intervalCount" | "intervalUnit">>(
+  rules: R[],
+  upcoming: { recurringRuleId: number | null; amountMinor: number; date: Date }[],
+  today: Date,
+): { rule: R; next: Date | null; nextAmountMinor: number; counts: boolean }[] {
+  const firstPending = new Map<number, { amountMinor: number; date: Date }>();
+  for (const row of [...upcoming].sort((a, b) => a.date.getTime() - b.date.getTime())) {
+    if (row.recurringRuleId != null && !firstPending.has(row.recurringRuleId)) firstPending.set(row.recurringRuleId, row);
+  }
+  return rules
+    .filter((rule) => rule.isActive || firstPending.has(rule.id))
+    .map((rule) => {
+      const pending = firstPending.get(rule.id);
+      return {
+        rule,
+        next: pending?.date ?? (rule.isActive ? nextOccurrence(rule, today) : null),
+        nextAmountMinor: pending?.amountMinor ?? rule.amountMinor,
+        counts: rule.isActive,
+      };
+    });
+}
+
 export function describeSchedule(intervalCount: number, intervalUnit: RecurrenceUnit): string {
   const unit = UNIT_LABELS[intervalUnit];
   return intervalCount === 1 ? `Repeats every ${unit}` : `Repeats every ${intervalCount} ${unit}s`;

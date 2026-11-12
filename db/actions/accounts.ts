@@ -65,6 +65,7 @@ export interface AccountUpdateInput {
   creditLimitMinor?: number | null;
   budgetModeEnabled?: boolean | null;
   showFutureTxEnabled?: boolean | null;
+  safeToSpendEnabled?: boolean | null;
   budgetMonthlyMinor?: number | null;
   openingBalanceMinor: number;
   openingDate: Date;
@@ -121,6 +122,7 @@ export function updateAccount(id: number, input: AccountUpdateInput): void {
         creditLimitMinor: input.creditLimitMinor ?? null,
         budgetModeEnabled: input.budgetModeEnabled ?? null,
         showFutureTxEnabled: input.showFutureTxEnabled ?? null,
+        safeToSpendEnabled: input.safeToSpendEnabled ?? null,
         budgetMonthlyMinor: input.budgetMonthlyMinor ?? null,
       })
       .where(eq(accounts.id, id))

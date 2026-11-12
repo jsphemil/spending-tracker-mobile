@@ -16,6 +16,17 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "4.3.0",
+    date: "2026-11-12",
+    title: "Safe to spend, at a glance",
+    highlights: [
+      "New: Safe to spend today on the Dashboard and as a home-screen widget — what you can spend per day for the rest of the month, for each counted account and combined. Choose which accounts count with \"Count toward Safe to Spend\" when editing an account; savings and wallets count by default.",
+      "Budget Mode now shows how much of your monthly spending cap is left, and says plainly that it's a limit you set, not your balance.",
+      "Fixed Commitments hiding an upcoming occurrence you'd changed with \"just this one\" after a later \"this and all future\" edit.",
+      "The net worth hide/show eye is gone — amounts are always shown.",
+    ],
+  },
+  {
     version: "4.2.0",
     date: "2026-11-03",
     title: "Add a transaction in three taps",

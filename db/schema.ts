@@ -53,6 +53,10 @@ export const accounts = sqliteTable("accounts", {
   // null = inherit the global setting, 0/1 = explicit per-account override.
   budgetModeEnabled: integer("budget_mode_enabled", { mode: "boolean" }),
   showFutureTxEnabled: integer("show_future_tx_enabled", { mode: "boolean" }),
+  // Counts toward the combined Safe to Spend (Dashboard card + widget).
+  // null = default by type (savings/wallet yes, others no) — see
+  // services/safeToSpend.ts; a boolean is the user's explicit choice.
+  safeToSpendEnabled: integer("safe_to_spend_enabled", { mode: "boolean" }),
   budgetMonthlyMinor: integer("budget_monthly_minor"),
   sortOrder: integer("sort_order").notNull().default(0),
   createdAt: integer("created_at", { mode: "timestamp" })
@@ -343,10 +347,8 @@ export const settings = sqliteTable("settings", {
   // screen shown on app open. Defaults to hidden (not visible) for the
   // same reason — first thing shown, so first-run privacy should be the
   // safe default rather than opt-in. Persisted so it survives restarts.
-  // `net_worth_hidden` lived here until 2026-09-10. The Dashboard's privacy
-  // toggle is now session-scoped — always hidden on app open, a reveal
-  // lasting only until the app closes — so there is nothing to persist.
-  // See hooks/useNetWorthHidden.ts.
+  // `net_worth_hidden` lived here until 2026-09-10; the privacy toggle it
+  // backed was removed entirely in 4.3.0.
   //
   // ---- v3 (spec.md §5.22 / §5.23), all added in migration 0017 ----
   // Biometric app lock. Nothing secret is stored — the OS answers "is this

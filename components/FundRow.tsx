@@ -18,8 +18,6 @@ interface FundRowProps {
   balance: FundBalance;
   progress: FundProgress;
   baseCurrency: string;
-  /** Masks amounts alongside the Dashboard's net worth privacy toggle. */
-  hidden?: boolean;
 }
 
 // The one fund row, shared by the Dashboard's Funds card and the /fund
@@ -30,10 +28,9 @@ interface FundRowProps {
 //
 // Presentational only — it takes an already-computed balance and progress
 // so the two screens share services/funds.ts's calculation too.
-export function FundRow({ fund, balance, progress, baseCurrency, hidden = false }: FundRowProps) {
+export function FundRow({ fund, balance, progress, baseCurrency }: FundRowProps) {
   const colors = useThemeColors();
-  const money = (amountMinor: number) =>
-    hidden ? "••••" : formatMoney(amountMinor, baseCurrency);
+  const money = (amountMinor: number) => formatMoney(amountMinor, baseCurrency);
   const isClosed = fund.status === "closed";
 
   return (

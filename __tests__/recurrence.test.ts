@@ -2,7 +2,7 @@ import { and, eq, gte, lt } from "drizzle-orm";
 
 import { funds, recurringRules, tags, transactionTags, transactions } from "../db/schema";
 import { toLocalDateString } from "../services/period";
-import { createRecurringSeries, deleteFutureOccurrences, deleteSingleOccurrence, describeSchedule, editFutureOccurrences, editSingleOccurrence, ensureMaterialized, monthlyEquivalent, nextOccurrence } from "../services/recurrence";
+import { commitmentEntries, createRecurringSeries, deleteFutureOccurrences, deleteSingleOccurrence, describeSchedule, editFutureOccurrences, editSingleOccurrence, ensureMaterialized, monthlyEquivalent, nextOccurrence } from "../services/recurrence";
 import { closeTestDb, createTestDb, insertAccount, type TestDb } from "./testDb";
 
 let db: TestDb;
@@ -481,5 +481,61 @@ describe("nextOccurrence", () => {
 
   it("returns null once the rule has ended", () => {
     expect(nextOccurrence({ ...monthly, endDate: new Date(2026, 2, 31) }, new Date(2026, 3, 1))).toBeNull();
+  });
+});
+
+describe("commitmentEntries (Commitments screen)", () => {
+  // Reported 2026-11-12: a "just this one" edit on the next occurrence, then a
+  // "this and all future" edit on a later one, made the edited occurrence
+  // vanish from Commitments because its rule had been closed by the split.
+  it("still lists a pending occurrence whose rule was closed by a later split", () => {
+    const accountId = insertAccount(db);
+    createRecurringSeries(db, baseInput({ accountId, amountMinor: 150000, date: new Date(2026, 7, 16) }), {
+      intervalCount: 1,
+      intervalUnit: "month",
+      endDate: null,
+    });
+    const at = (m: number) =>
+      db.select().from(transactions).where(eq(transactions.date, new Date(2026, m, 16))).get()!;
+    const aug = at(7);
+    editSingleOccurrence(
+      db,
+      { id: aug.id, recurringRuleId: aug.recurringRuleId!, occurrenceDate: aug.occurrenceDate! },
+      baseInput({ accountId, amountMinor: 75000, date: new Date(2026, 7, 16) }),
+    );
+    const sep = at(8);
+    editFutureOccurrences(
+      db,
+      { id: sep.id, recurringRuleId: sep.recurringRuleId!, occurrenceDate: sep.occurrenceDate! },
+      baseInput({ accountId, amountMinor: 180000, date: new Date(2026, 8, 16) }),
+      null,
+    );
+
+    const rules = db.select().from(recurringRules).all();
+    const upcoming = db
+      .select()
+      .from(transactions)
+      .where(gte(transactions.date, TODAY))
+      .all();
+    const entries = commitmentEntries(rules, upcoming, TODAY);
+
+    expect(entries).toHaveLength(2);
+    const closed = entries.find((e) => !e.rule.isActive)!;
+    expect(toLocalDateString(closed.next!)).toBe("2026-08-16");
+    expect(closed.nextAmountMinor).toBe(75000);
+    expect(closed.counts).toBe(false);
+    const active = entries.find((e) => e.rule.isActive)!;
+    expect(toLocalDateString(active.next!)).toBe("2026-09-16");
+    expect(active.nextAmountMinor).toBe(180000);
+    expect(active.counts).toBe(true);
+  });
+
+  it("drops a closed rule once it has nothing pending", () => {
+    const accountId = insertAccount(db);
+    createRecurringSeries(db, baseInput({ accountId }), { intervalCount: 1, intervalUnit: "month", endDate: null });
+    const sep = db.select().from(transactions).where(eq(transactions.date, new Date(2026, 8, 1))).get()!;
+    deleteFutureOccurrences(db, { id: sep.id, recurringRuleId: sep.recurringRuleId!, occurrenceDate: sep.occurrenceDate! });
+    const upcoming = db.select().from(transactions).where(gte(transactions.date, TODAY)).all();
+    expect(commitmentEntries(db.select().from(recurringRules).all(), upcoming, TODAY)).toHaveLength(0);
   });
 });

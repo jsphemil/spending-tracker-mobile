@@ -139,10 +139,10 @@ internal fun MutablePreferences.bumpDataVersion() {
 // handled an update. A widget being configured for the very first time may
 // not be in that map yet, so getGlanceIds() can return an empty list and
 // make updateAll() a silent no-op. AppWidgetManager always knows.
-internal fun boundAppWidgetIds(context: Context): IntArray =
-  AppWidgetManager.getInstance(context).getAppWidgetIds(
-    ComponentName(context, AccountsGlanceWidgetReceiver::class.java),
-  )
+internal fun boundAppWidgetIds(
+  context: Context,
+  receiver: Class<*> = AccountsGlanceWidgetReceiver::class.java,
+): IntArray = AppWidgetManager.getInstance(context).getAppWidgetIds(ComponentName(context, receiver))
 
 internal fun glanceIdFor(context: Context, appWidgetId: Int): GlanceId =
   GlanceAppWidgetManager(context).getGlanceIdBy(appWidgetId)

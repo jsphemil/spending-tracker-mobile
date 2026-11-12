@@ -1,0 +1,1 @@
+ALTER TABLE `accounts` ADD `safe_to_spend_enabled` integer;

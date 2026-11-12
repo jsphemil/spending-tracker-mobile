@@ -28,6 +28,12 @@ class WidgetBridgeModule : Module() {
             updateAppWidgetState(context, glanceId) { prefs -> prefs.bumpDataVersion() }
             AccountsGlanceWidget().update(context, glanceId)
           }
+          // Safe to Spend reads the same balances, so it refreshes on the same writes.
+          boundAppWidgetIds(context, SafeToSpendGlanceWidgetReceiver::class.java).forEach { appWidgetId ->
+            val glanceId = glanceIdFor(context, appWidgetId)
+            updateAppWidgetState(context, glanceId) { prefs -> prefs.bumpDataVersion() }
+            SafeToSpendGlanceWidget().update(context, glanceId)
+          }
         }
       }
     }

@@ -18,7 +18,7 @@ describe("parseDashboardLayout", () => {
   it("keeps a saved order and hidden set", () => {
     const raw = JSON.stringify({ order: ["netWorth", "attention", "month", "funds"], hidden: ["funds"] });
     expect(parseDashboardLayout(raw)).toEqual({
-      order: ["netWorth", "attention", "month", "funds"],
+      order: ["netWorth", "attention", "month", "funds", "safeToSpend"],
       hidden: ["funds"],
     });
   });
@@ -33,7 +33,7 @@ describe("parseDashboardLayout", () => {
   it("drops unknown ids and appends cards missing from a saved order", () => {
     const raw = JSON.stringify({ order: ["netWorth", "retired", "attention"], hidden: ["retired"] });
     const layout = parseDashboardLayout(raw);
-    expect(layout.order).toEqual(["netWorth", "attention", "month", "funds"]);
+    expect(layout.order).toEqual(["netWorth", "attention", "safeToSpend", "month", "funds"]);
     expect(layout.hidden).toEqual([]);
     expect(new Set(layout.order).size).toBe(CARD_IDS.length);
   });
@@ -46,7 +46,7 @@ describe("parseDashboardLayout", () => {
       shortcuts: ["/fund", "/tag"],
     });
     expect(parseDashboardLayout(raw)).toEqual({
-      order: ["netWorth", "attention", "month", "funds"],
+      order: ["netWorth", "attention", "month", "funds", "safeToSpend"],
       hidden: ["funds"],
     });
   });
