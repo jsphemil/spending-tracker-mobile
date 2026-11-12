@@ -330,6 +330,25 @@ All 3 required updates for the 14-day window are now shipped
 (versionCode 9, 12, 13 — see step 9 below for the production-access
 application, the next gate).
 
+**4.3.0 building as versionCode 27 (2026-11-12).** Release name
+`Erebor 4.3.0 — Safe to Spend, at a Glance`. **Adds a native widget**
+(`SafeToSpendGlanceWidget`) and migration `0019`, so per the release
+routine it goes to **Internal testing first**: smoke-test the new widget,
+the existing Accounts and Quick Add widgets, Dropbox backup/restore and
+notifications on the Pixel, then Promote. Contents: Safe to Spend
+(Dashboard card, per-account toggle, widget), Budget Mode remaining cap,
+Commitments fix for an occurrence hidden after a split edit, net worth
+eye removed. `tsc`, lint and 160 tests clean; verified on the Pixel_10
+emulator (widget not placed there). Build
+`4aa9cf69-6cf3-4e0f-b336-048a819d830b`.
+
+Release notes to use (4.3.0):
+```
+<en-GB>
+New: Safe to spend today on the Dashboard and as a home-screen widget, per account and combined. Choose which accounts count when editing an account. Budget Mode now shows how much of your cap is left. Fixed Commitments hiding an upcoming occurrence changed with "just this one". The net worth hide/show eye has been removed.
+</en-GB>
+```
+
 **4.2.0 built as versionCode 26 (2026-11-03) — live in Production 2026-11-03.** Release name
 `Erebor 4.2.0 — Add a Transaction in Three Taps`. JS-only (no native
 change): the New Transaction quick-entry redesign (spec.md §5.2a) —

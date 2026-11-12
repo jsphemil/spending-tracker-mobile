@@ -67,6 +67,7 @@
 - **In-app Info/Tips reference page** (Profile) — a fuller explainer than the one-time onboarding intro above. User explicitly said "later" — deferred, no phase assigned. Accepted into current work (deferred) — spec.md §5.15.
 
 ## In Progress
+- **4.3.0 usage-observation batch** (spec.md §5.25) — Safe to Spend (Dashboard card, per-account toggle, new widget), Budget Mode remaining cap, Commitments split-rule bug, net worth eye removed. Built 2026-11-12; verified on the emulator except the widget. EAS build vc27 (`4aa9cf69-6cf3-4e0f-b336-048a819d830b`) → Internal testing → widget check on the Pixel → Production.
 
 
 ## Done
