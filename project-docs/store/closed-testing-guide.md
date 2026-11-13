@@ -330,7 +330,7 @@ All 3 required updates for the 14-day window are now shipped
 (versionCode 9, 12, 13 — see step 9 below for the production-access
 application, the next gate).
 
-**5.0.4 built as versionCode 32 (2026-11-13) — Internal testing; the one to promote.** Release name
+**5.0.4 built as versionCode 32 (2026-11-13) — verified on the Pixel via Internal testing, promoted to Production 2026-11-13 with the new Play icon + feature graphic.** Release name
 `Erebor 5.0.4 — A New Look`. Same as 5.0.3 plus the Accounts and Quick Add
 widget-picker previews (static PNGs in `modules/widget-bridge/.../drawable-nodpi`)
 redrawn with the new icon — 5.0.3 still showed the old chevron there. Build
