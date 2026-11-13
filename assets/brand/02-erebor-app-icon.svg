@@ -8,7 +8,7 @@
   <linearGradient id="goldRing" x1="0" y1="0" x2="1" y2="1">
     <stop offset="0" stop-color="#F6DC8C"/><stop offset="0.5" stop-color="#D9AE52"/><stop offset="1" stop-color="#A87A2C"/></linearGradient>
   <radialGradient id="greenBg" cx="0.5" cy="0.4" r="0.65">
-    <stop offset="0" stop-color="#0B3B2E"/><stop offset="1" stop-color="#06261D"/></radialGradient>
+    <stop offset="0" stop-color="#0E7490"/><stop offset="1" stop-color="#0A4F66"/></radialGradient>
 </defs>
 <rect width="1024" height="1024" fill="url(#greenBg)"/>
 <path fill="url(#goldLit)" d="M249.2 725.9 L321.8 610.5 L308.3 523.1 L122.0 725.9Z"/>

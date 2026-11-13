@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- The Erebor mark (gold peaks in a green disc, from assets/brand/02-erebor-app-icon.svg),
+<!-- The Erebor mark (gold peaks in a sea-blue disc, from assets/brand/02-erebor-app-icon.svg),
      for the widget-picker preview. The library module can't reference :app's mipmap/ic_launcher. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp"
     android:height="24dp"
     android:viewportWidth="1024"
     android:viewportHeight="1024">
-  <path android:fillColor="#0B3B2E" android:pathData="M512,0a512,512 0,1 1,0 1024a512,512 0,1 1,0 -1024z" />
+  <path android:fillColor="#0E7490" android:pathData="M512,0a512,512 0,1 1,0 1024a512,512 0,1 1,0 -1024z" />
   <path android:fillColor="#E6C46E" android:pathData="M249.2,725.9L321.8,610.5L308.3,523.1L122,725.9Z" />
   <path android:fillColor="#93682A" android:pathData="M321.8,610.5L346.5,571.3L308.3,523.1Z" />
   <path android:fillColor="#E6C46E" android:pathData="M757.5,725.9L725.4,675L714.8,596.3L698.3,494.9L653.1,560.1Z" />

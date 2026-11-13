@@ -2,7 +2,7 @@
   "expo": {
     "name": "Erebor",
     "slug": "spending-tracker-mobile",
-    "version": "5.0.2",
+    "version": "5.0.3",
     "scheme": "spendingtracker",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -14,7 +14,7 @@
     "android": {
       "package": "com.jsphemil.spendingtracker",
       "adaptiveIcon": {
-        "backgroundColor": "#0B3B2E",
+        "backgroundColor": "#0E7490",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -39,7 +39,7 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#06261D",
+          "backgroundColor": "#0A4F66",
           "image": "./assets/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain"
