@@ -330,6 +330,22 @@ All 3 required updates for the 14-day window are now shipped
 (versionCode 9, 12, 13 — see step 9 below for the production-access
 application, the next gate).
 
+**5.0.1 built as versionCode 29 (2026-11-13) — Internal testing.** Release name
+`Erebor 5.0.1 — A New Look`. New logo only: launcher icon, adaptive +
+themed (monochrome) icon, splash badge, widget-picker mark. Source SVGs in
+`assets/brand/`; Play icon + feature graphic in `assets/brand/export/`
+(swap them in the listing after promoting). Check on the Pixel: launcher
+icon (themed on/off), splash, widget picker, widget headers. Build
+`022ed284-a70a-4fae-9672-815e8bf484b7`; AAB at
+`https://expo.dev/artifacts/eas/6paEdDw6tDae2O4reA1TfBPxzlFVb4ZUFBLY3Lznh7o.aab`.
+
+Release notes to use (5.0.1):
+```
+<en-GB>
+Erebor has a new look: a new logo with gold peaks on deep green, on your home screen, the launch screen and the widget picker. Android themed icons get a matching monochrome version. No other changes.
+</en-GB>
+```
+
 **5.0.0 built as versionCode 28 (2026-11-12) — Internal testing passed (widget checked on the Pixel), promoted to Production 2026-11-12.** — release name
 `Erebor 5.0.0 — Refunds, Statements and Safe to Spend`. Replaces 4.3.0
 (vc27), which never left Internal testing, so its changes ship here too.
