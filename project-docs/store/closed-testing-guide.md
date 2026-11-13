@@ -330,7 +330,15 @@ All 3 required updates for the 14-day window are now shipped
 (versionCode 9, 12, 13 — see step 9 below for the production-access
 application, the next gate).
 
-**5.0.3 built as versionCode 31 (2026-11-13) — Internal testing; the one to promote.** Release name
+**5.0.4 built as versionCode 32 (2026-11-13) — Internal testing; the one to promote.** Release name
+`Erebor 5.0.4 — A New Look`. Same as 5.0.3 plus the Accounts and Quick Add
+widget-picker previews (static PNGs in `modules/widget-bridge/.../drawable-nodpi`)
+redrawn with the new icon — 5.0.3 still showed the old chevron there. Build
+`878637fa-9e8c-4a5c-9bc0-06d3f4332fa2`; AAB at
+`https://expo.dev/artifacts/eas/joEhy8kWc9JUciHVsAdJKGxmdfrbs5_xSxJDtPTXgD0.aab`.
+Release notes: same text as 5.0.3 below.
+
+**5.0.3 built as versionCode 31 (2026-11-13) — Internal testing only, superseded by 5.0.4.** Release name
 `Erebor 5.0.3 — A New Look`. Logo recoloured from deep green to sea blue
 (`#0E7490` / edge `#0A4F66`) because the green vanished on black widgets
 and dark launchers; launcher label shortened to "Erebor" (5.0.2, vc30,
