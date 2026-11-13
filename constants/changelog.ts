@@ -16,8 +16,8 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
-    // 5.0.1 and 5.0.2 only reached Internal testing, so their changes are listed here.
-    version: "5.0.3",
+    // 5.0.1–5.0.3 only reached Internal testing, so their changes are listed here.
+    version: "5.0.4",
     date: "2026-11-13",
     title: "A new look for Erebor",
     highlights: [

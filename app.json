@@ -2,7 +2,7 @@
   "expo": {
     "name": "Erebor",
     "slug": "spending-tracker-mobile",
-    "version": "5.0.3",
+    "version": "5.0.4",
     "scheme": "spendingtracker",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
