@@ -330,7 +330,23 @@ All 3 required updates for the 14-day window are now shipped
 (versionCode 9, 12, 13 — see step 9 below for the production-access
 application, the next gate).
 
-**5.0.1 built as versionCode 29 (2026-11-13) — Internal testing.** Release name
+**5.0.3 built as versionCode 31 (2026-11-13) — Internal testing; the one to promote.** Release name
+`Erebor 5.0.3 — A New Look`. Logo recoloured from deep green to sea blue
+(`#0E7490` / edge `#0A4F66`) because the green vanished on black widgets
+and dark launchers; launcher label shortened to "Erebor" (5.0.2, vc30,
+Internal only); Play listing title stays "Erebor Wealth Management".
+Swap the Play icon + feature graphic (`assets/brand/export/`) just before
+promoting. Build `341c6238-d4f1-4fe4-aeae-5019f1c3c915`; AAB at
+`https://expo.dev/artifacts/eas/Yk0OTd4RifjMFC8B-OsDcBN4FY3haiYsszGsv7pETt4.aab`.
+
+Release notes to use (5.0.3):
+```
+<en-GB>
+Erebor has a new look: a new logo with gold peaks on sea blue, on your home screen, the launch screen and the widget picker. Android themed icons get a matching monochrome version, and the app is now simply "Erebor" under its icon. No other changes.
+</en-GB>
+```
+
+**5.0.1 built as versionCode 29 (2026-11-13) — Internal testing only, superseded by 5.0.3 (green logo).** Release name
 `Erebor 5.0.1 — A New Look`. New logo only: launcher icon, adaptive +
 themed (monochrome) icon, splash badge, widget-picker mark. Source SVGs in
 `assets/brand/`; Play icon + feature graphic in `assets/brand/export/`
