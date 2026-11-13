@@ -16,6 +16,14 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "5.0.1",
+    date: "2026-11-13",
+    title: "A new look for Erebor",
+    highlights: [
+      "A new Erebor logo: gold peaks on deep green, on your home screen, the launch screen and the widget picker. Android themed icons get a matching monochrome version.",
+    ],
+  },
+  {
     // 4.3.0 only reached Internal testing, so its changes are listed here too.
     version: "5.0.0",
     date: "2026-11-12",

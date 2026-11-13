@@ -2,7 +2,7 @@
   "expo": {
     "name": "Erebor Wealth Management",
     "slug": "spending-tracker-mobile",
-    "version": "5.0.0",
+    "version": "5.0.1",
     "scheme": "spendingtracker",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -14,7 +14,7 @@
     "android": {
       "package": "com.jsphemil.spendingtracker",
       "adaptiveIcon": {
-        "backgroundColor": "#4c7dff",
+        "backgroundColor": "#0B3B2E",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -39,9 +39,9 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#0c1120",
-          "image": "./assets/icon.png",
-          "imageWidth": 160,
+          "backgroundColor": "#06261D",
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 200,
           "resizeMode": "contain"
         }
       ],
